@@ -14,12 +14,11 @@ export default async function Home() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-8">
       <div className="max-w-2xl text-center">
-        <div className="flex items-center justify-center gap-3 mb-4">
-          <Link2 className="w-10 h-10 text-red-500" />
-          <h1 className="text-4xl font-bold">
-            <span className="text-white">Link</span><span className="text-red-500">Medic</span>
-          </h1>
-        </div>
+        <h1 className="text-4xl font-bold flex items-center justify-center gap-1 mb-4">
+          <span className="text-white">Link</span>
+          <Link2 className="w-8 h-8 text-red-500" />
+          <span className="text-red-500">Medic</span>
+        </h1>
         <p className="text-xl text-gray-300 mb-8">
           Detect, prioritize, and fix broken affiliate links across all your YouTube videos before revenue is lost.
         </p>
