@@ -18,25 +18,14 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
-  callbacks: {
-    async signIn({ user, account }) {
-      if (account?.provider === "google" && account.access_token) {
+  events: {
+    // Use the linkAccount event which fires AFTER the user and account are created
+    async linkAccount({ user, account }) {
+      if (account.provider === "google" && account.access_token) {
         try {
-          // Store tokens in the user record
-          // Use upsert to handle both new and existing users
-          await prisma.user.upsert({
-            where: { email: user.email! },
-            update: {
-              accessToken: account.access_token,
-              refreshToken: account.refresh_token || null,
-              tokenExpiry: account.expires_at
-                ? new Date(account.expires_at * 1000)
-                : null,
-            },
-            create: {
-              email: user.email!,
-              name: user.name,
-              image: user.image,
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
               accessToken: account.access_token,
               refreshToken: account.refresh_token || null,
               tokenExpiry: account.expires_at
@@ -46,12 +35,12 @@ export const authOptions: NextAuthOptions = {
             },
           });
         } catch (error) {
-          console.error("Error storing tokens:", error);
-          // Don't block sign-in if token storage fails
+          console.error("Error storing tokens in linkAccount:", error);
         }
       }
-      return true;
     },
+  },
+  callbacks: {
     async session({ session, user }) {
       if (session.user) {
         session.user.id = user.id;
@@ -75,8 +64,10 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: "/login",
+    error: "/login",
   },
   session: {
     strategy: "database",
   },
+  debug: true,
 };
