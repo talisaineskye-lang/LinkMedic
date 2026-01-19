@@ -5,6 +5,15 @@ import { formatNumber, formatCurrency, calculateEstimatedLoss } from "@/lib/reve
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import type { LinkStatus } from "@prisma/client";
+
+type AffiliateLink = {
+  id: string;
+  originalUrl: string;
+  merchant: string | null;
+  status: LinkStatus;
+  lastCheckedAt: Date | null;
+};
 
 export default async function VideoDetailPage({
   params,
@@ -143,7 +152,7 @@ export default async function VideoDetailPage({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {video.affiliateLinks.map((link) => {
+              {video.affiliateLinks.map((link: AffiliateLink) => {
                 const isBroken = link.status === "NOT_FOUND" || link.status === "OOS";
                 const estimatedLoss = isBroken
                   ? calculateEstimatedLoss(video.viewCount, revenueSettings)
