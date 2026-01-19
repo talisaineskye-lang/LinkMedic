@@ -5,13 +5,12 @@ import { formatNumber, formatCurrency, calculateEstimatedLoss } from "@/lib/reve
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import type { LinkStatus } from "@prisma/client";
 
 type AffiliateLink = {
   id: string;
   originalUrl: string;
   merchant: string | null;
-  status: LinkStatus;
+  status: "OK" | "OOS" | "NOT_FOUND" | "REDIRECT" | "UNKNOWN";
   lastCheckedAt: Date | null;
 };
 
