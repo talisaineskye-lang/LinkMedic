@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
           },
         });
 
-        const totalEstimatedLoss = brokenLinks.reduce((sum, link) => {
+        const totalEstimatedLoss = brokenLinks.reduce((sum: number, link: { video: { viewCount: number } }) => {
           return (
             sum +
             calculateEstimatedLoss(link.video.viewCount, {
