@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { Link2, Play, Search, AlertCircle, ArrowRight, Check } from "lucide-react";
+import { Link as LinkIcon, Play, Search, AlertCircle, ArrowRight, Check } from "lucide-react";
 
 export default async function Home() {
   const session = await getServerSession(authOptions);
@@ -18,7 +18,7 @@ export default async function Home() {
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-1 text-xl font-semibold text-gray-900">
             <span>Link</span>
-            <Link2 className="w-5 h-5 text-emerald-600" />
+            <LinkIcon className="w-5 h-5 text-emerald-600" />
             <span>Medic</span>
           </div>
           <Link
@@ -126,7 +126,7 @@ export default async function Home() {
           <div className="border border-gray-200 rounded-lg p-8 text-center">
             <div className="flex items-center justify-center gap-1 text-xl font-semibold text-gray-900 mb-2">
               <span>Link</span>
-              <Link2 className="w-5 h-5 text-emerald-600" />
+              <LinkIcon className="w-5 h-5 text-emerald-600" />
               <span>Medic</span>
             </div>
             <div className="mb-4">
@@ -179,7 +179,7 @@ export default async function Home() {
         <div className="max-w-5xl mx-auto px-6 text-center text-sm text-gray-400">
           <div className="flex items-center justify-center gap-1 mb-2">
             <span>Link</span>
-            <Link2 className="w-4 h-4 text-emerald-600" />
+            <LinkIcon className="w-4 h-4 text-emerald-600" />
             <span>Medic</span>
           </div>
           <p>Affiliate link health monitoring for YouTube creators.</p>
