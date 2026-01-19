@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { LinkStatus } from "@prisma/client";
+
+type LinkStatus = "OK" | "OOS" | "NOT_FOUND" | "REDIRECT" | "UNKNOWN";
+const VALID_STATUSES: LinkStatus[] = ["OK", "OOS", "NOT_FOUND", "REDIRECT", "UNKNOWN"];
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,7 +27,7 @@ export async function GET(request: NextRequest) {
       video: { userId: session.user.id },
     };
 
-    if (status && Object.values(LinkStatus).includes(status)) {
+    if (status && VALID_STATUSES.includes(status)) {
       where.status = status;
     }
 

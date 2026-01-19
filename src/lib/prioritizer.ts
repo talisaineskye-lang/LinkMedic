@@ -1,5 +1,6 @@
-import { LinkStatus } from "@prisma/client";
 import { calculateEstimatedLoss, RevenueSettings, DEFAULT_SETTINGS } from "./revenue-estimator";
+
+export type LinkStatus = "OK" | "OOS" | "NOT_FOUND" | "REDIRECT" | "UNKNOWN";
 
 /**
  * Represents an issue (broken or OOS link) for prioritization

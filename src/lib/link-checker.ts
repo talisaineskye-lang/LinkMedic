@@ -1,4 +1,4 @@
-import { LinkStatus } from "@prisma/client";
+export type LinkStatus = "OK" | "OOS" | "NOT_FOUND" | "REDIRECT" | "UNKNOWN";
 
 export interface LinkCheckResult {
   status: LinkStatus;

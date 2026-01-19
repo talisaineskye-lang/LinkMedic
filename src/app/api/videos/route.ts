@@ -32,8 +32,19 @@ export async function GET() {
       orderBy: { publishedAt: "desc" },
     });
 
+    type VideoResult = {
+      id: string;
+      youtubeVideoId: string;
+      title: string;
+      thumbnailUrl: string | null;
+      viewCount: number;
+      publishedAt: Date | null;
+      _count: { affiliateLinks: number };
+      affiliateLinks: { status: string }[];
+    };
+
     // Transform to include link stats
-    const videosWithStats = videos.map(video => ({
+    const videosWithStats = videos.map((video: VideoResult) => ({
       id: video.id,
       youtubeVideoId: video.youtubeVideoId,
       title: video.title,

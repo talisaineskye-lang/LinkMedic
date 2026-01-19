@@ -61,7 +61,7 @@ export default async function DashboardPage() {
 
   // Calculate total estimated loss from all issues
   const allIssues = links.filter(l => l.status === "NOT_FOUND" || l.status === "OOS");
-  const totalEstimatedLoss = allIssues.reduce((sum, link) => {
+  const totalEstimatedLoss = allIssues.reduce((sum: number, link: RawLinkData) => {
     const loss = link.video.viewCount * (revenueSettings.ctrPercent / 100) * (revenueSettings.conversionPercent / 100) * revenueSettings.avgOrderValue;
     return sum + loss;
   }, 0);

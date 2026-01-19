@@ -51,7 +51,7 @@ export default async function IssuesPage() {
   const issues = getAllIssues(links, revenueSettings);
 
   // Calculate total estimated loss
-  const totalEstimatedLoss = issues.reduce((sum, issue) => sum + issue.estimatedLoss, 0);
+  const totalEstimatedLoss = issues.reduce((sum: number, issue: { estimatedLoss: number }) => sum + issue.estimatedLoss, 0);
 
   return (
     <div className="space-y-6">
