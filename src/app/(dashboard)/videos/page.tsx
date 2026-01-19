@@ -15,6 +15,12 @@ type Video = {
   affiliateLinks: { status: string }[];
 };
 
+type VideoWithStats = Video & {
+  linkCount: number;
+  brokenCount: number;
+  hasIssues: boolean;
+};
+
 export default async function VideosPage() {
   const session = await getServerSession(authOptions);
 
@@ -94,7 +100,7 @@ export default async function VideosPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {videosWithStats.map((video) => (
+              {videosWithStats.map((video: VideoWithStats) => (
                 <tr key={video.id}>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
