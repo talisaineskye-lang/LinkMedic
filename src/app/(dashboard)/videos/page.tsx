@@ -5,6 +5,16 @@ import { formatNumber } from "@/lib/revenue-estimator";
 import Link from "next/link";
 import Image from "next/image";
 
+type Video = {
+  id: string;
+  youtubeVideoId: string;
+  title: string;
+  thumbnailUrl: string | null;
+  viewCount: number;
+  publishedAt: Date | null;
+  affiliateLinks: { status: string }[];
+};
+
 export default async function VideosPage() {
   const session = await getServerSession(authOptions);
 
@@ -32,7 +42,7 @@ export default async function VideosPage() {
   });
 
   // Transform to include link stats
-  const videosWithStats = videos.map((video) => ({
+  const videosWithStats = videos.map((video: Video) => ({
     ...video,
     linkCount: video.affiliateLinks.length,
     brokenCount: video.affiliateLinks.filter(
@@ -118,7 +128,7 @@ export default async function VideosPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
-                    {new Date(video.publishedAt).toLocaleDateString()}
+                    {video.publishedAt ? new Date(video.publishedAt).toLocaleDateString() : "N/A"}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">
                     {formatNumber(video.viewCount)}
