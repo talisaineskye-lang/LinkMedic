@@ -1,0 +1,19 @@
+{
+  "/(dashboard)/dashboard/page": "/dashboard",
+  "/(dashboard)/issues/page": "/issues",
+  "/(dashboard)/settings/page": "/settings",
+  "/(dashboard)/videos/[id]/page": "/videos/[id]",
+  "/(dashboard)/videos/page": "/videos",
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/api/auth/[...nextauth]/route": "/api/auth/[...nextauth]",
+  "/api/cron/scan/route": "/api/cron/scan",
+  "/api/links/route": "/api/links",
+  "/api/scan/route": "/api/scan",
+  "/api/settings/route": "/api/settings",
+  "/api/videos/route": "/api/videos",
+  "/api/videos/sync/route": "/api/videos/sync",
+  "/favicon.ico/route": "/favicon.ico",
+  "/login/page": "/login",
+  "/page": "/"
+}
