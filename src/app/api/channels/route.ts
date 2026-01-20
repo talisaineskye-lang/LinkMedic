@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/db";
-import { getAllUserChannels } from "@/lib/youtube";
+import { getAllUserChannels, getValidAccessToken } from "@/lib/youtube";
 
 export async function GET() {
   try {
@@ -12,35 +11,17 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get tokens from Account table
-    const account = await prisma.account.findFirst({
-      where: {
-        userId: session.user.id,
-        provider: "google",
-      },
-      select: {
-        access_token: true,
-        refresh_token: true,
-      },
-    });
+    // Get valid tokens (refreshes if expired)
+    const { accessToken, refreshToken } = await getValidAccessToken(session.user.id);
 
-    if (!account?.access_token) {
-      return NextResponse.json(
-        { error: "Not authenticated with YouTube" },
-        { status: 401 }
-      );
-    }
-
-    const channels = await getAllUserChannels(
-      account.access_token,
-      account.refresh_token
-    );
+    const channels = await getAllUserChannels(accessToken, refreshToken);
 
     return NextResponse.json({ channels });
   } catch (error) {
     console.error("Error fetching channels:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Failed to fetch channels" },
+      { error: `Failed to fetch channels: ${errorMessage}` },
       { status: 500 }
     );
   }

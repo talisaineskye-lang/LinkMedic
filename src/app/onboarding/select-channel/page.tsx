@@ -34,14 +34,17 @@ export default function SelectChannelPage() {
     async function fetchChannels() {
       try {
         const response = await fetch("/api/channels");
-        if (!response.ok) {
-          throw new Error("Failed to fetch channels");
-        }
         const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to fetch channels");
+        }
+
         setChannels(data.channels);
       } catch (err) {
-        setError("Failed to load your YouTube channels. Please try again.");
-        console.error(err);
+        const errorMessage = err instanceof Error ? err.message : "Unknown error";
+        setError(errorMessage);
+        console.error("Channel fetch error:", err);
       } finally {
         setLoading(false);
       }

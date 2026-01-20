@@ -43,6 +43,76 @@ export function createOAuth2Client(accessToken: string, refreshToken?: string | 
 }
 
 /**
+ * Gets a valid access token, refreshing if necessary
+ * Updates the database with new tokens if refreshed
+ */
+export async function getValidAccessToken(userId: string): Promise<{ accessToken: string; refreshToken: string | null }> {
+  const account = await prisma.account.findFirst({
+    where: {
+      userId,
+      provider: "google",
+    },
+    select: {
+      id: true,
+      access_token: true,
+      refresh_token: true,
+      expires_at: true,
+    },
+  });
+
+  if (!account?.access_token) {
+    throw new Error("No Google account found for user");
+  }
+
+  // Check if token is expired (with 5 min buffer)
+  const now = Math.floor(Date.now() / 1000);
+  const isExpired = account.expires_at && account.expires_at < now + 300;
+
+  if (isExpired && account.refresh_token) {
+    console.log("[YouTube] Access token expired, refreshing...");
+
+    const oauth2Client = new google.auth.OAuth2(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET
+    );
+
+    oauth2Client.setCredentials({
+      refresh_token: account.refresh_token,
+    });
+
+    try {
+      const { credentials } = await oauth2Client.refreshAccessToken();
+
+      // Update database with new tokens
+      await prisma.account.update({
+        where: { id: account.id },
+        data: {
+          access_token: credentials.access_token,
+          expires_at: credentials.expiry_date
+            ? Math.floor(credentials.expiry_date / 1000)
+            : null,
+        },
+      });
+
+      console.log("[YouTube] Token refreshed successfully");
+
+      return {
+        accessToken: credentials.access_token!,
+        refreshToken: account.refresh_token,
+      };
+    } catch (error) {
+      console.error("[YouTube] Failed to refresh token:", error);
+      throw new Error("Failed to refresh access token. Please sign in again.");
+    }
+  }
+
+  return {
+    accessToken: account.access_token,
+    refreshToken: account.refresh_token,
+  };
+}
+
+/**
  * Gets the user's YouTube channel ID (primary channel)
  */
 export async function getChannelId(accessToken: string, refreshToken?: string | null): Promise<string | null> {
@@ -172,17 +242,8 @@ export async function fetchChannelVideos(
  * Requires user to have selected a channel first (youtubeChannelId must be set)
  */
 export async function syncUserVideos(userId: string): Promise<{ synced: number; total: number }> {
-  // Get tokens from Account table (where NextAuth stores them)
-  const account = await prisma.account.findFirst({
-    where: {
-      userId,
-      provider: "google",
-    },
-    select: {
-      access_token: true,
-      refresh_token: true,
-    },
-  });
+  // Get valid tokens (refreshes if expired)
+  const { accessToken, refreshToken } = await getValidAccessToken(userId);
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -190,10 +251,6 @@ export async function syncUserVideos(userId: string): Promise<{ synced: number; 
       youtubeChannelId: true,
     },
   });
-
-  if (!account?.access_token) {
-    throw new Error("User not authenticated with YouTube");
-  }
 
   const channelId = user?.youtubeChannelId;
   if (!channelId) {
@@ -206,8 +263,8 @@ export async function syncUserVideos(userId: string): Promise<{ synced: number; 
 
   while (synced < MAX_VIDEOS) {
     const { videos, nextPageToken } = await fetchChannelVideos(
-      account.access_token,
-      account.refresh_token,
+      accessToken,
+      refreshToken,
       channelId,
       pageToken,
       Math.min(50, MAX_VIDEOS - synced)
