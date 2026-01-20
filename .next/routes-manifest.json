@@ -22,12 +22,36 @@
   },
   "dynamicRoutes": [
     {
+      "page": "/api/audit/results/[id]",
+      "regex": "^/api/audit/results/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/audit/results/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
       "page": "/api/auth/[...nextauth]",
       "regex": "^/api/auth/(.+?)(?:/)?$",
       "routeKeys": {
         "nxtPnextauth": "nxtPnextauth"
       },
       "namedRegex": "^/api/auth/(?<nxtPnextauth>.+?)(?:/)?$"
+    },
+    {
+      "page": "/api/videos/[id]/export-description",
+      "regex": "^/api/videos/([^/]+?)/export\\-description(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/videos/(?<nxtPid>[^/]+?)/export\\-description(?:/)?$"
+    },
+    {
+      "page": "/audit/results/[id]",
+      "regex": "^/audit/results/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/audit/results/(?<nxtPid>[^/]+?)(?:/)?$"
     },
     {
       "page": "/videos/[id]",
@@ -56,6 +80,12 @@
       "regex": "^/_not\\-found(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/api/audit",
+      "regex": "^/api/audit(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/audit(?:/)?$"
     },
     {
       "page": "/api/auth/signout",
@@ -88,6 +118,18 @@
       "namedRegex": "^/api/links(?:/)?$"
     },
     {
+      "page": "/api/links/generate-suggestions",
+      "regex": "^/api/links/generate\\-suggestions(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/links/generate\\-suggestions(?:/)?$"
+    },
+    {
+      "page": "/api/links/mark-fixed",
+      "regex": "^/api/links/mark\\-fixed(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/links/mark\\-fixed(?:/)?$"
+    },
+    {
       "page": "/api/scan",
       "regex": "^/api/scan(?:/)?$",
       "routeKeys": {},
@@ -110,6 +152,12 @@
       "regex": "^/api/videos/sync(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/api/videos/sync(?:/)?$"
+    },
+    {
+      "page": "/audit",
+      "regex": "^/audit(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/audit(?:/)?$"
     },
     {
       "page": "/dashboard",
