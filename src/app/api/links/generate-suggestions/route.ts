@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { generateSuggestedLink } from "@/lib/claude";
+import { generateSuggestedLink, extractAffiliateTag } from "@/lib/claude";
+import { isAmazonUrl } from "@/lib/link-parser";
 
 // Rate limiting: max 10 suggestions at a time to avoid API overload
 const MAX_SUGGESTIONS_PER_REQUEST = 10;
@@ -51,13 +52,15 @@ export async function POST(request: Request) {
       });
     } else {
       // Get all broken links without suggestions for this user
+      // Include both "amazon" and "unknown" merchants (unknown may be Amazon links that weren't detected)
       linksToProcess = await prisma.affiliateLink.findMany({
         where: {
           video: { userId: session.user.id },
           status: { in: ["NOT_FOUND", "OOS"] },
           isFixed: false,
           suggestedLink: null, // Only links without suggestions
-          merchant: "amazon", // Only Amazon links for now
+          // Include amazon and unknown (unknown may be Amazon links from before proper detection)
+          merchant: { in: ["amazon", "unknown"] },
         },
         select: {
           id: true,
@@ -75,6 +78,8 @@ export async function POST(request: Request) {
       });
     }
 
+    console.log(`[generate-suggestions] Found ${linksToProcess.length} links to process`);
+
     if (linksToProcess.length === 0) {
       return NextResponse.json({
         success: true,
@@ -84,21 +89,69 @@ export async function POST(request: Request) {
       });
     }
 
+    // Log links for debugging
+    linksToProcess.forEach((link, i) => {
+      console.log(`[generate-suggestions] Link ${i + 1}: merchant=${link.merchant}, url=${link.originalUrl.slice(0, 50)}...`);
+    });
+
+    // Try to find a fallback affiliate tag from user's existing Amazon links
+    // This is needed because many Amazon links (like amzn.to shortlinks) don't have visible ?tag= params
+    let fallbackAffiliateTag: string | null = null;
+    const allUserLinks = await prisma.affiliateLink.findMany({
+      where: {
+        video: { userId: session.user.id },
+        merchant: "amazon",
+      },
+      select: { originalUrl: true },
+      take: 50,
+    });
+
+    for (const link of allUserLinks) {
+      const tag = extractAffiliateTag(link.originalUrl);
+      if (tag) {
+        fallbackAffiliateTag = tag;
+        console.log(`[generate-suggestions] Found fallback affiliate tag from user's links: ${tag}`);
+        break;
+      }
+    }
+
+    if (!fallbackAffiliateTag) {
+      console.log(`[generate-suggestions] No fallback affiliate tag found in user's links`);
+    }
+
     let generated = 0;
     const errors: string[] = [];
+    const skipped: string[] = [];
 
     for (const link of linksToProcess) {
-      // Only process Amazon links
-      if (link.merchant !== "amazon") {
+      // Check if this is an Amazon link
+      const isAmazon = link.merchant === "amazon" || isAmazonUrl(link.originalUrl);
+
+      if (!isAmazon) {
+        console.log(`[generate-suggestions] Skipping non-amazon link: ${link.id}, merchant: ${link.merchant}, url: ${link.originalUrl.slice(0, 50)}`);
+        skipped.push(link.id);
         continue;
       }
 
+      // Update merchant if it was "unknown" but is actually Amazon
+      if (link.merchant === "unknown") {
+        console.log(`[generate-suggestions] Updating merchant to 'amazon' for link: ${link.id}`);
+        await prisma.affiliateLink.update({
+          where: { id: link.id },
+          data: { merchant: "amazon" },
+        });
+      }
+
       try {
+        console.log(`[generate-suggestions] Calling Claude for link ${link.id}: ${link.originalUrl}`);
         const suggestedLink = await generateSuggestedLink(
           link.originalUrl,
           link.video.title,
-          link.video.description || undefined
+          link.video.description || undefined,
+          fallbackAffiliateTag || undefined
         );
+
+        console.log(`[generate-suggestions] Claude response for ${link.id}: ${suggestedLink ? suggestedLink.slice(0, 50) + '...' : 'null'}`);
 
         if (suggestedLink) {
           await prisma.affiliateLink.update({
@@ -106,6 +159,9 @@ export async function POST(request: Request) {
             data: { suggestedLink },
           });
           generated++;
+          console.log(`[generate-suggestions] Saved suggestion for ${link.id}`);
+        } else {
+          console.log(`[generate-suggestions] No suggestion returned for ${link.id}`);
         }
       } catch (error) {
         console.error(`Error generating suggestion for link ${link.id}:`, error);
@@ -118,10 +174,13 @@ export async function POST(request: Request) {
       }
     }
 
+    console.log(`[generate-suggestions] Complete: processed=${linksToProcess.length}, generated=${generated}, skipped=${skipped.length}, errors=${errors.length}`);
+
     return NextResponse.json({
       success: true,
       processed: linksToProcess.length,
       generated,
+      skipped: skipped.length,
       errors: errors.length > 0 ? errors : undefined,
       message: `Generated ${generated} suggestion(s) for ${linksToProcess.length} link(s)`,
     });
@@ -149,7 +208,7 @@ export async function GET() {
         status: { in: ["NOT_FOUND", "OOS"] },
         isFixed: false,
         suggestedLink: null,
-        merchant: "amazon",
+        merchant: { in: ["amazon", "unknown"] },
       },
     });
 

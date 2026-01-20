@@ -66,7 +66,7 @@ const TRACKING_PARAMS = [
 /**
  * Checks if a URL is from Amazon
  */
-function isAmazonUrl(url: string): boolean {
+export function isAmazonUrl(url: string): boolean {
   try {
     const urlObj = new URL(url);
     const hostname = urlObj.hostname.toLowerCase();

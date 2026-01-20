@@ -63,8 +63,17 @@ export async function suggestReplacementProduct(
   videoTitle: string,
   videoDescription?: string
 ): Promise<ProductSuggestion | null> {
+  console.log(`[claude] suggestReplacementProduct called`);
+
+  // Check if API key is configured
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.error("[claude] ANTHROPIC_API_KEY is not set!");
+    return null;
+  }
+
   try {
     const { asin } = extractProductInfoFromUrl(originalUrl);
+    console.log(`[claude] Extracted ASIN: ${asin || 'none'}`);
 
     // Build context for Claude
     const context = `
@@ -74,6 +83,7 @@ Original broken Amazon URL: ${originalUrl}
 ${asin ? `Original ASIN: ${asin}` : ""}
     `.trim();
 
+    console.log(`[claude] Calling Anthropic API...`);
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 500,
@@ -109,20 +119,26 @@ If you cannot determine a suitable replacement, respond with:
       ],
     });
 
+    console.log(`[claude] API call successful, parsing response...`);
+
     // Parse the response
     const responseText =
       message.content[0].type === "text" ? message.content[0].text : "";
 
+    console.log(`[claude] Raw response: ${responseText.slice(0, 200)}...`);
+
     // Try to parse as JSON
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      console.error("Could not parse Claude response as JSON:", responseText);
+      console.error("[claude] Could not parse Claude response as JSON:", responseText);
       return null;
     }
 
     const parsed = JSON.parse(jsonMatch[0]);
+    console.log(`[claude] Parsed response:`, JSON.stringify(parsed).slice(0, 200));
 
     if (!parsed.suggestedProduct) {
+      console.log(`[claude] No suggestedProduct in response`);
       return null;
     }
 
@@ -132,7 +148,7 @@ If you cannot determine a suitable replacement, respond with:
       reason: parsed.reason || "",
     };
   } catch (error) {
-    console.error("Error getting suggestion from Claude:", error);
+    console.error("[claude] Error getting suggestion from Claude:", error);
     return null;
   }
 }
@@ -168,13 +184,17 @@ export async function generateSuggestedLink(
   videoDescription?: string,
   fallbackAffiliateTag?: string
 ): Promise<string | null> {
+  console.log(`[claude] generateSuggestedLink called for: ${originalUrl.slice(0, 80)}...`);
+
   // Extract the affiliate tag from the original URL
   const affiliateTag = extractAffiliateTag(originalUrl) || fallbackAffiliateTag;
 
   if (!affiliateTag) {
-    console.error("No affiliate tag found in URL and no fallback provided");
+    console.error("[claude] No affiliate tag found in URL and no fallback provided:", originalUrl);
     return null;
   }
+
+  console.log(`[claude] Found affiliate tag: ${affiliateTag}`);
 
   // Get suggestion from Claude
   const suggestion = await suggestReplacementProduct(
@@ -184,14 +204,21 @@ export async function generateSuggestedLink(
   );
 
   if (!suggestion) {
+    console.log("[claude] No suggestion returned from Claude");
     return null;
   }
 
+  console.log(`[claude] Got suggestion: ${suggestion.productName}, ASIN: ${suggestion.asin || 'none'}`);
+
   // If Claude provided an ASIN, use it directly
   if (suggestion.asin) {
-    return buildAmazonAffiliateLink(suggestion.asin, affiliateTag);
+    const link = buildAmazonAffiliateLink(suggestion.asin, affiliateTag);
+    console.log(`[claude] Built affiliate link: ${link}`);
+    return link;
   }
 
   // Otherwise, build a search link with the suggested product name
-  return buildAmazonSearchLink(suggestion.productName, affiliateTag);
+  const searchLink = buildAmazonSearchLink(suggestion.productName, affiliateTag);
+  console.log(`[claude] Built search link: ${searchLink.slice(0, 80)}...`);
+  return searchLink;
 }
