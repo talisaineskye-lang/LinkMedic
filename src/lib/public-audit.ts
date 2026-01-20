@@ -394,15 +394,10 @@ export async function runPublicAudit(channelInput: string, ipAddress?: string): 
     }
   }
 
-  // For remaining unchecked links, assume UNKNOWN with conservative impact
+  // For remaining unchecked links, mark as UNKNOWN with no impact (we don't know their status)
   for (let i = MAX_LINKS_TO_CHECK; i < allLinks.length; i++) {
     allLinks[i].status = "UNKNOWN";
-    allLinks[i].revenueImpact = calculateRevenueImpact(
-      allLinks[i].viewCount,
-      "UNKNOWN",
-      DEFAULT_SETTINGS,
-      allLinks[i].videoAgeMonths
-    );
+    allLinks[i].revenueImpact = 0; // Don't count unknown links in revenue impact
   }
 
   // Calculate metrics
@@ -412,9 +407,12 @@ export async function runPublicAudit(channelInput: string, ipAddress?: string): 
   const healthyLinks = allLinks.filter(l => l.status === "OK").length;
 
   // Calculate total potential impact with exposure multiplier
-  const affectedLinkCount = allLinks.filter(l => l.status !== "OK").length;
-  const exposureMultiplier = getExposureMultiplier(affectedLinkCount);
-  const baseImpact = allLinks.reduce((sum, link) => sum + (link.revenueImpact || 0), 0);
+  // Only count confirmed issues (NOT_FOUND, OOS, REDIRECT) - not UNKNOWN or OK
+  const confirmedIssues = allLinks.filter(l =>
+    l.status === "NOT_FOUND" || l.status === "OOS" || l.status === "REDIRECT"
+  );
+  const exposureMultiplier = getExposureMultiplier(confirmedIssues.length);
+  const baseImpact = confirmedIssues.reduce((sum, link) => sum + (link.revenueImpact || 0), 0);
   const potentialMonthlyImpact = Math.round(baseImpact * exposureMultiplier * 100) / 100;
 
   // Get top issues (broken/OOS/redirect links sorted by revenue impact)
