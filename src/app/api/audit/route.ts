@@ -3,9 +3,9 @@ import { runPublicAudit } from "@/lib/public-audit";
 import { prisma } from "@/lib/db";
 import crypto from "crypto";
 
-// Rate limiting: max 3 audits per IP per hour
+// Rate limiting: max 10 audits per IP per hour
 const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour
-const MAX_AUDITS_PER_WINDOW = 3;
+const MAX_AUDITS_PER_WINDOW = 10;
 
 async function checkRateLimit(ipAddress: string): Promise<boolean> {
   const ipHash = crypto.createHash("sha256").update(ipAddress).digest("hex").slice(0, 16);
