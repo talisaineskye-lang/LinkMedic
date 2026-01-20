@@ -20,7 +20,6 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account }) {
-      // Allow sign in - the adapter handles user creation
       console.log("[NextAuth] signIn callback", { email: user?.email, provider: account?.provider });
       return true;
     },
@@ -30,6 +29,11 @@ export const authOptions: NextAuthOptions = {
         session.user.id = user.id;
       }
       return session;
+    },
+    async redirect({ url, baseUrl }) {
+      // Redirect to dashboard after signin
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      return `${baseUrl}/dashboard`;
     },
   },
   pages: {
