@@ -9,6 +9,11 @@ const MAX_VIDEOS_TO_SCAN = 15; // Free audit: last 15 videos only (not full chan
 const MAX_LINKS_TO_CHECK = 20; // Limit link checks to avoid timeout
 const RATE_LIMIT_DELAY = 300; // ms between link checks
 
+// Required for YouTube API key with HTTP referrer restrictions
+const YOUTUBE_API_HEADERS = {
+  "Referer": "https://link-medic.vercel.app/",
+};
+
 interface YouTubeChannel {
   id: string;
   title: string;
@@ -143,7 +148,8 @@ async function resolveChannelId(identifier: string): Promise<YouTubeChannel | nu
     const handle = identifier.substring(1);
     console.log("Looking up handle:", handle);
     const response = await fetch(
-      `https://www.googleapis.com/youtube/v3/channels?part=snippet&forHandle=${encodeURIComponent(handle)}&key=${YOUTUBE_API_KEY}`
+      `https://www.googleapis.com/youtube/v3/channels?part=snippet&forHandle=${encodeURIComponent(handle)}&key=${YOUTUBE_API_KEY}`,
+      { headers: YOUTUBE_API_HEADERS }
     );
 
     if (!response.ok) {
@@ -169,7 +175,8 @@ async function resolveChannelId(identifier: string): Promise<YouTubeChannel | nu
   // Search for channel
   console.log("Searching for channel:", searchQuery);
   const searchResponse = await fetch(
-    `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(searchQuery)}&maxResults=1&key=${YOUTUBE_API_KEY}`
+    `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(searchQuery)}&maxResults=1&key=${YOUTUBE_API_KEY}`,
+    { headers: YOUTUBE_API_HEADERS }
   );
 
   if (!searchResponse.ok) {
@@ -202,7 +209,8 @@ async function getChannelById(channelId: string): Promise<YouTubeChannel | null>
   }
 
   const response = await fetch(
-    `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${channelId}&key=${YOUTUBE_API_KEY}`
+    `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${channelId}&key=${YOUTUBE_API_KEY}`,
+    { headers: YOUTUBE_API_HEADERS }
   );
 
   if (!response.ok) {
@@ -233,7 +241,8 @@ async function getChannelVideos(channelId: string, maxResults: number = MAX_VIDE
 
   // First, get the uploads playlist ID
   const channelResponse = await fetch(
-    `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${channelId}&key=${YOUTUBE_API_KEY}`
+    `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${channelId}&key=${YOUTUBE_API_KEY}`,
+    { headers: YOUTUBE_API_HEADERS }
   );
 
   if (!channelResponse.ok) {
@@ -249,7 +258,8 @@ async function getChannelVideos(channelId: string, maxResults: number = MAX_VIDE
 
   // Fetch videos from uploads playlist
   const videosResponse = await fetch(
-    `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${uploadsPlaylistId}&maxResults=${maxResults}&key=${YOUTUBE_API_KEY}`
+    `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${uploadsPlaylistId}&maxResults=${maxResults}&key=${YOUTUBE_API_KEY}`,
+    { headers: YOUTUBE_API_HEADERS }
   );
 
   if (!videosResponse.ok) {
@@ -265,7 +275,8 @@ async function getChannelVideos(channelId: string, maxResults: number = MAX_VIDE
 
   // Fetch full video details including statistics and description
   const detailsResponse = await fetch(
-    `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${videoIds.join(",")}&key=${YOUTUBE_API_KEY}`
+    `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${videoIds.join(",")}&key=${YOUTUBE_API_KEY}`,
+    { headers: YOUTUBE_API_HEADERS }
   );
 
   if (!detailsResponse.ok) {
