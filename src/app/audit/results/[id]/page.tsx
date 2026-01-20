@@ -95,9 +95,14 @@ export default async function AuditResultsPage({ params }: PageProps) {
             <LinkIcon className="w-4 h-4 text-emerald-500" />
             <span className="text-emerald-500">Medic</span>
           </div>
-          <p className="text-slate-500 text-sm">
+          <p className="text-slate-500 text-sm mb-4">
             Affiliate link health monitoring for YouTube creators.
           </p>
+          <div className="flex items-center justify-center gap-6 text-sm text-slate-500">
+            <Link href="/" className="hover:text-emerald-400 transition">Home</Link>
+            <Link href="/privacy" className="hover:text-emerald-400 transition">Privacy</Link>
+            <Link href="/terms" className="hover:text-emerald-400 transition">Terms</Link>
+          </div>
         </div>
       </footer>
     </main>

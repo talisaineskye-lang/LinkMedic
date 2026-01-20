@@ -56,17 +56,21 @@ export interface AuditResult {
  */
 export function extractChannelId(input: string): string | null {
   const trimmed = input.trim();
+  console.log("extractChannelId input:", trimmed);
 
   // Direct channel ID (starts with UC)
   if (/^UC[a-zA-Z0-9_-]{22}$/.test(trimmed)) {
+    console.log("Matched direct channel ID");
     return trimmed;
   }
 
   try {
     const url = new URL(trimmed);
     const hostname = url.hostname.toLowerCase();
+    console.log("Parsed URL hostname:", hostname, "pathname:", url.pathname);
 
     if (!hostname.includes("youtube.com") && !hostname.includes("youtu.be")) {
+      console.log("Not a YouTube URL");
       return null;
     }
 
@@ -74,25 +78,41 @@ export function extractChannelId(input: string): string | null {
 
     // /channel/UC... format
     const channelMatch = pathname.match(/\/channel\/(UC[a-zA-Z0-9_-]{22})/);
-    if (channelMatch) return channelMatch[1];
+    if (channelMatch) {
+      console.log("Matched /channel/ format:", channelMatch[1]);
+      return channelMatch[1];
+    }
 
     // /@handle format - need to resolve via API
     const handleMatch = pathname.match(/\/@([^/]+)/);
-    if (handleMatch) return `@${handleMatch[1]}`;
+    if (handleMatch) {
+      console.log("Matched /@handle format:", handleMatch[1]);
+      return `@${handleMatch[1]}`;
+    }
 
     // /c/customname format - need to resolve via API
     const customMatch = pathname.match(/\/c\/([^/]+)/);
-    if (customMatch) return `c/${customMatch[1]}`;
+    if (customMatch) {
+      console.log("Matched /c/ format:", customMatch[1]);
+      return `c/${customMatch[1]}`;
+    }
 
     // /user/username format - need to resolve via API
     const userMatch = pathname.match(/\/user\/([^/]+)/);
-    if (userMatch) return `user/${userMatch[1]}`;
+    if (userMatch) {
+      console.log("Matched /user/ format:", userMatch[1]);
+      return `user/${userMatch[1]}`;
+    }
+
+    console.log("No pattern matched for pathname:", pathname);
 
   } catch {
     // Not a valid URL, check if it's a handle
     if (trimmed.startsWith("@")) {
+      console.log("Matched bare @handle format");
       return trimmed;
     }
+    console.log("Not a valid URL and not a handle");
   }
 
   return null;
@@ -103,8 +123,11 @@ export function extractChannelId(input: string): string | null {
  */
 async function resolveChannelId(identifier: string): Promise<YouTubeChannel | null> {
   if (!YOUTUBE_API_KEY) {
+    console.error("YOUTUBE_API_KEY is not configured");
     throw new Error("YouTube API key not configured");
   }
+
+  console.log("Resolving channel identifier:", identifier);
 
   let searchQuery = identifier;
 
@@ -118,16 +141,19 @@ async function resolveChannelId(identifier: string): Promise<YouTubeChannel | nu
   // Use forHandle for @ handles (newer API)
   if (identifier.startsWith("@")) {
     const handle = identifier.substring(1);
+    console.log("Looking up handle:", handle);
     const response = await fetch(
       `https://www.googleapis.com/youtube/v3/channels?part=snippet&forHandle=${encodeURIComponent(handle)}&key=${YOUTUBE_API_KEY}`
     );
 
     if (!response.ok) {
-      console.error("YouTube API error:", await response.text());
+      const errorText = await response.text();
+      console.error("YouTube API error (forHandle):", response.status, errorText);
       return null;
     }
 
     const data = await response.json();
+    console.log("forHandle API response items:", data.items?.length || 0);
     if (data.items && data.items.length > 0) {
       const channel = data.items[0];
       return {
@@ -136,19 +162,24 @@ async function resolveChannelId(identifier: string): Promise<YouTubeChannel | nu
         thumbnail: channel.snippet.thumbnails?.default?.url || null,
       };
     }
+    // If forHandle returns no results, fall through to search
+    console.log("forHandle returned no results, trying search...");
   }
 
   // Search for channel
+  console.log("Searching for channel:", searchQuery);
   const searchResponse = await fetch(
     `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(searchQuery)}&maxResults=1&key=${YOUTUBE_API_KEY}`
   );
 
   if (!searchResponse.ok) {
-    console.error("YouTube search API error:", await searchResponse.text());
+    const errorText = await searchResponse.text();
+    console.error("YouTube search API error:", searchResponse.status, errorText);
     return null;
   }
 
   const searchData = await searchResponse.json();
+  console.log("Search API response items:", searchData.items?.length || 0);
   if (searchData.items && searchData.items.length > 0) {
     const item = searchData.items[0];
     return {
@@ -158,6 +189,7 @@ async function resolveChannelId(identifier: string): Promise<YouTubeChannel | nu
     };
   }
 
+  console.log("No channel found for identifier:", identifier);
   return null;
 }
 

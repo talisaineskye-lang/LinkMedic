@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { AuditTool } from "@/components/audit-tool";
-import { Link as LinkIcon } from "lucide-react";
+import { Link as LinkIcon, XCircle, AlertTriangle, CornerDownRight, BarChart3, Video, Zap } from "lucide-react";
 import Link from "next/link";
 
 export const metadata: Metadata = {
@@ -85,22 +85,60 @@ export default function AuditPage() {
           What We Check For
         </h2>
         <div className="grid md:grid-cols-2 gap-6">
-          {[
-            { icon: "🔴", title: "404 / Broken Links", desc: "Products that no longer exist on Amazon" },
-            { icon: "⚠️", title: "Out of Stock", desc: "Products discontinued or temporarily unavailable" },
-            { icon: "↪️", title: "Incorrect Redirects", desc: "Links that don't go to the right product" },
-            { icon: "📊", title: "Revenue Impact", desc: "Estimated monthly loss per broken link" },
-            { icon: "🎬", title: "High-Traffic Videos", desc: "Which videos are bleeding the most revenue" },
-            { icon: "⚡", title: "Priority Ranking", desc: "Links sorted by impact for quick fixes" },
-          ].map(({ icon, title, desc }) => (
-            <div key={title} className="flex gap-4 p-4 bg-slate-800/30 rounded-lg border border-slate-700/50">
-              <span className="text-2xl">{icon}</span>
-              <div>
-                <h3 className="font-semibold text-white mb-1">{title}</h3>
-                <p className="text-sm text-slate-400">{desc}</p>
-              </div>
+          <div className="flex gap-4 p-4 bg-slate-800/30 rounded-lg border border-slate-700/50">
+            <div className="flex-shrink-0">
+              <XCircle className="w-6 h-6 text-red-400" />
             </div>
-          ))}
+            <div>
+              <h3 className="font-semibold text-white mb-1">404 / Broken Links</h3>
+              <p className="text-sm text-slate-400">Products that no longer exist on Amazon</p>
+            </div>
+          </div>
+          <div className="flex gap-4 p-4 bg-slate-800/30 rounded-lg border border-slate-700/50">
+            <div className="flex-shrink-0">
+              <AlertTriangle className="w-6 h-6 text-amber-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-white mb-1">Out of Stock</h3>
+              <p className="text-sm text-slate-400">Products discontinued or temporarily unavailable</p>
+            </div>
+          </div>
+          <div className="flex gap-4 p-4 bg-slate-800/30 rounded-lg border border-slate-700/50">
+            <div className="flex-shrink-0">
+              <CornerDownRight className="w-6 h-6 text-orange-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-white mb-1">Incorrect Redirects</h3>
+              <p className="text-sm text-slate-400">Links that don&apos;t go to the right product</p>
+            </div>
+          </div>
+          <div className="flex gap-4 p-4 bg-slate-800/30 rounded-lg border border-slate-700/50">
+            <div className="flex-shrink-0">
+              <BarChart3 className="w-6 h-6 text-emerald-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-white mb-1">Revenue Impact</h3>
+              <p className="text-sm text-slate-400">Estimated monthly loss per broken link</p>
+            </div>
+          </div>
+          <div className="flex gap-4 p-4 bg-slate-800/30 rounded-lg border border-slate-700/50">
+            <div className="flex-shrink-0">
+              <Video className="w-6 h-6 text-blue-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-white mb-1">High-Traffic Videos</h3>
+              <p className="text-sm text-slate-400">Which videos are bleeding the most revenue</p>
+            </div>
+          </div>
+          <div className="flex gap-4 p-4 bg-slate-800/30 rounded-lg border border-slate-700/50">
+            <div className="flex-shrink-0">
+              <Zap className="w-6 h-6 text-yellow-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-white mb-1">Priority Ranking</h3>
+              <p className="text-sm text-slate-400">Links sorted by impact for quick fixes</p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -144,6 +182,8 @@ export default function AuditPage() {
           <div className="flex items-center justify-center gap-6 text-sm text-slate-500">
             <Link href="/" className="hover:text-emerald-400 transition">Home</Link>
             <Link href="/login" className="hover:text-emerald-400 transition">Sign In</Link>
+            <Link href="/privacy" className="hover:text-emerald-400 transition">Privacy</Link>
+            <Link href="/terms" className="hover:text-emerald-400 transition">Terms</Link>
           </div>
         </div>
       </footer>

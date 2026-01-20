@@ -76,7 +76,10 @@ function LoginContent() {
           </div>
 
           <p className="mt-4 text-xs text-slate-500 text-center">
-            By signing in, you agree to our Terms of Service and Privacy Policy.
+            By signing in, you agree to our{" "}
+            <Link href="/terms" className="text-emerald-400 hover:underline">Terms of Service</Link>
+            {" "}and{" "}
+            <Link href="/privacy" className="text-emerald-400 hover:underline">Privacy Policy</Link>.
           </p>
         </div>
       </div>
@@ -89,7 +92,12 @@ function LoginContent() {
             <LinkIcon className="w-4 h-4 text-emerald-500" />
             <span className="text-emerald-500">Medic</span>
           </div>
-          <p>Affiliate link health monitoring for YouTube creators.</p>
+          <p className="mb-3">Affiliate link health monitoring for YouTube creators.</p>
+          <div className="flex items-center justify-center gap-6">
+            <Link href="/" className="hover:text-emerald-400 transition">Home</Link>
+            <Link href="/privacy" className="hover:text-emerald-400 transition">Privacy</Link>
+            <Link href="/terms" className="hover:text-emerald-400 transition">Terms</Link>
+          </div>
         </div>
       </footer>
     </main>
