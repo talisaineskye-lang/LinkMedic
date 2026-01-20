@@ -1,7 +1,10 @@
 import { Resend } from "resend";
 import { formatCurrency } from "./revenue-estimator";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Only initialize Resend if API key is available
+const resend = process.env.RESEND_API_KEY && !process.env.RESEND_API_KEY.startsWith("re_your")
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null;
 
 const FROM_EMAIL = "LinkMedic <alerts@linkmedic.app>";
 
@@ -18,6 +21,11 @@ export interface BrokenLinkAlert {
  * Sends an email alert for a broken or out-of-stock link
  */
 export async function sendBrokenLinkAlert(alert: BrokenLinkAlert): Promise<boolean> {
+  if (!resend) {
+    console.warn("Email not configured - skipping broken link alert");
+    return false;
+  }
+
   const statusText = alert.status === "NOT_FOUND" ? "Broken (404)" : "Out of Stock";
 
   try {
@@ -71,6 +79,11 @@ export interface ScanSummaryAlert {
  * Sends a summary email after a scan completes
  */
 export async function sendScanSummaryAlert(alert: ScanSummaryAlert): Promise<boolean> {
+  if (!resend) {
+    console.warn("Email not configured - skipping scan summary alert");
+    return false;
+  }
+
   if (alert.issuesFound === 0) {
     return true; // Don't send email if no issues
   }
