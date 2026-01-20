@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Copy, Check, CheckCircle2, ExternalLink } from "lucide-react";
 import { formatCurrency, formatNumber } from "@/lib/revenue-estimator";
+import { track, ANALYTICS_EVENTS } from "@/lib/posthog";
 
 interface Issue {
   id: string;
@@ -34,6 +35,7 @@ export function IssuesTable({ issues }: IssuesTableProps) {
     try {
       await navigator.clipboard.writeText(text);
       setCopiedId(id);
+      track(ANALYTICS_EVENTS.COPY_FIXED_LINK_CLICKED, { linkId: id });
       setTimeout(() => setCopiedId(null), 2000);
     } catch (err) {
       console.error("Failed to copy:", err);
@@ -42,6 +44,7 @@ export function IssuesTable({ issues }: IssuesTableProps) {
 
   const markAsFixed = async (id: string) => {
     setMarkingFixed(id);
+    track(ANALYTICS_EVENTS.MARK_AS_FIXED_CLICKED, { linkId: id });
     try {
       const response = await fetch("/api/links/mark-fixed", {
         method: "POST",

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   RotateCw,
@@ -10,6 +10,7 @@ import {
   Calendar,
   Search,
 } from "lucide-react";
+import { track, ANALYTICS_EVENTS } from "@/lib/posthog";
 
 interface RevenueAssumptions {
   ctrPercent: number;
@@ -106,6 +107,14 @@ export function DashboardClient({
   const [isScanning, setIsScanning] = useState(false);
   const router = useRouter();
 
+  // Track dashboard view on mount
+  useEffect(() => {
+    track(ANALYTICS_EVENTS.DASHBOARD_VIEWED, {
+      totalLinks: links.length,
+      problemLinks: links.filter(l => l.status !== "OK" && l.status !== "UNKNOWN").length,
+    });
+  }, [links]);
+
   const hasData = links.length > 0;
 
   // Filter problematic links
@@ -131,6 +140,7 @@ export function DashboardClient({
 
   const handleSync = async () => {
     setIsSyncing(true);
+    track(ANALYTICS_EVENTS.SYNC_VIDEOS_CLICKED);
     try {
       const response = await fetch("/api/videos/sync", {
         method: "POST",

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { track, ANALYTICS_EVENTS } from "@/lib/posthog";
 
 export function SyncButton() {
   const [loading, setLoading] = useState(false);
@@ -9,6 +10,7 @@ export function SyncButton() {
 
   const handleSync = async () => {
     setLoading(true);
+    track(ANALYTICS_EVENTS.SYNC_VIDEOS_CLICKED);
     try {
       const response = await fetch("/api/videos/sync", {
         method: "POST",

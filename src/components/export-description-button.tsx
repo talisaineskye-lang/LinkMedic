@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { FileText, X, Copy, Check, Download } from "lucide-react";
+import { track, ANALYTICS_EVENTS } from "@/lib/posthog";
 
 interface ExportDescriptionButtonProps {
   videoId: string;
@@ -29,6 +30,7 @@ export function ExportDescriptionButton({
     setIsOpen(true);
     setLoading(true);
     setError(null);
+    track(ANALYTICS_EVENTS.EXPORT_DESCRIPTION_CLICKED, { videoId });
 
     try {
       const response = await fetch(`/api/videos/${videoId}/export-description`);
