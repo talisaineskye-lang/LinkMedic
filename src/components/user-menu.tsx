@@ -24,11 +24,11 @@ export function UserMenu({ user }: UserMenuProps) {
             className="rounded-full"
           />
         )}
-        <span className="text-sm text-gray-700">{user.name || user.email}</span>
+        <span className="text-sm text-slate-300">{user.name || user.email}</span>
       </div>
       <button
         onClick={() => signOut({ callbackUrl: "/" })}
-        className="text-sm text-gray-500 hover:text-gray-700"
+        className="text-sm text-slate-500 hover:text-white transition-colors"
       >
         Sign out
       </button>
