@@ -12,14 +12,14 @@ function LoginContent() {
   const error = searchParams.get("error");
 
   return (
-    <main className="min-h-screen bg-white flex flex-col">
+    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col">
       {/* Header */}
-      <header className="border-b border-gray-100">
+      <header className="border-b border-slate-800/50">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-0.5 text-xl font-semibold">
-            <span className="text-gray-900">Link</span>
-            <LinkIcon className="w-5 h-5 text-green-700" />
-            <span className="text-green-700">Medic</span>
+            <span className="text-white">Link</span>
+            <LinkIcon className="w-5 h-5 text-emerald-500" />
+            <span className="text-emerald-500">Medic</span>
           </Link>
         </div>
       </header>
@@ -29,14 +29,14 @@ function LoginContent() {
         <div className="max-w-sm w-full">
           {/* Logo */}
           <div className="flex items-center justify-center gap-0.5 text-3xl font-semibold mb-3">
-            <span className="text-gray-900">Link</span>
-            <LinkIcon className="w-7 h-7 text-green-700" />
-            <span className="text-green-700">Medic</span>
+            <span className="text-white">Link</span>
+            <LinkIcon className="w-7 h-7 text-emerald-500" />
+            <span className="text-emerald-500">Medic</span>
           </div>
-          <p className="text-gray-600/85 text-center mb-8">Sign in to protect your affiliate revenue</p>
+          <p className="text-slate-400 text-center mb-8">Sign in to protect your affiliate revenue</p>
 
           {error && (
-            <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm">
+            <div className="mb-4 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-400 text-sm">
               {error === "OAuthSignin" && "Error starting sign in process."}
               {error === "OAuthCallback" && "Error during authentication."}
               {error === "OAuthCreateAccount" && "Error creating account."}
@@ -44,10 +44,10 @@ function LoginContent() {
             </div>
           )}
 
-          <div className="bg-white p-8 rounded-lg border border-gray-200">
+          <div className="bg-slate-800/50 p-8 rounded-xl border border-slate-700/50">
             <button
               onClick={() => signIn("google", { callbackUrl })}
-              className="w-full flex items-center justify-center gap-3 bg-green-900 text-white px-4 py-3 rounded-md font-medium hover:bg-green-950 transition-colors border border-green-950/20 shadow-sm"
+              className="w-full flex items-center justify-center gap-3 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-3 rounded-lg font-medium transition-colors"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path
@@ -70,24 +70,24 @@ function LoginContent() {
               Sign in with Google
             </button>
 
-            <p className="mt-4 text-xs text-gray-500/80 text-center leading-relaxed">
+            <p className="mt-4 text-xs text-slate-500 text-center leading-relaxed">
               We&apos;ll access your YouTube channel to scan video descriptions for affiliate links.
             </p>
           </div>
 
-          <p className="mt-4 text-xs text-gray-500/80 text-center">
+          <p className="mt-4 text-xs text-slate-500 text-center">
             By signing in, you agree to our Terms of Service and Privacy Policy.
           </p>
         </div>
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-gray-100 py-6">
-        <div className="max-w-5xl mx-auto px-6 text-center text-sm text-gray-500/80">
+      <footer className="border-t border-slate-800/50 py-6">
+        <div className="max-w-5xl mx-auto px-6 text-center text-sm text-slate-500">
           <div className="flex items-center justify-center gap-0.5 mb-1">
-            <span>Link</span>
-            <LinkIcon className="w-4 h-4 text-green-700" />
-            <span className="text-green-700">Medic</span>
+            <span className="text-white">Link</span>
+            <LinkIcon className="w-4 h-4 text-emerald-500" />
+            <span className="text-emerald-500">Medic</span>
           </div>
           <p>Affiliate link health monitoring for YouTube creators.</p>
         </div>
@@ -98,7 +98,11 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
+        <div className="text-slate-400">Loading...</div>
+      </div>
+    }>
       <LoginContent />
     </Suspense>
   );

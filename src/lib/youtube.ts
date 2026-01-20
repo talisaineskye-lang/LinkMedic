@@ -131,23 +131,33 @@ export async function fetchChannelVideos(
  * Handles pagination and respects the 500 video limit
  */
 export async function syncUserVideos(userId: string): Promise<{ synced: number; total: number }> {
+  // Get tokens from Account table (where NextAuth stores them)
+  const account = await prisma.account.findFirst({
+    where: {
+      userId,
+      provider: "google",
+    },
+    select: {
+      access_token: true,
+      refresh_token: true,
+    },
+  });
+
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
-      accessToken: true,
-      refreshToken: true,
       youtubeChannelId: true,
     },
   });
 
-  if (!user?.accessToken) {
+  if (!account?.access_token) {
     throw new Error("User not authenticated with YouTube");
   }
 
   // Get channel ID if not stored
-  let channelId = user.youtubeChannelId;
+  let channelId = user?.youtubeChannelId;
   if (!channelId) {
-    channelId = await getChannelId(user.accessToken, user.refreshToken);
+    channelId = await getChannelId(account.access_token, account.refresh_token);
     if (channelId) {
       await prisma.user.update({
         where: { id: userId },
@@ -162,8 +172,8 @@ export async function syncUserVideos(userId: string): Promise<{ synced: number; 
 
   while (synced < MAX_VIDEOS) {
     const { videos, nextPageToken } = await fetchChannelVideos(
-      user.accessToken,
-      user.refreshToken,
+      account.access_token,
+      account.refresh_token,
       pageToken,
       Math.min(50, MAX_VIDEOS - synced)
     );
