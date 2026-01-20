@@ -20,20 +20,42 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account }) {
-      console.log("[NextAuth] signIn callback", { email: user?.email, provider: account?.provider });
+      console.log("[NextAuth] signIn callback", {
+        email: user?.email,
+        provider: account?.provider,
+        accountId: account?.providerAccountId
+      });
       return true;
     },
     async session({ session, user }) {
-      console.log("[NextAuth] session callback", { userId: user?.id });
+      console.log("[NextAuth] session callback", {
+        userId: user?.id,
+        userEmail: user?.email
+      });
       if (session.user) {
         session.user.id = user.id;
       }
       return session;
     },
     async redirect({ url, baseUrl }) {
+      console.log("[NextAuth] redirect callback", { url, baseUrl });
       // Redirect to dashboard after signin
       if (url.startsWith("/")) return `${baseUrl}${url}`;
       return `${baseUrl}/dashboard`;
+    },
+  },
+  events: {
+    async signIn({ user, account }) {
+      console.log("[NextAuth] EVENT signIn", { userId: user?.id, provider: account?.provider });
+    },
+    async createUser({ user }) {
+      console.log("[NextAuth] EVENT createUser", { userId: user?.id, email: user?.email });
+    },
+    async linkAccount({ user, account }) {
+      console.log("[NextAuth] EVENT linkAccount", { userId: user?.id, provider: account?.provider });
+    },
+    async session({ session }) {
+      console.log("[NextAuth] EVENT session", { userId: session?.user?.id });
     },
   },
   pages: {
