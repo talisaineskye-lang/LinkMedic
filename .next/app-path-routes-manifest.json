@@ -7,6 +7,9 @@
   "/_global-error/page": "/_global-error",
   "/_not-found/page": "/_not-found",
   "/api/auth/[...nextauth]/route": "/api/auth/[...nextauth]",
+  "/api/auth/signout/route": "/api/auth/signout",
+  "/api/channels/route": "/api/channels",
+  "/api/channels/select/route": "/api/channels/select",
   "/api/cron/scan/route": "/api/cron/scan",
   "/api/links/route": "/api/links",
   "/api/scan/route": "/api/scan",
@@ -15,5 +18,6 @@
   "/api/videos/sync/route": "/api/videos/sync",
   "/favicon.ico/route": "/favicon.ico",
   "/login/page": "/login",
+  "/onboarding/select-channel/page": "/onboarding/select-channel",
   "/page": "/"
 }

@@ -58,6 +58,24 @@
       "namedRegex": "^/_not\\-found(?:/)?$"
     },
     {
+      "page": "/api/auth/signout",
+      "regex": "^/api/auth/signout(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/auth/signout(?:/)?$"
+    },
+    {
+      "page": "/api/channels",
+      "regex": "^/api/channels(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/channels(?:/)?$"
+    },
+    {
+      "page": "/api/channels/select",
+      "regex": "^/api/channels/select(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/channels/select(?:/)?$"
+    },
+    {
       "page": "/api/cron/scan",
       "regex": "^/api/cron/scan(?:/)?$",
       "routeKeys": {},
@@ -116,6 +134,12 @@
       "regex": "^/login(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/login(?:/)?$"
+    },
+    {
+      "page": "/onboarding/select-channel",
+      "regex": "^/onboarding/select\\-channel(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/onboarding/select\\-channel(?:/)?$"
     },
     {
       "page": "/settings",

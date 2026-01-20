@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   TrendingDown,
   Calendar,
+  Search,
 } from "lucide-react";
 
 interface RevenueAssumptions {
@@ -102,6 +103,7 @@ export function DashboardClient({
   lastScanDate,
 }: DashboardClientProps) {
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
   const router = useRouter();
 
   const hasData = links.length > 0;
@@ -150,6 +152,30 @@ export function DashboardClient({
       alert("Failed to sync videos");
     } finally {
       setIsSyncing(false);
+    }
+  };
+
+  const handleScan = async () => {
+    setIsScanning(true);
+    try {
+      const response = await fetch("/api/scan", {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        alert(error.error || "Failed to scan links");
+        return;
+      }
+
+      const data = await response.json();
+      alert(`Scanned ${data.checked} links. Found ${data.issuesFound} issues.`);
+      router.refresh();
+    } catch (error) {
+      console.error("Scan error:", error);
+      alert("Failed to scan links");
+    } finally {
+      setIsScanning(false);
     }
   };
 
@@ -211,14 +237,24 @@ export function DashboardClient({
           <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
           <p className="text-slate-400">Monitor your affiliate link health</p>
         </div>
-        <button
-          onClick={handleSync}
-          disabled={isSyncing}
-          className="flex items-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg font-semibold transition border border-slate-700"
-        >
-          <RotateCw className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
-          Rescan
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleScan}
+            disabled={isScanning || isSyncing}
+            className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-600 rounded-lg font-semibold transition"
+          >
+            <Search className={`w-4 h-4 ${isScanning ? "animate-pulse" : ""}`} />
+            {isScanning ? "Scanning..." : "Scan Links"}
+          </button>
+          <button
+            onClick={handleSync}
+            disabled={isSyncing || isScanning}
+            className="flex items-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 disabled:bg-slate-600 rounded-lg font-semibold transition border border-slate-700"
+          >
+            <RotateCw className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
+            {isSyncing ? "Syncing..." : "Resync"}
+          </button>
+        </div>
       </div>
 
       {/* Key Metrics */}

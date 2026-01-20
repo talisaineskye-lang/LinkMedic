@@ -54,6 +54,10 @@ self.__SERVER_FILES_MANIFEST={
         {
           "protocol": "https",
           "hostname": "*.googleusercontent.com"
+        },
+        {
+          "protocol": "https",
+          "hostname": "yt3.ggpht.com"
         }
       ],
       "qualities": [
