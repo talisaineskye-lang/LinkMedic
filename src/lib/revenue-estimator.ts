@@ -65,8 +65,9 @@ export function calculateRevenueImpact(
   // Get severity factor for this status
   const severityFactor = SEVERITY_FACTORS[status] ?? 0.3;
 
-  // Estimate monthly views (lifetime views / age, with minimum of 1 month)
-  const ageInMonths = Math.max(videoAgeMonths, 1);
+  // Estimate monthly views (lifetime views / age, with minimum of 12 months)
+  // Using 12-month floor to avoid inflating estimates for recent videos
+  const ageInMonths = Math.max(videoAgeMonths, 12);
   const monthlyViews = viewCount / ageInMonths;
 
   // Calculate potential monthly revenue impact
