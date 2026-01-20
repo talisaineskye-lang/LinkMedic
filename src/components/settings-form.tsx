@@ -48,7 +48,7 @@ export function SettingsForm({ initialValues }: SettingsFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label htmlFor="ctrPercent" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="ctrPercent" className="block text-sm font-medium text-slate-300 mb-1">
           Click-Through Rate (CTR) %
         </label>
         <input
@@ -61,15 +61,15 @@ export function SettingsForm({ initialValues }: SettingsFormProps) {
           onChange={(e) =>
             setValues({ ...values, ctrPercent: parseFloat(e.target.value) || 0 })
           }
-          className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full max-w-xs px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
         />
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-xs text-slate-500 mt-1">
           Typical range: 1-3%. Percentage of viewers who click affiliate links.
         </p>
       </div>
 
       <div>
-        <label htmlFor="conversionPercent" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="conversionPercent" className="block text-sm font-medium text-slate-300 mb-1">
           Conversion Rate %
         </label>
         <input
@@ -82,15 +82,15 @@ export function SettingsForm({ initialValues }: SettingsFormProps) {
           onChange={(e) =>
             setValues({ ...values, conversionPercent: parseFloat(e.target.value) || 0 })
           }
-          className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full max-w-xs px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
         />
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-xs text-slate-500 mt-1">
           Typical range: 2-5%. Percentage of clicks that result in purchases.
         </p>
       </div>
 
       <div>
-        <label htmlFor="avgOrderValue" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="avgOrderValue" className="block text-sm font-medium text-slate-300 mb-1">
           Average Order Value ($)
         </label>
         <input
@@ -103,9 +103,9 @@ export function SettingsForm({ initialValues }: SettingsFormProps) {
           onChange={(e) =>
             setValues({ ...values, avgOrderValue: parseFloat(e.target.value) || 0 })
           }
-          className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full max-w-xs px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
         />
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-xs text-slate-500 mt-1">
           Typical range: $30-60. Average purchase amount through your affiliate links.
         </p>
       </div>
@@ -113,7 +113,7 @@ export function SettingsForm({ initialValues }: SettingsFormProps) {
       {message && (
         <div
           className={`text-sm ${
-            message.includes("success") ? "text-green-600" : "text-red-600"
+            message.includes("success") ? "text-emerald-400" : "text-red-400"
           }`}
         >
           {message}
@@ -123,7 +123,7 @@ export function SettingsForm({ initialValues }: SettingsFormProps) {
       <button
         type="submit"
         disabled={loading}
-        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
       >
         {loading ? "Saving..." : "Save Settings"}
       </button>

@@ -33,49 +33,49 @@ export default async function SettingsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="text-gray-600">Manage your account and preferences</p>
+        <h1 className="text-2xl font-bold text-white">Settings</h1>
+        <p className="text-slate-300">Manage your account and preferences</p>
       </div>
 
       {/* Account Info */}
-      <div className="bg-white rounded-lg border p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Account</h2>
+      <div className="bg-slate-800/40 border border-slate-700/50 rounded-lg p-6 backdrop-blur">
+        <h2 className="text-lg font-semibold text-white mb-4">Account</h2>
         <dl className="space-y-4">
           <div>
-            <dt className="text-sm text-gray-500">Email</dt>
-            <dd className="text-gray-900">{user.email}</dd>
+            <dt className="text-sm text-slate-400">Email</dt>
+            <dd className="text-white">{user.email}</dd>
           </div>
           <div>
-            <dt className="text-sm text-gray-500">Name</dt>
-            <dd className="text-gray-900">{user.name || "-"}</dd>
+            <dt className="text-sm text-slate-400">Name</dt>
+            <dd className="text-white">{user.name || "-"}</dd>
           </div>
           <div>
-            <dt className="text-sm text-gray-500">YouTube Channel</dt>
-            <dd className="text-gray-900">
+            <dt className="text-sm text-slate-400">YouTube Channel</dt>
+            <dd className="text-white">
               {user.youtubeChannelId ? (
                 <a
                   href={`https://youtube.com/channel/${user.youtubeChannelId}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline"
+                  className="text-emerald-400 hover:underline"
                 >
                   {user.youtubeChannelId}
                 </a>
               ) : (
-                "Not connected"
+                <span className="text-slate-500">Not connected</span>
               )}
             </dd>
           </div>
           <div>
-            <dt className="text-sm text-gray-500">Subscription Status</dt>
+            <dt className="text-sm text-slate-400">Subscription Status</dt>
             <dd>
               <span
-                className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                className={`inline-flex px-2 py-1 text-xs font-medium rounded-full border ${
                   user.subscriptionStatus === "active"
-                    ? "bg-green-100 text-green-700"
+                    ? "bg-emerald-950/30 border-emerald-700/50 text-emerald-400"
                     : user.subscriptionStatus === "trial"
-                    ? "bg-blue-100 text-blue-700"
-                    : "bg-red-100 text-red-700"
+                    ? "bg-blue-950/30 border-blue-700/50 text-blue-400"
+                    : "bg-red-950/30 border-red-700/50 text-red-400"
                 }`}
               >
                 {user.subscriptionStatus === "trial"
@@ -88,9 +88,9 @@ export default async function SettingsPage() {
       </div>
 
       {/* Revenue Assumptions */}
-      <div className="bg-white rounded-lg border p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">Revenue Assumptions</h2>
-        <p className="text-sm text-gray-500 mb-6">
+      <div className="bg-slate-800/40 border border-slate-700/50 rounded-lg p-6 backdrop-blur">
+        <h2 className="text-lg font-semibold text-white mb-2">Revenue Assumptions</h2>
+        <p className="text-sm text-slate-400 mb-6">
           Customize the assumptions used to estimate revenue loss from broken links.
         </p>
         <SettingsForm
@@ -103,13 +103,13 @@ export default async function SettingsPage() {
       </div>
 
       {/* Danger Zone */}
-      <div className="bg-white rounded-lg border border-red-200 p-6">
-        <h2 className="text-lg font-semibold text-red-600 mb-2">Danger Zone</h2>
-        <p className="text-sm text-gray-500 mb-4">
+      <div className="bg-red-950/20 border border-red-700/50 rounded-lg p-6">
+        <h2 className="text-lg font-semibold text-red-400 mb-2">Danger Zone</h2>
+        <p className="text-sm text-slate-400 mb-4">
           These actions are irreversible. Please proceed with caution.
         </p>
         <button
-          className="px-4 py-2 text-sm font-medium text-red-600 bg-white border border-red-300 rounded-lg hover:bg-red-50 disabled:opacity-50"
+          className="px-4 py-2 text-sm font-medium text-red-400 bg-red-950/30 border border-red-700/50 rounded-lg hover:bg-red-950/50 disabled:opacity-50 transition"
           disabled
         >
           Delete Account (Coming Soon)

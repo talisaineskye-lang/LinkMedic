@@ -5,6 +5,7 @@ import { formatNumber, formatCurrency, calculateEstimatedLoss } from "@/lib/reve
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import { ExportDescriptionButton } from "@/components/export-description-button";
 
 type AffiliateLink = {
   id: string;
@@ -78,13 +79,13 @@ export default async function VideoDetailPage({
       {/* Back Link */}
       <Link
         href="/videos"
-        className="text-sm text-gray-500 hover:text-gray-700"
+        className="text-sm text-slate-400 hover:text-emerald-400 transition"
       >
         ← Back to Videos
       </Link>
 
       {/* Video Info */}
-      <div className="bg-white rounded-lg border p-6">
+      <div className="bg-slate-800/40 border border-slate-700/50 rounded-lg p-6 backdrop-blur">
         <div className="flex gap-6">
           {video.thumbnailUrl && (
             <Image
@@ -96,61 +97,67 @@ export default async function VideoDetailPage({
             />
           )}
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            <h1 className="text-2xl font-bold text-white mb-2">
               {video.title}
             </h1>
-            <div className="flex gap-4 text-sm text-gray-500 mb-4">
+            <div className="flex gap-4 text-sm text-slate-400 mb-4">
               <span>{formatNumber(video.viewCount)} views</span>
               <span>•</span>
               <span>Published {new Date(video.publishedAt).toLocaleDateString()}</span>
             </div>
-            <a
-              href={`https://youtube.com/watch?v=${video.youtubeVideoId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline text-sm"
-            >
-              View on YouTube →
-            </a>
+            <div className="flex items-center gap-4 mt-4">
+              <a
+                href={`https://youtube.com/watch?v=${video.youtubeVideoId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-emerald-400 hover:underline text-sm transition"
+              >
+                View on YouTube →
+              </a>
+              <ExportDescriptionButton
+                videoId={video.id}
+                videoTitle={video.title}
+              />
+            </div>
           </div>
         </div>
       </div>
 
       {/* Links Table */}
-      <div className="bg-white rounded-lg border">
-        <div className="px-6 py-4 border-b">
-          <h2 className="text-lg font-semibold text-gray-900">Affiliate Links</h2>
-          <p className="text-sm text-gray-600">
+      <div className="bg-slate-800/40 border border-slate-700/50 rounded-lg backdrop-blur">
+        <div className="px-6 py-4 border-b border-slate-700/50">
+          <h2 className="text-lg font-semibold text-white">Affiliate Links</h2>
+          <p className="text-sm text-slate-400">
             {video.affiliateLinks.length} links found in this video
           </p>
         </div>
 
         {video.affiliateLinks.length === 0 ? (
-          <div className="p-6 text-center text-gray-500">
+          <div className="p-6 text-center text-slate-400">
             No affiliate links found in this video.
           </div>
         ) : (
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-slate-900/50 border-b border-slate-700/50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                   URL
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                   Merchant
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                   Last Checked
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium text-slate-400 uppercase tracking-wider">
                   Est. Loss
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-slate-700/30">
               {video.affiliateLinks.map((link: AffiliateLink) => {
                 const isBroken = link.status === "NOT_FOUND" || link.status === "OOS";
                 const estimatedLoss = isBroken
@@ -158,13 +165,13 @@ export default async function VideoDetailPage({
                   : 0;
 
                 return (
-                  <tr key={link.id}>
+                  <tr key={link.id} className="hover:bg-slate-700/20 transition">
                     <td className="px-6 py-4">
                       <a
                         href={link.originalUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-blue-600 hover:underline truncate block max-w-md"
+                        className="text-sm text-emerald-400 hover:underline truncate block max-w-md"
                         title={link.originalUrl}
                       >
                         {link.originalUrl.length > 60
@@ -172,19 +179,19 @@ export default async function VideoDetailPage({
                           : link.originalUrl}
                       </a>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 capitalize">
+                    <td className="px-6 py-4 text-sm text-slate-400 capitalize">
                       {link.merchant}
                     </td>
                     <td className="px-6 py-4">
                       <span
-                        className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                        className={`inline-flex px-2 py-1 text-xs font-medium rounded-full border ${
                           link.status === "OK"
-                            ? "bg-green-100 text-green-700"
+                            ? "bg-emerald-950/30 border-emerald-700/50 text-emerald-400"
                             : link.status === "NOT_FOUND"
-                            ? "bg-red-100 text-red-700"
+                            ? "bg-red-950/30 border-red-700/50 text-red-400"
                             : link.status === "OOS"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : "bg-gray-100 text-gray-700"
+                            ? "bg-amber-950/30 border-amber-700/50 text-amber-400"
+                            : "bg-slate-700/30 border-slate-600/50 text-slate-400"
                         }`}
                       >
                         {link.status === "NOT_FOUND"
@@ -194,18 +201,18 @@ export default async function VideoDetailPage({
                           : link.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
+                    <td className="px-6 py-4 text-sm text-slate-400">
                       {link.lastCheckedAt
                         ? new Date(link.lastCheckedAt).toLocaleDateString()
                         : "Never"}
                     </td>
                     <td className="px-6 py-4 text-right">
                       {isBroken ? (
-                        <span className="text-sm font-medium text-red-600">
+                        <span className="text-sm font-medium text-red-400">
                           {formatCurrency(estimatedLoss)}
                         </span>
                       ) : (
-                        <span className="text-sm text-gray-400">-</span>
+                        <span className="text-sm text-slate-500">-</span>
                       )}
                     </td>
                   </tr>

@@ -15,6 +15,10 @@ export interface Issue {
   merchant: string;
   lastCheckedAt: Date | null;
   estimatedLoss: number;
+  // Fix tracking fields
+  suggestedLink: string | null;
+  isFixed: boolean;
+  dateFixed: Date | null;
 }
 
 /**
@@ -26,6 +30,9 @@ export interface RawLinkData {
   status: LinkStatus;
   merchant: string;
   lastCheckedAt: Date | null;
+  suggestedLink: string | null;
+  isFixed: boolean;
+  dateFixed: Date | null;
   video: {
     id: string;
     title: string;
@@ -47,16 +54,19 @@ export function toIssue(link: RawLinkData, settings: RevenueSettings = DEFAULT_S
     merchant: link.merchant,
     lastCheckedAt: link.lastCheckedAt,
     estimatedLoss: calculateEstimatedLoss(link.video.viewCount, settings),
+    suggestedLink: link.suggestedLink,
+    isFixed: link.isFixed,
+    dateFixed: link.dateFixed,
   };
 }
 
 /**
- * Filters links to only include broken/OOS issues
+ * Filters links to only include broken/OOS issues (excludes fixed issues by default)
  */
-export function filterIssues(links: RawLinkData[]): RawLinkData[] {
+export function filterIssues(links: RawLinkData[], includeFixed: boolean = false): RawLinkData[] {
   return links.filter(link =>
-    link.status === "NOT_FOUND" ||
-    link.status === "OOS"
+    (link.status === "NOT_FOUND" || link.status === "OOS") &&
+    (includeFixed || !link.isFixed)
   );
 }
 

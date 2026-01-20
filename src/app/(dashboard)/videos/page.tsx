@@ -64,15 +64,15 @@ export default async function VideosPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Videos</h1>
-          <p className="text-gray-600">{videos.length} videos synced</p>
+          <h1 className="text-2xl font-bold text-white">Videos</h1>
+          <p className="text-slate-300">{videos.length} videos synced</p>
         </div>
       </div>
 
       {/* Videos Table */}
-      <div className="bg-white rounded-lg border">
+      <div className="bg-slate-800/40 border border-slate-700/50 rounded-lg backdrop-blur">
         {videosWithStats.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
+          <div className="p-8 text-center text-slate-400">
             <p className="mb-2">No videos synced yet.</p>
             <p className="text-sm">
               Click &quot;Sync Videos&quot; on the dashboard to import your YouTube videos.
@@ -80,28 +80,28 @@ export default async function VideosPage() {
           </div>
         ) : (
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-slate-900/50 border-b border-slate-700/50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                   Video
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                   Published
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                   Views
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                   Links
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                   Status
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-slate-700/30">
               {videosWithStats.map((video: VideoWithStats) => (
-                <tr key={video.id}>
+                <tr key={video.id} className="hover:bg-slate-700/20 transition">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       {video.thumbnailUrl && (
@@ -116,7 +116,7 @@ export default async function VideosPage() {
                       <div>
                         <Link
                           href={`/videos/${video.id}`}
-                          className="text-sm font-medium text-gray-900 hover:text-blue-600"
+                          className="text-sm font-medium text-white hover:text-emerald-400 transition"
                         >
                           {video.title.length > 60
                             ? video.title.slice(0, 60) + "..."
@@ -126,36 +126,36 @@ export default async function VideosPage() {
                           href={`https://youtube.com/watch?v=${video.youtubeVideoId}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="block text-xs text-gray-500 hover:underline"
+                          className="block text-xs text-slate-400 hover:text-emerald-400 hover:underline transition"
                         >
                           View on YouTube
                         </a>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
+                  <td className="px-6 py-4 text-sm text-slate-400">
                     {video.publishedAt ? new Date(video.publishedAt).toLocaleDateString() : "N/A"}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
+                  <td className="px-6 py-4 text-sm text-white">
                     {formatNumber(video.viewCount)}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
+                  <td className="px-6 py-4 text-sm text-white">
                     {video.linkCount}
                     {video.brokenCount > 0 && (
-                      <span className="text-red-600 ml-1">
+                      <span className="text-red-400 ml-1">
                         ({video.brokenCount} broken)
                       </span>
                     )}
                   </td>
                   <td className="px-6 py-4">
                     {video.linkCount === 0 ? (
-                      <span className="text-xs text-gray-400">No links</span>
+                      <span className="text-xs text-slate-500">No links</span>
                     ) : video.hasIssues ? (
-                      <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-700">
+                      <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full border bg-red-950/30 border-red-700/50 text-red-400">
                         Has Issues
                       </span>
                     ) : (
-                      <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
+                      <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full border bg-emerald-950/30 border-emerald-700/50 text-emerald-400">
                         OK
                       </span>
                     )}
