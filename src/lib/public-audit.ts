@@ -5,8 +5,8 @@ import { prisma } from "./db";
 import crypto from "crypto";
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
-const MAX_VIDEOS_TO_SCAN = 50; // Limit for free audit
-const MAX_LINKS_TO_CHECK = 30; // Limit link checks to avoid timeout
+const MAX_VIDEOS_TO_SCAN = 15; // Free audit: last 15 videos only (not full channel history)
+const MAX_LINKS_TO_CHECK = 20; // Limit link checks to avoid timeout
 const RATE_LIMIT_DELAY = 300; // ms between link checks
 
 interface YouTubeChannel {

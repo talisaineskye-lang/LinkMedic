@@ -63,7 +63,7 @@ export default function AuditPage() {
         <div className="grid md:grid-cols-5 gap-4">
           {[
             { step: "1", title: "Enter Your Channel", desc: "Paste your YouTube URL or channel ID" },
-            { step: "2", title: "We Scan Videos", desc: "Analyze up to 50 recent video descriptions" },
+            { step: "2", title: "We Scan Videos", desc: "Analyze your last 15 video descriptions" },
             { step: "3", title: "Find Broken Links", desc: "Detect 404s, out-of-stock, and redirects" },
             { step: "4", title: "Calculate Impact", desc: "Show estimated monthly revenue loss" },
             { step: "5", title: "Get Fixes", desc: "See exactly which links need attention" },

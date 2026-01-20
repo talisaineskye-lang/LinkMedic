@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Loader2, AlertCircle, CheckCircle2, ExternalLink, Copy, Check, Share2 } from "lucide-react";
-import { formatCurrency, formatNumber } from "@/lib/revenue-estimator";
+import { Search, Loader2, AlertCircle, ExternalLink, Copy, Check, Share2, Lock } from "lucide-react";
+import { formatCurrency } from "@/lib/revenue-estimator";
 import { track, ANALYTICS_EVENTS } from "@/lib/posthog";
 import Link from "next/link";
 
@@ -147,9 +147,9 @@ export function AuditTool() {
       {loading && (
         <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-12 text-center">
           <Loader2 className="w-12 h-12 text-emerald-400 mx-auto mb-4 animate-spin" />
-          <p className="text-white font-medium mb-2">Scanning your channel...</p>
+          <p className="text-white font-medium mb-2">Scanning your last 15 videos...</p>
           <p className="text-sm text-slate-400">
-            This may take 30-60 seconds depending on how many videos you have.
+            This may take 20-30 seconds while we check your affiliate links.
           </p>
         </div>
       )}
@@ -184,7 +184,7 @@ export function AuditTool() {
               <div className="flex-1">
                 <h3 className="font-semibold text-white">{result.channelName}</h3>
                 <p className="text-sm text-slate-400">
-                  Scanned {result.totalVideos} videos • {result.totalLinks} affiliate links found
+                  Scanned last {result.totalVideos} videos • {result.totalLinks} affiliate links found
                 </p>
               </div>
               <button
@@ -203,6 +203,17 @@ export function AuditTool() {
                   </>
                 )}
               </button>
+            </div>
+          </div>
+
+          {/* Free Audit Limitations Notice */}
+          <div className="bg-slate-800/20 border border-slate-700/30 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <Lock className="w-5 h-5 text-slate-500 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-slate-400">
+                <p className="font-medium text-slate-300 mb-1">Free Audit Preview</p>
+                <p>This one-time scan covers your last 15 videos. Sign up to scan your full channel history, get AI fix suggestions, copy links, export descriptions, and enable weekly monitoring.</p>
+              </div>
             </div>
           </div>
 
@@ -268,13 +279,35 @@ export function AuditTool() {
 
           {/* CTA */}
           <div className="bg-gradient-to-br from-emerald-950/50 to-slate-900 border border-emerald-700/50 rounded-xl p-8 text-center">
-            <h3 className="text-xl font-bold text-white mb-2">
+            <h3 className="text-xl font-bold text-white mb-4">
               Ready to Fix These & Start Monitoring?
             </h3>
-            <p className="text-slate-400 mb-6">
-              Sign up free to see all broken links, get AI-powered fix suggestions,
-              and monitor your channel weekly.
-            </p>
+            <div className="grid grid-cols-2 gap-3 text-sm text-slate-300 mb-6 max-w-md mx-auto">
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-400" />
+                <span>Full channel history</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-400" />
+                <span>AI fix suggestions</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-400" />
+                <span>One-click copy</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-400" />
+                <span>Export descriptions</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-400" />
+                <span>Weekly monitoring</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-400" />
+                <span>Mark as fixed</span>
+              </div>
+            </div>
             <Link
               href="/login"
               className="inline-block px-8 py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold text-white transition"
