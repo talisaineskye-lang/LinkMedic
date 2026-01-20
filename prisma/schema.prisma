@@ -112,3 +112,25 @@ enum LinkStatus {
   REDIRECT
   UNKNOWN
 }
+
+model PublicAudit {
+  id                    String   @id @default(cuid())
+  channelId             String
+  channelName           String
+  channelThumbnail      String?
+  totalVideos           Int
+  totalLinks            Int
+  brokenLinks           Int
+  outOfStockLinks       Int
+  redirectLinks         Int
+  healthyLinks          Int
+  estimatedMonthlyLoss  Float
+  topIssues             Json     // Array of top issues
+  createdAt             DateTime @default(now())
+  ipHash                String?  // Hashed IP for rate limiting
+  convertedToSignup     Boolean  @default(false)
+  sharedCount           Int      @default(0)
+
+  @@index([channelId])
+  @@index([createdAt])
+}
