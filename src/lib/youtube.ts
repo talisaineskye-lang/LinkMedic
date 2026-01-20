@@ -17,6 +17,14 @@ interface FetchVideosResult {
   nextPageToken?: string;
 }
 
+export interface YouTubeChannel {
+  id: string;
+  title: string;
+  thumbnailUrl: string;
+  subscriberCount: number;
+  videoCount: number;
+}
+
 /**
  * Creates an OAuth2 client with the user's tokens
  */
@@ -35,7 +43,7 @@ export function createOAuth2Client(accessToken: string, refreshToken?: string | 
 }
 
 /**
- * Gets the user's YouTube channel ID
+ * Gets the user's YouTube channel ID (primary channel)
  */
 export async function getChannelId(accessToken: string, refreshToken?: string | null): Promise<string | null> {
   const auth = createOAuth2Client(accessToken, refreshToken);
@@ -55,26 +63,58 @@ export async function getChannelId(accessToken: string, refreshToken?: string | 
 }
 
 /**
- * Fetches videos from the user's channel with pagination
+ * Gets all YouTube channels the user has access to (including brand accounts)
+ */
+export async function getAllUserChannels(accessToken: string, refreshToken?: string | null): Promise<YouTubeChannel[]> {
+  const auth = createOAuth2Client(accessToken, refreshToken);
+
+  try {
+    // Get all channels the user owns or manages
+    const response = await youtube.channels.list({
+      auth,
+      part: ["snippet", "statistics"],
+      mine: true,
+      maxResults: 50,
+    });
+
+    const channels: YouTubeChannel[] = response.data.items?.map(channel => ({
+      id: channel.id!,
+      title: channel.snippet?.title || "Unnamed Channel",
+      thumbnailUrl: channel.snippet?.thumbnails?.medium?.url || channel.snippet?.thumbnails?.default?.url || "",
+      subscriberCount: parseInt(channel.statistics?.subscriberCount || "0", 10),
+      videoCount: parseInt(channel.statistics?.videoCount || "0", 10),
+    })) || [];
+
+    return channels;
+  } catch (error) {
+    console.error("Error fetching user channels:", error);
+    throw error;
+  }
+}
+
+/**
+ * Fetches videos from a specific channel with pagination
  * @param accessToken - OAuth access token
  * @param refreshToken - OAuth refresh token
+ * @param channelId - The YouTube channel ID to fetch videos from
  * @param pageToken - Optional page token for pagination
  * @param maxResults - Maximum results per page (max 50)
  */
 export async function fetchChannelVideos(
   accessToken: string,
   refreshToken: string | null,
+  channelId: string,
   pageToken?: string,
   maxResults: number = 50
 ): Promise<FetchVideosResult> {
   const auth = createOAuth2Client(accessToken, refreshToken);
 
   try {
-    // First, get the uploads playlist ID for the channel
+    // First, get the uploads playlist ID for the specific channel
     const channelResponse = await youtube.channels.list({
       auth,
       part: ["contentDetails"],
-      mine: true,
+      id: [channelId],
     });
 
     const uploadsPlaylistId = channelResponse.data.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
@@ -127,8 +167,9 @@ export async function fetchChannelVideos(
 }
 
 /**
- * Syncs all videos from a user's channel to the database
+ * Syncs all videos from a user's selected channel to the database
  * Handles pagination and respects the 500 video limit
+ * Requires user to have selected a channel first (youtubeChannelId must be set)
  */
 export async function syncUserVideos(userId: string): Promise<{ synced: number; total: number }> {
   // Get tokens from Account table (where NextAuth stores them)
@@ -154,16 +195,9 @@ export async function syncUserVideos(userId: string): Promise<{ synced: number; 
     throw new Error("User not authenticated with YouTube");
   }
 
-  // Get channel ID if not stored
-  let channelId = user?.youtubeChannelId;
+  const channelId = user?.youtubeChannelId;
   if (!channelId) {
-    channelId = await getChannelId(account.access_token, account.refresh_token);
-    if (channelId) {
-      await prisma.user.update({
-        where: { id: userId },
-        data: { youtubeChannelId: channelId },
-      });
-    }
+    throw new Error("No YouTube channel selected. Please select a channel first.");
   }
 
   const MAX_VIDEOS = 500; // Limit per plan
@@ -174,6 +208,7 @@ export async function syncUserVideos(userId: string): Promise<{ synced: number; 
     const { videos, nextPageToken } = await fetchChannelVideos(
       account.access_token,
       account.refresh_token,
+      channelId,
       pageToken,
       Math.min(50, MAX_VIDEOS - synced)
     );

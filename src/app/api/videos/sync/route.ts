@@ -26,8 +26,9 @@ export async function POST() {
     });
   } catch (error) {
     console.error("Error syncing videos:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Failed to sync videos" },
+      { error: `Failed to sync videos: ${errorMessage}` },
       { status: 500 }
     );
   }

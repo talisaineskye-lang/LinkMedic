@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 import Link from "next/link";
 import { Link as LinkIcon } from "lucide-react";
 import { UserMenu } from "@/components/user-menu";
@@ -14,6 +15,16 @@ export default async function DashboardLayout({
 
   if (!session) {
     redirect("/login");
+  }
+
+  // Check if user has selected a YouTube channel
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { youtubeChannelId: true },
+  });
+
+  if (!user?.youtubeChannelId) {
+    redirect("/onboarding/select-channel");
   }
 
   // Check if trial has expired
