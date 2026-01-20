@@ -18,46 +18,16 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
-  events: {
-    // Use the linkAccount event which fires AFTER the user and account are created
-    async linkAccount({ user, account }) {
-      if (account.provider === "google" && account.access_token) {
-        try {
-          await prisma.user.update({
-            where: { id: user.id },
-            data: {
-              accessToken: account.access_token,
-              refreshToken: account.refresh_token || null,
-              tokenExpiry: account.expires_at
-                ? new Date(account.expires_at * 1000)
-                : null,
-              trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-            },
-          });
-        } catch (error) {
-          console.error("Error storing tokens in linkAccount:", error);
-        }
-      }
-    },
-  },
   callbacks: {
+    async signIn({ user, account }) {
+      // Allow sign in - the adapter handles user creation
+      console.log("[NextAuth] signIn callback", { email: user?.email, provider: account?.provider });
+      return true;
+    },
     async session({ session, user }) {
+      console.log("[NextAuth] session callback", { userId: user?.id });
       if (session.user) {
         session.user.id = user.id;
-        // Fetch additional user data
-        const dbUser = await prisma.user.findUnique({
-          where: { id: user.id },
-          select: {
-            youtubeChannelId: true,
-            subscriptionStatus: true,
-            trialEndsAt: true,
-          },
-        });
-        if (dbUser) {
-          session.user.youtubeChannelId = dbUser.youtubeChannelId;
-          session.user.subscriptionStatus = dbUser.subscriptionStatus;
-          session.user.trialEndsAt = dbUser.trialEndsAt;
-        }
       }
       return session;
     },

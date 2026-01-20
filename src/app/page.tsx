@@ -18,8 +18,8 @@ export default async function Home() {
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-0.5 text-xl font-semibold">
             <span className="text-gray-900">Link</span>
-            <LinkIcon className="w-5 h-5 text-red-600" />
-            <span className="text-red-600">Medic</span>
+            <LinkIcon className="w-5 h-5 text-green-700" />
+            <span className="text-green-700">Medic</span>
           </div>
           <Link
             href="/login"
@@ -35,8 +35,8 @@ export default async function Home() {
         {/* Centered Logo */}
         <div className="flex items-center justify-center gap-0.5 text-4xl font-semibold mb-6">
           <span className="text-gray-900">Link</span>
-          <LinkIcon className="w-9 h-9 text-red-600" />
-          <span className="text-red-600">Medic</span>
+          <LinkIcon className="w-9 h-9 text-green-700" />
+          <span className="text-green-700">Medic</span>
         </div>
 
         <h1 className="text-3xl font-semibold text-gray-900 mb-4 leading-tight">
@@ -156,8 +156,8 @@ export default async function Home() {
           <div className="border border-gray-200 rounded-lg p-8 text-center">
             <div className="flex items-center justify-center gap-0.5 text-xl font-semibold mb-2">
               <span className="text-gray-900">Link</span>
-              <LinkIcon className="w-5 h-5 text-red-600" />
-              <span className="text-red-600">Medic</span>
+              <LinkIcon className="w-5 h-5 text-green-700" />
+              <span className="text-green-700">Medic</span>
             </div>
             <div className="mb-4">
               <span className="text-3xl font-semibold text-gray-900">$19</span>
@@ -209,8 +209,8 @@ export default async function Home() {
         <div className="max-w-5xl mx-auto px-6 text-center text-sm text-gray-500/80">
           <div className="flex items-center justify-center gap-0.5 mb-2">
             <span>Link</span>
-            <LinkIcon className="w-4 h-4 text-red-600" />
-            <span className="text-red-600">Medic</span>
+            <LinkIcon className="w-4 h-4 text-green-700" />
+            <span className="text-green-700">Medic</span>
           </div>
           <p>Affiliate link health monitoring for YouTube creators.</p>
         </div>

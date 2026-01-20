@@ -18,8 +18,8 @@ function LoginContent() {
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-0.5 text-xl font-semibold">
             <span className="text-gray-900">Link</span>
-            <LinkIcon className="w-5 h-5 text-red-600" />
-            <span className="text-red-600">Medic</span>
+            <LinkIcon className="w-5 h-5 text-green-700" />
+            <span className="text-green-700">Medic</span>
           </Link>
         </div>
       </header>
@@ -30,8 +30,8 @@ function LoginContent() {
           {/* Logo */}
           <div className="flex items-center justify-center gap-0.5 text-3xl font-semibold mb-3">
             <span className="text-gray-900">Link</span>
-            <LinkIcon className="w-7 h-7 text-red-600" />
-            <span className="text-red-600">Medic</span>
+            <LinkIcon className="w-7 h-7 text-green-700" />
+            <span className="text-green-700">Medic</span>
           </div>
           <p className="text-gray-600/85 text-center mb-8">Sign in to protect your affiliate revenue</p>
 
@@ -86,8 +86,8 @@ function LoginContent() {
         <div className="max-w-5xl mx-auto px-6 text-center text-sm text-gray-500/80">
           <div className="flex items-center justify-center gap-0.5 mb-1">
             <span>Link</span>
-            <LinkIcon className="w-4 h-4 text-red-600" />
-            <span className="text-red-600">Medic</span>
+            <LinkIcon className="w-4 h-4 text-green-700" />
+            <span className="text-green-700">Medic</span>
           </div>
           <p>Affiliate link health monitoring for YouTube creators.</p>
         </div>
