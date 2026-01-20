@@ -11,7 +11,7 @@ interface AuditIssue {
   videoId: string;
   url: string;
   status: string;
-  estimatedLoss: number;
+  revenueImpact: number;
 }
 
 interface AuditResult {
@@ -25,7 +25,7 @@ interface AuditResult {
   outOfStockLinks: number;
   redirectLinks: number;
   healthyLinks: number;
-  estimatedMonthlyLoss: number;
+  potentialMonthlyImpact: number;
   topIssues: AuditIssue[];
 }
 
@@ -88,7 +88,7 @@ export function AuditTool() {
       // Fallback to native share if available
       if (navigator.share) {
         await navigator.share({
-          title: `I audited my YouTube channel and found ${formatCurrency(result.estimatedMonthlyLoss)}/month in lost revenue`,
+          title: `I audited my YouTube channel and found ${formatCurrency(result.potentialMonthlyImpact)}/month at risk`,
           text: `Use this free tool to check your affiliate links: ${shareUrl}`,
           url: shareUrl,
         });
@@ -160,14 +160,14 @@ export function AuditTool() {
           {/* Big Revenue Number */}
           <div className="bg-gradient-to-br from-red-950/50 to-slate-900 border border-red-700/50 rounded-xl p-8 text-center">
             <p className="text-sm text-red-400 uppercase tracking-wide mb-2">
-              Revenue Leakage Detected
+              Potential Monthly Revenue Impact
             </p>
             <p className="text-5xl md:text-6xl font-bold text-red-400 mb-2">
-              {formatCurrency(result.estimatedMonthlyLoss)}
+              {formatCurrency(result.potentialMonthlyImpact)}
               <span className="text-2xl text-red-400/70">/month</span>
             </p>
             <p className="text-slate-400">
-              Estimated lost affiliate revenue from broken links
+              Affiliate revenue at risk from link issues
             </p>
           </div>
 
@@ -263,12 +263,14 @@ export function AuditTool() {
                       <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${
                         issue.status === "NOT_FOUND"
                           ? "bg-red-950/50 text-red-400"
+                          : issue.status === "REDIRECT"
+                          ? "bg-orange-950/50 text-orange-400"
                           : "bg-amber-950/50 text-amber-400"
                       }`}>
-                        {issue.status === "NOT_FOUND" ? "Broken" : "Out of Stock"}
+                        {issue.status === "NOT_FOUND" ? "Broken" : issue.status === "REDIRECT" ? "Redirect" : "Out of Stock"}
                       </span>
                       <p className="text-sm text-red-400 mt-1">
-                        -{formatCurrency(issue.estimatedLoss)}
+                        -{formatCurrency(issue.revenueImpact)}
                       </p>
                     </div>
                   </div>

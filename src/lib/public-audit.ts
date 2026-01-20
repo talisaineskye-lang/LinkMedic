@@ -1,6 +1,6 @@
 import { extractLinksFromDescription, filterAffiliateLinks, ParsedLink } from "./link-parser";
 import { checkLink, LinkCheckResult } from "./link-checker";
-import { calculateEstimatedLoss, DEFAULT_SETTINGS } from "./revenue-estimator";
+import { calculateRevenueImpact, getExposureMultiplier, DEFAULT_SETTINGS } from "./revenue-estimator";
 import { prisma } from "./db";
 import crypto from "crypto";
 
@@ -26,14 +26,16 @@ interface YouTubeVideo {
   description: string;
   viewCount: number;
   thumbnailUrl: string;
+  publishedAt: string;
 }
 
 interface AuditLink extends ParsedLink {
   videoId: string;
   videoTitle: string;
   viewCount: number;
+  videoAgeMonths: number;
   status?: LinkCheckResult["status"];
-  estimatedLoss?: number;
+  revenueImpact?: number;
 }
 
 export interface AuditResult {
@@ -46,13 +48,13 @@ export interface AuditResult {
   outOfStockLinks: number;
   redirectLinks: number;
   healthyLinks: number;
-  estimatedMonthlyLoss: number;
+  potentialMonthlyImpact: number;
   topIssues: {
     videoTitle: string;
     videoId: string;
     url: string;
     status: string;
-    estimatedLoss: number;
+    revenueImpact: number;
   }[];
 }
 
@@ -287,7 +289,7 @@ async function getChannelVideos(channelId: string, maxResults: number = MAX_VIDE
 
   return detailsData.items.map((video: {
     id: string;
-    snippet: { title: string; description: string; thumbnails?: { default?: { url: string } } };
+    snippet: { title: string; description: string; publishedAt: string; thumbnails?: { default?: { url: string } } };
     statistics: { viewCount?: string };
   }) => ({
     id: video.id,
@@ -295,7 +297,19 @@ async function getChannelVideos(channelId: string, maxResults: number = MAX_VIDE
     description: video.snippet.description,
     viewCount: parseInt(video.statistics.viewCount || "0", 10),
     thumbnailUrl: video.snippet.thumbnails?.default?.url || "",
+    publishedAt: video.snippet.publishedAt,
   }));
+}
+
+/**
+ * Calculate video age in months from publish date
+ */
+function getVideoAgeMonths(publishedAt: string): number {
+  const publishDate = new Date(publishedAt);
+  const now = new Date();
+  const diffMs = now.getTime() - publishDate.getTime();
+  const diffMonths = diffMs / (1000 * 60 * 60 * 24 * 30);
+  return Math.max(diffMonths, 1); // Minimum 1 month
 }
 
 /**
@@ -334,6 +348,7 @@ export async function runPublicAudit(channelInput: string, ipAddress?: string): 
   for (const video of videos) {
     const links = extractLinksFromDescription(video.description);
     const affiliateLinks = filterAffiliateLinks(links);
+    const videoAgeMonths = getVideoAgeMonths(video.publishedAt);
 
     for (const link of affiliateLinks) {
       allLinks.push({
@@ -341,6 +356,7 @@ export async function runPublicAudit(channelInput: string, ipAddress?: string): 
         videoId: video.id,
         videoTitle: video.title,
         viewCount: video.viewCount,
+        videoAgeMonths,
       });
     }
   }
@@ -354,13 +370,22 @@ export async function runPublicAudit(channelInput: string, ipAddress?: string): 
       const isAmazon = link.merchant === "amazon";
       const result = await checkLink(link.url, isAmazon);
       link.status = result.status;
-      link.estimatedLoss = result.status === "NOT_FOUND" || result.status === "OOS"
-        ? calculateEstimatedLoss(link.viewCount, DEFAULT_SETTINGS)
-        : 0;
+      // Calculate revenue impact using new model with severity factor
+      link.revenueImpact = calculateRevenueImpact(
+        link.viewCount,
+        link.status,
+        DEFAULT_SETTINGS,
+        link.videoAgeMonths
+      );
     } catch (error) {
       console.error(`Error checking link ${link.url}:`, error);
       link.status = "UNKNOWN";
-      link.estimatedLoss = 0;
+      link.revenueImpact = calculateRevenueImpact(
+        link.viewCount,
+        "UNKNOWN",
+        DEFAULT_SETTINGS,
+        link.videoAgeMonths
+      );
     }
 
     // Rate limiting
@@ -369,10 +394,15 @@ export async function runPublicAudit(channelInput: string, ipAddress?: string): 
     }
   }
 
-  // For remaining unchecked links, assume UNKNOWN
+  // For remaining unchecked links, assume UNKNOWN with conservative impact
   for (let i = MAX_LINKS_TO_CHECK; i < allLinks.length; i++) {
     allLinks[i].status = "UNKNOWN";
-    allLinks[i].estimatedLoss = 0;
+    allLinks[i].revenueImpact = calculateRevenueImpact(
+      allLinks[i].viewCount,
+      "UNKNOWN",
+      DEFAULT_SETTINGS,
+      allLinks[i].videoAgeMonths
+    );
   }
 
   // Calculate metrics
@@ -381,19 +411,23 @@ export async function runPublicAudit(channelInput: string, ipAddress?: string): 
   const redirectLinks = allLinks.filter(l => l.status === "REDIRECT").length;
   const healthyLinks = allLinks.filter(l => l.status === "OK").length;
 
-  const estimatedMonthlyLoss = allLinks.reduce((sum, link) => sum + (link.estimatedLoss || 0), 0);
+  // Calculate total potential impact with exposure multiplier
+  const affectedLinkCount = allLinks.filter(l => l.status !== "OK").length;
+  const exposureMultiplier = getExposureMultiplier(affectedLinkCount);
+  const baseImpact = allLinks.reduce((sum, link) => sum + (link.revenueImpact || 0), 0);
+  const potentialMonthlyImpact = Math.round(baseImpact * exposureMultiplier * 100) / 100;
 
-  // Get top issues (broken/OOS links sorted by estimated loss)
+  // Get top issues (broken/OOS/redirect links sorted by revenue impact)
   const issues = allLinks
-    .filter(l => l.status === "NOT_FOUND" || l.status === "OOS")
-    .sort((a, b) => (b.estimatedLoss || 0) - (a.estimatedLoss || 0))
+    .filter(l => l.status === "NOT_FOUND" || l.status === "OOS" || l.status === "REDIRECT")
+    .sort((a, b) => (b.revenueImpact || 0) - (a.revenueImpact || 0))
     .slice(0, 10)
     .map(link => ({
       videoTitle: link.videoTitle,
       videoId: link.videoId,
       url: link.url,
       status: link.status || "UNKNOWN",
-      estimatedLoss: link.estimatedLoss || 0,
+      revenueImpact: link.revenueImpact || 0,
     }));
 
   const result: AuditResult = {
@@ -406,7 +440,7 @@ export async function runPublicAudit(channelInput: string, ipAddress?: string): 
     outOfStockLinks,
     redirectLinks,
     healthyLinks,
-    estimatedMonthlyLoss,
+    potentialMonthlyImpact,
     topIssues: issues,
   };
 
@@ -424,7 +458,7 @@ export async function runPublicAudit(channelInput: string, ipAddress?: string): 
       outOfStockLinks,
       redirectLinks,
       healthyLinks,
-      estimatedMonthlyLoss,
+      estimatedMonthlyLoss: potentialMonthlyImpact, // DB field name unchanged for compatibility
       topIssues: issues,
       ipHash,
     },
@@ -453,7 +487,7 @@ export async function getAuditById(auditId: string): Promise<AuditResult | null>
     outOfStockLinks: audit.outOfStockLinks,
     redirectLinks: audit.redirectLinks,
     healthyLinks: audit.healthyLinks,
-    estimatedMonthlyLoss: audit.estimatedMonthlyLoss,
+    potentialMonthlyImpact: audit.estimatedMonthlyLoss, // DB field name unchanged for compatibility
     topIssues: audit.topIssues as AuditResult["topIssues"],
   };
 }

@@ -17,17 +17,44 @@ export const DEFAULT_SETTINGS: RevenueSettings = {
 };
 
 /**
- * Calculates estimated revenue loss for a broken/OOS link
- *
- * Formula: Video Views × CTR × Conversion Rate × AOV
- *
- * @param viewCount - Number of video views
- * @param settings - User's revenue estimation settings
- * @returns Estimated revenue loss in USD
+ * Severity factors by link status
+ * Reflects the probability of actual revenue loss
  */
-export function calculateEstimatedLoss(
+export const SEVERITY_FACTORS: Record<string, number> = {
+  NOT_FOUND: 1.0,    // Dead / 404 - full impact
+  OOS: 0.5,          // No Buy Box / unavailable - partial impact
+  REDIRECT: 0.6,     // Redirect / mismatched product
+  OK: 0,             // Healthy - no impact
+  UNKNOWN: 0.3,      // Unknown status - conservative estimate
+};
+
+/**
+ * Get exposure multiplier based on number of affected videos
+ * More videos with issues = higher overall risk
+ */
+export function getExposureMultiplier(affectedVideoCount: number): number {
+  if (affectedVideoCount >= 20) return 1.6;
+  if (affectedVideoCount >= 6) return 1.4;
+  if (affectedVideoCount >= 2) return 1.2;
+  return 1.0;
+}
+
+/**
+ * Calculates potential monthly revenue impact for a link
+ *
+ * Formula: Monthly Views × CTR × Conversion Rate × AOV × Severity Factor
+ *
+ * @param viewCount - Number of video views (lifetime)
+ * @param status - Link status (NOT_FOUND, OOS, REDIRECT, OK, UNKNOWN)
+ * @param settings - User's revenue estimation settings
+ * @param videoAgeMonths - Age of video in months (for monthly view estimation)
+ * @returns Potential monthly revenue impact in USD
+ */
+export function calculateRevenueImpact(
   viewCount: number,
-  settings: RevenueSettings = DEFAULT_SETTINGS
+  status: string,
+  settings: RevenueSettings = DEFAULT_SETTINGS,
+  videoAgeMonths: number = 12
 ): number {
   const { ctrPercent, conversionPercent, avgOrderValue } = settings;
 
@@ -35,18 +62,65 @@ export function calculateEstimatedLoss(
   const ctr = ctrPercent / 100;
   const conversionRate = conversionPercent / 100;
 
-  // Calculate estimated loss
-  // Views × CTR = estimated clicks
-  // Clicks × Conversion Rate = estimated purchases
-  // Purchases × AOV = estimated revenue
-  const estimatedLoss = viewCount * ctr * conversionRate * avgOrderValue;
+  // Get severity factor for this status
+  const severityFactor = SEVERITY_FACTORS[status] ?? 0.3;
+
+  // Estimate monthly views (lifetime views / age, with minimum of 1 month)
+  const ageInMonths = Math.max(videoAgeMonths, 1);
+  const monthlyViews = viewCount / ageInMonths;
+
+  // Calculate potential monthly revenue impact
+  // Monthly Views × CTR × Conversion Rate × AOV × Severity Factor
+  const impact = monthlyViews * ctr * conversionRate * avgOrderValue * severityFactor;
 
   // Round to 2 decimal places
-  return Math.round(estimatedLoss * 100) / 100;
+  return Math.round(impact * 100) / 100;
 }
 
 /**
- * Calculates the total estimated loss across multiple links
+ * Legacy function for backwards compatibility
+ * @deprecated Use calculateRevenueImpact instead
+ */
+export function calculateEstimatedLoss(
+  viewCount: number,
+  settings: RevenueSettings = DEFAULT_SETTINGS
+): number {
+  // Use NOT_FOUND severity (1.0) for backwards compatibility
+  return calculateRevenueImpact(viewCount, "NOT_FOUND", settings, 12);
+}
+
+/**
+ * Calculates the total potential monthly revenue impact across multiple links
+ * Applies exposure multiplier based on number of affected videos
+ */
+export function calculateTotalRevenueImpact(
+  links: Array<{ viewCount: number; status: string; videoAgeMonths?: number }>,
+  settings: RevenueSettings = DEFAULT_SETTINGS
+): number {
+  // Count unique affected videos (those with non-OK status)
+  const affectedLinks = links.filter(l => l.status !== "OK");
+  const exposureMultiplier = getExposureMultiplier(affectedLinks.length);
+
+  // Sum individual impacts
+  const baseImpact = links.reduce(
+    (sum, link) => sum + calculateRevenueImpact(
+      link.viewCount,
+      link.status,
+      settings,
+      link.videoAgeMonths ?? 12
+    ),
+    0
+  );
+
+  // Apply exposure multiplier
+  const totalImpact = baseImpact * exposureMultiplier;
+
+  return Math.round(totalImpact * 100) / 100;
+}
+
+/**
+ * Legacy function for backwards compatibility
+ * @deprecated Use calculateTotalRevenueImpact instead
  */
 export function calculateTotalLoss(
   links: Array<{ viewCount: number }>,

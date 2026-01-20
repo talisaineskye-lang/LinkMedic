@@ -18,15 +18,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: "Audit Not Found - LinkMedic" };
   }
 
-  const title = `${audit.channelName} Lost ${formatCurrency(audit.estimatedMonthlyLoss)}/month in Affiliate Revenue`;
+  const title = `${audit.channelName} Has ${formatCurrency(audit.potentialMonthlyImpact)}/month at Risk in Affiliate Revenue`;
   const description = `This YouTube channel has ${audit.brokenLinks} broken and ${audit.outOfStockLinks} out-of-stock affiliate links. Use LinkMedic to audit your channel for free.`;
 
   return {
     title,
     description,
     openGraph: {
-      title: `I Audited My YouTube Channel & Found ${formatCurrency(audit.estimatedMonthlyLoss)} in Lost Revenue`,
-      description: "Use this free tool to discover how much you're losing to broken affiliate links.",
+      title: `I Audited My YouTube Channel & Found ${formatCurrency(audit.potentialMonthlyImpact)}/month at Risk`,
+      description: "Use this free tool to discover your potential revenue impact from broken affiliate links.",
       type: "website",
     },
     twitter: {

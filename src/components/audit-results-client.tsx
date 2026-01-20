@@ -10,7 +10,7 @@ interface AuditIssue {
   videoId: string;
   url: string;
   status: string;
-  estimatedLoss: number;
+  revenueImpact: number;
 }
 
 interface AuditResult {
@@ -23,7 +23,7 @@ interface AuditResult {
   outOfStockLinks: number;
   redirectLinks: number;
   healthyLinks: number;
-  estimatedMonthlyLoss: number;
+  potentialMonthlyImpact: number;
   topIssues: AuditIssue[];
 }
 
@@ -53,7 +53,7 @@ export function AuditResultsClient({ auditId, initialData }: AuditResultsClientP
     } catch {
       if (navigator.share) {
         await navigator.share({
-          title: `${result.channelName} lost ${formatCurrency(result.estimatedMonthlyLoss)}/month in affiliate revenue`,
+          title: `${result.channelName} has ${formatCurrency(result.potentialMonthlyImpact)}/month at risk in affiliate revenue`,
           url: shareUrl,
         });
       }
@@ -65,14 +65,14 @@ export function AuditResultsClient({ auditId, initialData }: AuditResultsClientP
       {/* Big Revenue Number */}
       <div className="bg-gradient-to-br from-red-950/50 to-slate-900 border border-red-700/50 rounded-xl p-8 text-center">
         <p className="text-sm text-red-400 uppercase tracking-wide mb-2">
-          Revenue Leakage Found
+          Potential Monthly Revenue Impact
         </p>
         <p className="text-5xl md:text-6xl font-bold text-red-400 mb-2">
-          {formatCurrency(result.estimatedMonthlyLoss)}
+          {formatCurrency(result.potentialMonthlyImpact)}
           <span className="text-2xl text-red-400/70">/month</span>
         </p>
         <p className="text-slate-400">
-          Estimated lost affiliate revenue from broken links
+          Affiliate revenue at risk from link issues
         </p>
       </div>
 
@@ -157,12 +157,14 @@ export function AuditResultsClient({ auditId, initialData }: AuditResultsClientP
                   <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${
                     issue.status === "NOT_FOUND"
                       ? "bg-red-950/50 text-red-400"
+                      : issue.status === "REDIRECT"
+                      ? "bg-orange-950/50 text-orange-400"
                       : "bg-amber-950/50 text-amber-400"
                   }`}>
-                    {issue.status === "NOT_FOUND" ? "Broken" : "Out of Stock"}
+                    {issue.status === "NOT_FOUND" ? "Broken" : issue.status === "REDIRECT" ? "Redirect" : "Out of Stock"}
                   </span>
                   <p className="text-sm text-red-400 mt-1">
-                    -{formatCurrency(issue.estimatedLoss)}
+                    -{formatCurrency(issue.revenueImpact)}
                   </p>
                 </div>
               </div>
