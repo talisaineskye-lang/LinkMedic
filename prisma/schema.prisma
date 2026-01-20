@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -12,41 +9,40 @@ datasource db {
 model User {
   id                 String    @id @default(cuid())
   email              String    @unique
-  emailVerified      DateTime?
   name               String?
   image              String?
   youtubeChannelId   String?
-  accessToken        String?   @db.Text
-  refreshToken       String?   @db.Text
+  accessToken        String?
+  refreshToken       String?
   tokenExpiry        DateTime?
-  // Revenue estimation settings
   ctrPercent         Float     @default(2.0)
   conversionPercent  Float     @default(3.0)
   avgOrderValue      Float     @default(45.0)
-  // Subscription / Trial
   trialEndsAt        DateTime?
   subscriptionStatus String    @default("trial")
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
-  videos             Video[]
+  emailVerified      DateTime?
   accounts           Account[]
   sessions           Session[]
+  videos             Video[]
 }
 
 model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String? @db.Text
-  session_state     String?
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                       String  @id @default(cuid())
+  userId                   String
+  type                     String
+  provider                 String
+  providerAccountId        String
+  refresh_token            String? @db.Text
+  access_token             String? @db.Text
+  expires_at               Int?
+  token_type               String?
+  scope                    String?
+  id_token                 String? @db.Text
+  session_state            String?
+  refresh_token_expires_in Int?
+  user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -71,38 +67,38 @@ model Video {
   id             String          @id @default(cuid())
   youtubeVideoId String          @unique
   title          String
-  description    String?         @db.Text
+  description    String?
   thumbnailUrl   String?
   viewCount      Int             @default(0)
   publishedAt    DateTime
   userId         String
-  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  affiliateLinks AffiliateLink[]
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
+  affiliateLinks AffiliateLink[]
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model AffiliateLink {
   id            String       @id @default(cuid())
-  videoId       String
-  video         Video        @relation(fields: [videoId], references: [id], onDelete: Cascade)
   originalUrl   String
   merchant      String       @default("unknown")
-  lastCheckedAt DateTime?
   status        LinkStatus   @default(UNKNOWN)
-  scanResults   ScanResult[]
+  lastCheckedAt DateTime?
+  videoId       String
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
+  video         Video        @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  scanResults   ScanResult[]
 }
 
 model ScanResult {
   id                 String        @id @default(cuid())
   affiliateLinkId    String
-  affiliateLink      AffiliateLink @relation(fields: [affiliateLinkId], references: [id], onDelete: Cascade)
   scanTimestamp      DateTime      @default(now())
   httpStatus         Int?
   availabilityStatus String?
   notes              String?
+  affiliateLink      AffiliateLink @relation(fields: [affiliateLinkId], references: [id], onDelete: Cascade)
 }
 
 enum LinkStatus {
