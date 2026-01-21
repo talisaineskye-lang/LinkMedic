@@ -1,6 +1,6 @@
 import { extractLinksFromDescription, filterAffiliateLinks, ParsedLink } from "./link-parser";
 import { checkLink, LinkCheckResult } from "./link-checker";
-import { calculateRevenueImpact, getExposureMultiplier, DEFAULT_SETTINGS } from "./revenue-estimator";
+import { calculateRevenueImpact, DEFAULT_SETTINGS } from "./revenue-estimator";
 import { prisma } from "./db";
 import crypto from "crypto";
 
@@ -406,14 +406,14 @@ export async function runPublicAudit(channelInput: string, ipAddress?: string): 
   const redirectLinks = allLinks.filter(l => l.status === "REDIRECT").length;
   const healthyLinks = allLinks.filter(l => l.status === "OK").length;
 
-  // Calculate total potential impact with exposure multiplier
+  // Calculate total potential impact (no artificial multipliers)
   // Only count confirmed issues (NOT_FOUND, OOS, REDIRECT) - not UNKNOWN or OK
   const confirmedIssues = allLinks.filter(l =>
     l.status === "NOT_FOUND" || l.status === "OOS" || l.status === "REDIRECT"
   );
-  const exposureMultiplier = getExposureMultiplier(confirmedIssues.length);
-  const baseImpact = confirmedIssues.reduce((sum, link) => sum + (link.revenueImpact || 0), 0);
-  const potentialMonthlyImpact = Math.round(baseImpact * exposureMultiplier * 100) / 100;
+  const potentialMonthlyImpact = Math.round(
+    confirmedIssues.reduce((sum, link) => sum + (link.revenueImpact || 0), 0) * 100
+  ) / 100;
 
   // Get top issues (broken/OOS/redirect links sorted by revenue impact)
   const issues = allLinks

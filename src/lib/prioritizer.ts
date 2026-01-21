@@ -1,6 +1,6 @@
-import { calculateEstimatedLoss, RevenueSettings, DEFAULT_SETTINGS } from "./revenue-estimator";
+import { calculateRevenueImpact, RevenueSettings, DEFAULT_SETTINGS } from "./revenue-estimator";
 
-export type LinkStatus = "OK" | "OOS" | "NOT_FOUND" | "REDIRECT" | "UNKNOWN";
+export type LinkStatus = "OK" | "OOS" | "NOT_FOUND" | "REDIRECT" | "MISSING_TAG" | "UNKNOWN";
 
 /**
  * Represents an issue (broken or OOS link) for prioritization
@@ -10,6 +10,7 @@ export interface Issue {
   videoId: string;
   videoTitle: string;
   videoViewCount: number;
+  videoAgeMonths?: number;
   url: string;
   status: LinkStatus;
   merchant: string;
@@ -37,23 +38,45 @@ export interface RawLinkData {
     id: string;
     title: string;
     viewCount: number;
+    publishedAt?: Date;
   };
 }
 
 /**
+ * Calculate video age in months from publish date
+ */
+function getVideoAgeMonths(publishedAt?: Date): number {
+  if (!publishedAt) return 12; // Default to 12 months if unknown
+  const now = new Date();
+  const diffMs = now.getTime() - publishedAt.getTime();
+  const diffMonths = diffMs / (1000 * 60 * 60 * 24 * 30);
+  return Math.max(diffMonths, 1); // Minimum 1 month
+}
+
+/**
  * Converts raw link data to an Issue with calculated estimated loss
+ * Now uses status-aware revenue calculation with decay function
  */
 export function toIssue(link: RawLinkData, settings: RevenueSettings = DEFAULT_SETTINGS): Issue {
+  const videoAgeMonths = getVideoAgeMonths(link.video.publishedAt);
+
   return {
     id: link.id,
     videoId: link.video.id,
     videoTitle: link.video.title,
     videoViewCount: link.video.viewCount,
+    videoAgeMonths,
     url: link.originalUrl,
     status: link.status,
     merchant: link.merchant,
     lastCheckedAt: link.lastCheckedAt,
-    estimatedLoss: calculateEstimatedLoss(link.video.viewCount, settings),
+    // Use new formula with status awareness and decay
+    estimatedLoss: calculateRevenueImpact(
+      link.video.viewCount,
+      link.status,
+      settings,
+      videoAgeMonths
+    ),
     suggestedLink: link.suggestedLink,
     isFixed: link.isFixed,
     dateFixed: link.dateFixed,
@@ -90,6 +113,7 @@ export function sortByPriority(issues: Issue[]): Issue[] {
 
     // Finally by status severity
     const statusPriority: Record<LinkStatus, number> = {
+      MISSING_TAG: 4,  // Highest priority - link works but no credit
       NOT_FOUND: 3,
       OOS: 2,
       UNKNOWN: 1,

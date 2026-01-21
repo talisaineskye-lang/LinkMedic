@@ -1,10 +1,113 @@
 /**
+ * Revenue Estimation Engine v2.1
+ *
+ * Implements a realistic affiliate revenue loss calculation:
+ * Monthly Revenue Loss = Monthly Views × CTR × Conversion Rate × AOV × Commission % × Severity
+ *
+ * Key improvements:
+ * - Decay function for older videos (views decline over time)
+ * - Commission rate included (creator's actual cut, not GMV)
+ * - Niche-based presets for CTR, CR, AOV, and evergreen defaults
+ * - Adjusted severity factors based on real affiliate behavior
+ * - MISSING_TAG detection for links without affiliate tags
+ * - Removed artificial "exposure multiplier" - use annualized display instead
+ */
+
+/**
+ * Creator niche types for presets
+ */
+export type CreatorNiche = "tech" | "beauty" | "finance" | "lifestyle" | "gaming" | "education" | "fitness" | "food" | "default";
+
+/**
+ * Niche-specific defaults
+ * Reflects real-world affiliate marketing patterns:
+ * - Tech: High AOV, low CR (expensive items, considered purchases)
+ * - Beauty: Low AOV, high CR (impulse buys, frequent purchases)
+ * - Education: Evergreen content (tutorials, how-tos)
+ */
+export interface NicheDefaults {
+  ctrPercent: number;         // Click-through rate
+  conversionPercent: number;  // Conversion rate after click
+  avgOrderValue: number;      // Average order value in USD
+  commissionPercent: number;  // Default commission rate
+  isEvergreen: boolean;       // Whether content tends to be evergreen
+}
+
+export const NICHE_DEFAULTS: Record<CreatorNiche, NicheDefaults> = {
+  tech: {
+    ctrPercent: 5.0,          // High - viewers want product links
+    conversionPercent: 1.0,   // Low - expensive, considered purchases
+    avgOrderValue: 350,       // High - cameras, laptops, phones
+    commissionPercent: 4.0,   // Amazon Electronics ~4%
+    isEvergreen: false,       // Products go obsolete
+  },
+  gaming: {
+    ctrPercent: 4.0,
+    conversionPercent: 1.5,
+    avgOrderValue: 150,       // Peripherals, games
+    commissionPercent: 4.0,
+    isEvergreen: false,       // Games/gear go obsolete
+  },
+  finance: {
+    ctrPercent: 4.0,
+    conversionPercent: 2.0,   // Medium - tools, courses
+    avgOrderValue: 100,       // Books, software, courses
+    commissionPercent: 5.0,   // Higher for financial products
+    isEvergreen: true,        // "How to budget" stays relevant
+  },
+  beauty: {
+    ctrPercent: 3.0,
+    conversionPercent: 6.0,   // High - impulse/repeat purchases
+    avgOrderValue: 35,        // Low - cosmetics, skincare
+    commissionPercent: 4.0,   // Amazon Beauty ~4%
+    isEvergreen: false,       // Trends change
+  },
+  fitness: {
+    ctrPercent: 3.0,
+    conversionPercent: 4.0,
+    avgOrderValue: 60,        // Supplements, equipment
+    commissionPercent: 4.0,
+    isEvergreen: true,        // Workout routines stay relevant
+  },
+  food: {
+    ctrPercent: 2.5,
+    conversionPercent: 5.0,   // High - recipe ingredients
+    avgOrderValue: 40,        // Kitchen tools, ingredients
+    commissionPercent: 4.0,
+    isEvergreen: true,        // Recipes are timeless
+  },
+  education: {
+    ctrPercent: 2.0,
+    conversionPercent: 3.0,
+    avgOrderValue: 50,        // Books, courses, tools
+    commissionPercent: 4.0,
+    isEvergreen: true,        // Tutorials stay relevant
+  },
+  lifestyle: {
+    ctrPercent: 1.5,          // Low - casual viewers
+    conversionPercent: 3.0,
+    avgOrderValue: 45,
+    commissionPercent: 4.0,
+    isEvergreen: false,
+  },
+  default: {
+    ctrPercent: 2.0,
+    conversionPercent: 3.0,
+    avgOrderValue: 45,
+    commissionPercent: 4.0,
+    isEvergreen: false,
+  },
+};
+
+/**
  * Revenue estimation settings
  */
 export interface RevenueSettings {
-  ctrPercent: number;      // Click-through rate (default: 2%)
-  conversionPercent: number; // Conversion rate (default: 3%)
-  avgOrderValue: number;   // Average order value in USD (default: $45)
+  ctrPercent: number;          // Click-through rate (default varies by niche)
+  conversionPercent: number;   // Conversion rate after click (default: 3%)
+  avgOrderValue: number;       // Average order value in USD (default: $45)
+  commissionPercent?: number;  // Affiliate commission rate (default: 4%) - optional for backwards compat
+  niche?: CreatorNiche;        // Creator's niche for presets
 }
 
 /**
@@ -14,124 +117,196 @@ export const DEFAULT_SETTINGS: RevenueSettings = {
   ctrPercent: 2.0,
   conversionPercent: 3.0,
   avgOrderValue: 45.0,
+  commissionPercent: 4.0,
+  niche: "default",
 };
+
+/**
+ * Get default settings for a specific niche
+ * Returns full settings based on niche-specific benchmarks
+ */
+export function getSettingsForNiche(niche: CreatorNiche): RevenueSettings {
+  const defaults = NICHE_DEFAULTS[niche] || NICHE_DEFAULTS.default;
+  return {
+    ctrPercent: defaults.ctrPercent,
+    conversionPercent: defaults.conversionPercent,
+    avgOrderValue: defaults.avgOrderValue,
+    commissionPercent: defaults.commissionPercent,
+    niche,
+  };
+}
+
+/**
+ * Check if a niche is typically evergreen
+ */
+export function isNicheEvergreen(niche: CreatorNiche): boolean {
+  return NICHE_DEFAULTS[niche]?.isEvergreen ?? false;
+}
 
 /**
  * Severity factors by link status
  * Reflects the probability of actual revenue loss
+ *
+ * Key insights:
+ * - MISSING_TAG: Link works but no commission earned (100% loss)
+ * - NOT_FOUND: Complete loss, no sale possible
+ * - REDIRECT: Often goes to newer/better products that still convert
+ * - OOS: Amazon shows "Similar Items", some halo effect
  */
 export const SEVERITY_FACTORS: Record<string, number> = {
-  NOT_FOUND: 1.0,    // Dead / 404 - full impact
-  OOS: 0.5,          // No Buy Box / unavailable - partial impact
-  REDIRECT: 0.6,     // Redirect / mismatched product
+  MISSING_TAG: 1.0,  // Link works but affiliate tag missing/malformed - full loss
+  NOT_FOUND: 1.0,    // Dead / 404 - complete loss, no sale possible
+  OOS: 0.5,          // Out of stock - Amazon shows "Similar Items", some halo effect
+  REDIRECT: 0.3,     // Redirect to different product - often still converts
   OK: 0,             // Healthy - no impact
   UNKNOWN: 0.3,      // Unknown status - conservative estimate
 };
 
 /**
- * Get exposure multiplier based on number of affected videos
- * More videos with issues = higher overall risk
+ * Calculates estimated current monthly views using a decay function
+ *
+ * YouTube views follow a power-law decay:
+ * - First month: highest views (viral period)
+ * - Months 2-6: moderate views (recommendation algorithm)
+ * - Months 7-12: declining views
+ * - 12+ months: "long tail" - typically 5-10% of average monthly
+ *
+ * For evergreen/search content, decay is slower
+ *
+ * @param lifetimeViews - Total views the video has received
+ * @param videoAgeMonths - How old the video is
+ * @param isEvergreen - True for search-heavy/tutorial content that ages well
+ * @param actualMonthlyViews - If available from Analytics API, use this directly
+ * @returns Estimated current monthly views
  */
-export function getExposureMultiplier(affectedVideoCount: number): number {
-  if (affectedVideoCount >= 20) return 1.6;
-  if (affectedVideoCount >= 6) return 1.4;
-  if (affectedVideoCount >= 2) return 1.2;
-  return 1.0;
+export function estimateCurrentMonthlyViews(
+  lifetimeViews: number,
+  videoAgeMonths: number,
+  isEvergreen: boolean = false,
+  actualMonthlyViews?: number
+): number {
+  // If we have actual analytics data, use it directly (most accurate)
+  if (actualMonthlyViews !== undefined && actualMonthlyViews >= 0) {
+    return actualMonthlyViews;
+  }
+
+  // Calculate naive average
+  const ageInMonths = Math.max(videoAgeMonths, 1);
+  const naiveMonthlyAverage = lifetimeViews / ageInMonths;
+
+  // For recent videos (< 3 months), use naive average
+  // They're still in their "growth" phase
+  if (videoAgeMonths < 3) {
+    return naiveMonthlyAverage;
+  }
+
+  // For videos 3-12 months old, apply mild decay
+  if (videoAgeMonths <= 12) {
+    const decayFactor = isEvergreen ? 0.7 : 0.5;
+    return naiveMonthlyAverage * decayFactor;
+  }
+
+  // For videos > 12 months old, apply strong decay
+  // Evergreen content retains ~15% of average, regular content ~7%
+  const longTailFactor = isEvergreen ? 0.15 : 0.07;
+  return naiveMonthlyAverage * longTailFactor;
 }
 
 /**
- * Calculates potential monthly revenue impact for a link
+ * Calculates potential monthly revenue impact for a single link
  *
- * Formula: Monthly Views × CTR × Conversion Rate × AOV × Severity Factor
+ * Formula: Monthly Views × CTR × Conversion Rate × AOV × Commission % × Severity
+ *
+ * This represents the creator's ACTUAL lost earnings, not gross merchandise value.
  *
  * @param viewCount - Number of video views (lifetime)
- * @param status - Link status (NOT_FOUND, OOS, REDIRECT, OK, UNKNOWN)
+ * @param status - Link status (MISSING_TAG, NOT_FOUND, OOS, REDIRECT, OK, UNKNOWN)
  * @param settings - User's revenue estimation settings
- * @param videoAgeMonths - Age of video in months (for monthly view estimation)
- * @returns Potential monthly revenue impact in USD
+ * @param videoAgeMonths - Age of video in months
+ * @param isEvergreen - Whether this is evergreen/search content
+ * @param actualMonthlyViews - Actual monthly views from Analytics API (if available)
+ * @returns Potential monthly revenue impact in USD (creator's commission)
  */
 export function calculateRevenueImpact(
   viewCount: number,
   status: string,
   settings: RevenueSettings = DEFAULT_SETTINGS,
-  videoAgeMonths: number = 12
+  videoAgeMonths: number = 12,
+  isEvergreen: boolean = false,
+  actualMonthlyViews?: number
 ): number {
-  const { ctrPercent, conversionPercent, avgOrderValue } = settings;
+  const { ctrPercent, conversionPercent, avgOrderValue, commissionPercent = 4.0 } = settings;
 
   // Convert percentages to decimals
   const ctr = ctrPercent / 100;
   const conversionRate = conversionPercent / 100;
+  const commissionRate = commissionPercent / 100;
 
   // Get severity factor for this status
   const severityFactor = SEVERITY_FACTORS[status] ?? 0.3;
 
-  // Estimate monthly views (lifetime views / age, with minimum of 12 months)
-  // Using 12-month floor to avoid inflating estimates for recent videos
-  const ageInMonths = Math.max(videoAgeMonths, 12);
-  const monthlyViews = viewCount / ageInMonths;
+  // If status is OK, no impact
+  if (severityFactor === 0) {
+    return 0;
+  }
+
+  // Estimate current monthly views (with decay function)
+  const monthlyViews = estimateCurrentMonthlyViews(
+    viewCount,
+    videoAgeMonths,
+    isEvergreen,
+    actualMonthlyViews
+  );
 
   // Calculate potential monthly revenue impact
-  // Monthly Views × CTR × Conversion Rate × AOV × Severity Factor
-  const impact = monthlyViews * ctr * conversionRate * avgOrderValue * severityFactor;
+  // Monthly Views × CTR × CR × AOV × Commission % × Severity
+  const impact = monthlyViews * ctr * conversionRate * avgOrderValue * commissionRate * severityFactor;
 
   // Round to 2 decimal places
   return Math.round(impact * 100) / 100;
 }
 
 /**
- * Legacy function for backwards compatibility
- * @deprecated Use calculateRevenueImpact instead
+ * Extended link data for more accurate calculations
  */
-export function calculateEstimatedLoss(
-  viewCount: number,
-  settings: RevenueSettings = DEFAULT_SETTINGS
-): number {
-  // Use NOT_FOUND severity (1.0) for backwards compatibility
-  return calculateRevenueImpact(viewCount, "NOT_FOUND", settings, 12);
+export interface LinkData {
+  viewCount: number;
+  status: string;
+  videoAgeMonths?: number;
+  isEvergreen?: boolean;
+  actualMonthlyViews?: number;
 }
 
 /**
  * Calculates the total potential monthly revenue impact across multiple links
- * Applies exposure multiplier based on number of affected videos
+ * No artificial multipliers - just sum of individual impacts
  */
 export function calculateTotalRevenueImpact(
-  links: Array<{ viewCount: number; status: string; videoAgeMonths?: number }>,
+  links: LinkData[],
   settings: RevenueSettings = DEFAULT_SETTINGS
 ): number {
-  // Count unique affected videos (those with non-OK status)
-  const affectedLinks = links.filter(l => l.status !== "OK");
-  const exposureMultiplier = getExposureMultiplier(affectedLinks.length);
-
-  // Sum individual impacts
-  const baseImpact = links.reduce(
+  const total = links.reduce(
     (sum, link) => sum + calculateRevenueImpact(
       link.viewCount,
       link.status,
       settings,
-      link.videoAgeMonths ?? 12
+      link.videoAgeMonths ?? 12,
+      link.isEvergreen ?? false,
+      link.actualMonthlyViews
     ),
     0
   );
 
-  // Apply exposure multiplier
-  const totalImpact = baseImpact * exposureMultiplier;
-
-  return Math.round(totalImpact * 100) / 100;
+  return Math.round(total * 100) / 100;
 }
 
 /**
- * Legacy function for backwards compatibility
- * @deprecated Use calculateTotalRevenueImpact instead
+ * Calculates annualized revenue impact
+ * Use this for display instead of artificial multipliers
+ * "$X/month" feels small, "$Y/year" feels significant
  */
-export function calculateTotalLoss(
-  links: Array<{ viewCount: number }>,
-  settings: RevenueSettings = DEFAULT_SETTINGS
-): number {
-  const total = links.reduce(
-    (sum, link) => sum + calculateEstimatedLoss(link.viewCount, settings),
-    0
-  );
-  return Math.round(total * 100) / 100;
+export function calculateAnnualizedImpact(monthlyImpact: number): number {
+  return Math.round(monthlyImpact * 12 * 100) / 100;
 }
 
 /**
@@ -144,6 +319,19 @@ export function formatCurrency(amount: number): string {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);
+}
+
+/**
+ * Formats revenue impact with both monthly and annual
+ */
+export function formatRevenueImpact(monthlyAmount: number): {
+  monthly: string;
+  annual: string;
+} {
+  return {
+    monthly: formatCurrency(monthlyAmount),
+    annual: formatCurrency(calculateAnnualizedImpact(monthlyAmount)),
+  };
 }
 
 /**
@@ -160,12 +348,13 @@ export function formatNumber(num: number): string {
 }
 
 /**
- * Gets risk level based on estimated loss
+ * Gets risk level based on estimated monthly loss
+ * Thresholds adjusted for more realistic commission-based amounts
  */
 export function getRiskLevel(estimatedLoss: number): "low" | "medium" | "high" | "critical" {
-  if (estimatedLoss >= 1000) return "critical";
-  if (estimatedLoss >= 500) return "high";
-  if (estimatedLoss >= 100) return "medium";
+  if (estimatedLoss >= 100) return "critical";  // $100+/month is significant
+  if (estimatedLoss >= 50) return "high";       // $50+/month
+  if (estimatedLoss >= 10) return "medium";     // $10+/month
   return "low";
 }
 
@@ -199,8 +388,56 @@ export function validateSettings(settings: Partial<RevenueSettings>): {
     }
   }
 
+  if (settings.commissionPercent !== undefined) {
+    if (settings.commissionPercent < 0 || settings.commissionPercent > 50) {
+      errors.push("Commission rate must be between 0 and 50%");
+    }
+  }
+
   return {
     valid: errors.length === 0,
     errors,
   };
 }
+
+// ============================================
+// Legacy functions for backwards compatibility
+// ============================================
+
+/**
+ * @deprecated Exposure multiplier is removed - no longer used
+ * Keeping stub for any code that might reference it
+ */
+export function getExposureMultiplier(_affectedVideoCount: number): number {
+  // Always return 1 - we no longer artificially inflate numbers
+  return 1.0;
+}
+
+/**
+ * @deprecated Use calculateRevenueImpact instead
+ */
+export function calculateEstimatedLoss(
+  viewCount: number,
+  settings: RevenueSettings = DEFAULT_SETTINGS
+): number {
+  return calculateRevenueImpact(viewCount, "NOT_FOUND", settings, 12);
+}
+
+/**
+ * @deprecated Use calculateTotalRevenueImpact instead
+ */
+export function calculateTotalLoss(
+  links: Array<{ viewCount: number }>,
+  settings: RevenueSettings = DEFAULT_SETTINGS
+): number {
+  const linksWithStatus = links.map(l => ({ ...l, status: "NOT_FOUND" }));
+  return calculateTotalRevenueImpact(linksWithStatus, settings);
+}
+
+/**
+ * Legacy CTR defaults - use NICHE_DEFAULTS instead
+ * @deprecated Use NICHE_DEFAULTS[niche].ctrPercent
+ */
+export const NICHE_CTR_DEFAULTS: Record<CreatorNiche, number> = Object.fromEntries(
+  Object.entries(NICHE_DEFAULTS).map(([niche, defaults]) => [niche, defaults.ctrPercent])
+) as Record<CreatorNiche, number>;

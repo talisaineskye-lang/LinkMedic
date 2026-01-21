@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Loader2, AlertCircle, ExternalLink, Copy, Check, Share2, Lock } from "lucide-react";
-import { formatCurrency } from "@/lib/revenue-estimator";
+import { Search, Loader2, AlertCircle, ExternalLink, Copy, Check, Share2, Lock, Info } from "lucide-react";
+import { formatCurrency, calculateAnnualizedImpact } from "@/lib/revenue-estimator";
 import { track, ANALYTICS_EVENTS } from "@/lib/posthog";
 import Link from "next/link";
 
@@ -88,7 +88,7 @@ export function AuditTool() {
       // Fallback to native share if available
       if (navigator.share) {
         await navigator.share({
-          title: `I audited my YouTube channel and found ${formatCurrency(result.potentialMonthlyImpact)}/month at risk`,
+          title: `I could recover ${formatCurrency(calculateAnnualizedImpact(result.potentialMonthlyImpact))}/year in affiliate revenue`,
           text: `Use this free tool to check your affiliate links: ${shareUrl}`,
           url: shareUrl,
         });
@@ -157,18 +157,23 @@ export function AuditTool() {
       {/* Results */}
       {result && !loading && (
         <div className="space-y-6">
-          {/* Big Revenue Number */}
-          <div className="bg-gradient-to-br from-red-950/50 to-slate-900 border border-red-700/50 rounded-xl p-8 text-center">
-            <p className="text-sm text-red-400 uppercase tracking-wide mb-2">
-              Potential Monthly Revenue Impact
+          {/* Big Revenue Number - Show both monthly and annual */}
+          <div className="bg-gradient-to-br from-emerald-950/50 to-slate-900 border border-emerald-700/50 rounded-xl p-8 text-center">
+            <p className="text-sm text-emerald-400 uppercase tracking-wide mb-2">
+              Recoverable Annual Revenue
             </p>
-            <p className="text-5xl md:text-6xl font-bold text-red-400 mb-2">
-              {formatCurrency(result.potentialMonthlyImpact)}
-              <span className="text-2xl text-red-400/70">/month</span>
+            <p className="text-5xl md:text-6xl font-bold text-emerald-400 mb-2">
+              {formatCurrency(calculateAnnualizedImpact(result.potentialMonthlyImpact))}
+              <span className="text-2xl text-emerald-400/70">/year</span>
             </p>
             <p className="text-slate-400">
-              Affiliate revenue at risk from link issues
+              {formatCurrency(result.potentialMonthlyImpact)}/month in affiliate commissions you could recover
             </p>
+            {/* Tooltip about conservative estimate */}
+            <div className="mt-4 flex items-center justify-center gap-2 text-xs text-slate-500">
+              <Info className="w-3 h-3" />
+              <span>Conservative estimate — doesn&apos;t include &quot;halo&quot; commissions from other items viewers buy</span>
+            </div>
           </div>
 
           {/* Channel Info */}
@@ -317,7 +322,7 @@ export function AuditTool() {
               Sign Up Free — 7-Day Trial
             </Link>
             <p className="text-xs text-slate-500 mt-4">
-              No credit card required to start
+              7-day free trial · Cancel anytime
             </p>
           </div>
 
