@@ -144,10 +144,11 @@ export const CONSERVATIVE_SETTINGS: RevenueSettings = {
  * More generous assumptions about partial recovery
  */
 export const CONSERVATIVE_SEVERITY_FACTORS: Record<string, number> = {
-  MISSING_TAG: 1.0,  // Full loss - no commission earned
-  NOT_FOUND: 1.0,    // Full loss - dead link
-  OOS: 0.4,          // 60% "saved" by Amazon's similar items
-  REDIRECT: 0.2,     // 80% still converts via redirect
+  MISSING_TAG: 1.0,      // Full loss - no commission earned
+  NOT_FOUND: 1.0,        // Full loss - dead link / dog page / search fallback
+  OOS: 0.4,              // 60% "saved" by Amazon's similar items
+  OOS_THIRD_PARTY: 0.2,  // 80% still converts via third party (conservative)
+  REDIRECT: 0.2,         // 80% still converts via redirect
   OK: 0,
   UNKNOWN: 0.2,
 };
@@ -180,17 +181,19 @@ export function isNicheEvergreen(niche: CreatorNiche): boolean {
  *
  * Key insights:
  * - MISSING_TAG: Link works but no commission earned (100% loss)
- * - NOT_FOUND: Complete loss, no sale possible
- * - REDIRECT: Often goes to newer/better products that still convert
+ * - NOT_FOUND: Complete loss, no sale possible (includes soft 404s like search fallback)
  * - OOS: Amazon shows "Similar Items", some halo effect
+ * - OOS_THIRD_PARTY: Third party sellers available, lower trust but still converts
+ * - REDIRECT: Often goes to newer/better products that still convert
  */
 export const SEVERITY_FACTORS: Record<string, number> = {
-  MISSING_TAG: 1.0,  // Link works but affiliate tag missing/malformed - full loss
-  NOT_FOUND: 1.0,    // Dead / 404 - complete loss, no sale possible
-  OOS: 0.5,          // Out of stock - Amazon shows "Similar Items", some halo effect
-  REDIRECT: 0.3,     // Redirect to different product - often still converts
-  OK: 0,             // Healthy - no impact
-  UNKNOWN: 0.3,      // Unknown status - conservative estimate
+  MISSING_TAG: 1.0,      // Link works but affiliate tag missing/stripped - full loss
+  NOT_FOUND: 1.0,        // Dead / 404 / Dog Page / Search Fallback - complete loss
+  OOS: 0.5,              // Out of stock - Amazon shows "Similar Items", some halo effect
+  OOS_THIRD_PARTY: 0.3,  // Third party sellers only - lower trust, still converts
+  REDIRECT: 0.3,         // Redirect to different product - often still converts
+  OK: 0,                 // Healthy - no impact
+  UNKNOWN: 0.3,          // Unknown status - conservative estimate
 };
 
 /**
@@ -431,6 +434,154 @@ export function validateSettings(settings: Partial<RevenueSettings>): {
   return {
     valid: errors.length === 0,
     errors,
+  };
+}
+
+// ============================================
+// REVENUE RECOVERY ENGINE - "LEAKAGE" CALCULATION
+// ============================================
+
+/**
+ * Link scan result for leakage calculation
+ */
+export interface ScanResult {
+  url: string;
+  status: string;
+  severity: number;
+  reason?: string;
+}
+
+/**
+ * Leakage summary returned by calculateVideoLeakage
+ */
+export interface LeakageSummary {
+  monthly: number;
+  annual: number;
+  linkCount: number;
+  brokenCount: number;
+  breakdown: {
+    deadLinks: { count: number; annualLoss: number };
+    searchRedirects: { count: number; annualLoss: number };
+    missingTags: { count: number; annualLoss: number };
+    outOfStock: { count: number; annualLoss: number };
+    thirdPartyOnly: { count: number; annualLoss: number };
+  };
+}
+
+/**
+ * LinkMedic Revenue Summary Logic
+ * Calculates the monthly and annual "Leakage" for a video or channel.
+ *
+ * This function should be called after the bot finishes scanning links.
+ *
+ * @param scanResults - Array of link scan results with status and severity
+ * @param monthlyViews - Estimated monthly views for the video/channel
+ * @param settings - Optional custom revenue settings (defaults to conservative)
+ * @returns LeakageSummary with monthly/annual loss and breakdown
+ */
+export function calculateVideoLeakage(
+  scanResults: ScanResult[],
+  monthlyViews: number,
+  settings: RevenueSettings = CONSERVATIVE_SETTINGS
+): LeakageSummary {
+  const { ctrPercent, conversionPercent, avgOrderValue, commissionPercent = 4.0 } = settings;
+
+  // Convert percentages to decimals
+  const ctr = ctrPercent / 100;
+  const cr = conversionPercent / 100;
+  const commission = commissionPercent / 100;
+
+  // Revenue per click
+  const revenuePerClick = cr * avgOrderValue * commission;
+
+  // Estimate clicks per link (distribute CTR across all links)
+  const linksWithIssues = scanResults.filter(l => l.severity > 0);
+  const estimatedMonthlyClicks = monthlyViews * ctr;
+
+  // Initialize breakdown counters
+  const breakdown = {
+    deadLinks: { count: 0, annualLoss: 0 },
+    searchRedirects: { count: 0, annualLoss: 0 },
+    missingTags: { count: 0, annualLoss: 0 },
+    outOfStock: { count: 0, annualLoss: 0 },
+    thirdPartyOnly: { count: 0, annualLoss: 0 },
+  };
+
+  let totalMonthlyLoss = 0;
+
+  scanResults.forEach(link => {
+    if (link.severity === 0) return; // Skip healthy links
+
+    // Calculate loss for this link
+    // Assuming clicks are distributed evenly across all links in description
+    const linkClicks = estimatedMonthlyClicks / Math.max(scanResults.length, 1);
+    const linkLoss = linkClicks * revenuePerClick * link.severity;
+
+    totalMonthlyLoss += linkLoss;
+
+    // Categorize for breakdown
+    const annualLinkLoss = linkLoss * 12;
+
+    switch (link.status) {
+      case "NOT_FOUND":
+        // Check if it's a search redirect
+        if (link.reason?.includes("Search Fallback")) {
+          breakdown.searchRedirects.count++;
+          breakdown.searchRedirects.annualLoss += annualLinkLoss;
+        } else {
+          breakdown.deadLinks.count++;
+          breakdown.deadLinks.annualLoss += annualLinkLoss;
+        }
+        break;
+      case "MISSING_TAG":
+        breakdown.missingTags.count++;
+        breakdown.missingTags.annualLoss += annualLinkLoss;
+        break;
+      case "OOS":
+        breakdown.outOfStock.count++;
+        breakdown.outOfStock.annualLoss += annualLinkLoss;
+        break;
+      case "OOS_THIRD_PARTY":
+        breakdown.thirdPartyOnly.count++;
+        breakdown.thirdPartyOnly.annualLoss += annualLinkLoss;
+        break;
+      case "REDIRECT":
+        // Treat non-search redirects as potential issues
+        breakdown.deadLinks.count++;
+        breakdown.deadLinks.annualLoss += annualLinkLoss;
+        break;
+    }
+  });
+
+  // Round breakdown losses
+  breakdown.deadLinks.annualLoss = Math.round(breakdown.deadLinks.annualLoss);
+  breakdown.searchRedirects.annualLoss = Math.round(breakdown.searchRedirects.annualLoss);
+  breakdown.missingTags.annualLoss = Math.round(breakdown.missingTags.annualLoss);
+  breakdown.outOfStock.annualLoss = Math.round(breakdown.outOfStock.annualLoss);
+  breakdown.thirdPartyOnly.annualLoss = Math.round(breakdown.thirdPartyOnly.annualLoss);
+
+  return {
+    monthly: Math.round(totalMonthlyLoss * 100) / 100,
+    annual: Math.round(totalMonthlyLoss * 12),
+    linkCount: scanResults.length,
+    brokenCount: linksWithIssues.length,
+    breakdown,
+  };
+}
+
+/**
+ * Formats leakage summary for display
+ * Returns headline and subtitle strings for UI
+ */
+export function formatLeakageSummary(summary: LeakageSummary): {
+  headline: string;
+  subtitle: string;
+  disclaimer: string;
+} {
+  return {
+    headline: `We found ${formatCurrency(summary.annual)} in Recoverable Annual Revenue.`,
+    subtitle: `You are currently losing approximately ${formatCurrency(summary.monthly)} per month due to ${summary.brokenCount} broken or un-tagged links.`,
+    disclaimer: "Calculations based on conservative industry benchmarks (1.5% CTR / 3% CR). Your actual loss may be higher depending on your specific niche engagement.",
   };
 }
 

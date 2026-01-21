@@ -108,7 +108,9 @@ model ScanResult {
 enum LinkStatus {
   OK
   OOS
+  OOS_THIRD_PARTY   // Available from third-party sellers only
   NOT_FOUND
+  MISSING_TAG       // Affiliate tag stripped from URL
   REDIRECT
   UNKNOWN
 }

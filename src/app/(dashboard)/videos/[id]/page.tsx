@@ -11,7 +11,7 @@ type AffiliateLink = {
   id: string;
   originalUrl: string;
   merchant: string | null;
-  status: "OK" | "OOS" | "NOT_FOUND" | "REDIRECT" | "UNKNOWN";
+  status: "OK" | "OOS" | "OOS_THIRD_PARTY" | "NOT_FOUND" | "MISSING_TAG" | "REDIRECT" | "UNKNOWN";
   lastCheckedAt: Date | null;
 };
 

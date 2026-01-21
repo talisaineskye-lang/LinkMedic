@@ -1,5 +1,5 @@
 import { extractLinksFromDescription, filterAffiliateLinks, ParsedLink } from "./link-parser";
-import { checkLink, LinkCheckResult } from "./link-checker";
+import { checkLink, getJitteredDelay, LinkCheckResult } from "./link-checker";
 import { calculateRevenueImpact, CONSERVATIVE_SETTINGS } from "./revenue-estimator";
 import { prisma } from "./db";
 import crypto from "crypto";
@@ -7,7 +7,6 @@ import crypto from "crypto";
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 const MAX_VIDEOS_TO_SCAN = 15; // Free audit: last 15 videos only (not full channel history)
 const MAX_LINKS_TO_CHECK = 20; // Limit link checks to avoid timeout
-const RATE_LIMIT_DELAY = 300; // ms between link checks
 
 // Required for YouTube API key with HTTP referrer restrictions
 const YOUTUBE_API_HEADERS = {
@@ -399,9 +398,10 @@ export async function runPublicAudit(channelInput: string, ipAddress?: string): 
       );
     }
 
-    // Rate limiting
+    // Jittered rate limiting (2-4 seconds) for anti-bot protection
     if (i < linksToCheck.length - 1) {
-      await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DELAY));
+      const delay = getJitteredDelay();
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
 
@@ -411,9 +411,13 @@ export async function runPublicAudit(channelInput: string, ipAddress?: string): 
     allLinks[i].revenueImpact = 0; // Don't count unknown links in revenue impact
   }
 
-  // Calculate metrics
-  const brokenLinks = allLinks.filter(l => l.status === "NOT_FOUND").length;
-  const outOfStockLinks = allLinks.filter(l => l.status === "OOS").length;
+  // Calculate metrics - include new status types
+  const brokenLinks = allLinks.filter(l =>
+    l.status === "NOT_FOUND" || l.status === "MISSING_TAG"
+  ).length;
+  const outOfStockLinks = allLinks.filter(l =>
+    l.status === "OOS" || l.status === "OOS_THIRD_PARTY"
+  ).length;
   const redirectLinks = allLinks.filter(l => l.status === "REDIRECT").length;
   const healthyLinks = allLinks.filter(l => l.status === "OK").length;
 
@@ -423,8 +427,13 @@ export async function runPublicAudit(channelInput: string, ipAddress?: string): 
 
   // 1. VERIFIED LOSS: Only from scanned videos (100% verifiable)
   // This is the most accurate number - what we actually found and checked
+  // Includes all issue types: NOT_FOUND, OOS, OOS_THIRD_PARTY, REDIRECT, MISSING_TAG
   const confirmedIssues = allLinks.filter(l =>
-    l.status === "NOT_FOUND" || l.status === "OOS" || l.status === "REDIRECT"
+    l.status === "NOT_FOUND" ||
+    l.status === "MISSING_TAG" ||
+    l.status === "OOS" ||
+    l.status === "OOS_THIRD_PARTY" ||
+    l.status === "REDIRECT"
   );
   const verifiedMonthlyLoss = Math.round(
     confirmedIssues.reduce((sum, link) => sum + (link.revenueImpact || 0), 0) * 100
@@ -442,9 +451,15 @@ export async function runPublicAudit(channelInput: string, ipAddress?: string): 
   // No extrapolation multiplier for free audit - just show what we found
   const potentialMonthlyImpact = verifiedMonthlyLoss;
 
-  // Get top issues (broken/OOS/redirect links sorted by revenue impact)
+  // Get top issues (all problem statuses sorted by revenue impact)
   const issues = allLinks
-    .filter(l => l.status === "NOT_FOUND" || l.status === "OOS" || l.status === "REDIRECT")
+    .filter(l =>
+      l.status === "NOT_FOUND" ||
+      l.status === "MISSING_TAG" ||
+      l.status === "OOS" ||
+      l.status === "OOS_THIRD_PARTY" ||
+      l.status === "REDIRECT"
+    )
     .sort((a, b) => (b.revenueImpact || 0) - (a.revenueImpact || 0))
     .slice(0, 10)
     .map(link => ({

@@ -1,27 +1,80 @@
-export type LinkStatus = "OK" | "OOS" | "NOT_FOUND" | "REDIRECT" | "UNKNOWN";
+export type LinkStatus =
+  | "OK"
+  | "OOS"
+  | "OOS_THIRD_PARTY"  // Available from other sellers (lower trust)
+  | "NOT_FOUND"
+  | "MISSING_TAG"      // Valid page but affiliate tag stripped
+  | "REDIRECT"         // Stuck in redirect or non-Amazon destination
+  | "UNKNOWN";
 
 export interface LinkCheckResult {
   status: LinkStatus;
   httpStatus: number | null;
+  originalUrl: string;
   finalUrl: string | null;
+  reason: string;
+  severity: number;
+  lastChecked: Date;
+  // Legacy fields for backwards compatibility
   availabilityStatus: string | null;
   notes: string | null;
 }
 
-// Amazon out-of-stock indicators
+// ============================================
+// USER-AGENT ROTATION (Anti-Bot Layer)
+// ============================================
+const USER_AGENTS = [
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15",
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:121.0) Gecko/20100101 Firefox/121.0",
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
+];
+
+function getRandomUserAgent(): string {
+  return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+}
+
+// ============================================
+// SEVERITY FACTORS (Revenue Impact)
+// ============================================
+const SEVERITY_MAP: Record<LinkStatus, number> = {
+  NOT_FOUND: 1.0,       // Complete loss - dead link
+  MISSING_TAG: 1.0,     // Complete loss - no commission earned
+  OOS: 0.5,             // Partial loss - Amazon shows similar items
+  OOS_THIRD_PARTY: 0.3, // Lower loss - third party sellers available
+  REDIRECT: 0.3,        // Partial loss - may still convert
+  OK: 0,                // No loss
+  UNKNOWN: 0.2,         // Conservative estimate
+};
+
+// ============================================
+// AMAZON DETECTION INDICATORS
+// ============================================
+
+// Out of stock - main listing unavailable
 const AMAZON_OOS_INDICATORS = [
   "currently unavailable",
   "out of stock",
   "we don't know when or if this item will be back",
   "this item is not available",
   "we don't know when or if this item will be back in stock",
-  "available from these sellers",
   "sign up to be notified when this item becomes available",
   "temporarily out of stock",
   "this item cannot be shipped",
   "not available for purchase",
   "no offers available",
-  "see all buying options", // Often shown when main listing unavailable
+];
+
+// Third-party sellers available (lower trust, still some conversion)
+const AMAZON_THIRD_PARTY_INDICATORS = [
+  "available from these sellers",
+  "see all buying options",
+  "other sellers on amazon",
+  "new & used",
 ];
 
 // Amazon "dog page" / product not found indicators (product completely gone)
@@ -44,9 +97,25 @@ const ERROR_PAGE_INDICATORS = [
   "The page you requested could not be found",
 ];
 
-const DEFAULT_TIMEOUT = 10000; // 10 seconds
+// ============================================
+// CONFIGURATION
+// ============================================
+const DEFAULT_TIMEOUT = 15000; // 15 seconds (increased for redirect chains)
 const MAX_RETRIES = 2;
 const RETRY_DELAY = 1000; // 1 second
+const MIN_JITTER_DELAY = 2000; // 2 seconds minimum between checks
+const MAX_JITTER_DELAY = 4000; // 4 seconds maximum between checks
+
+// Amazon affiliate tag regex: tag=something-20 (or similar formats)
+const AMAZON_TAG_REGEX = /[?&]tag=[a-zA-Z0-9_-]+-[0-9]{2}/;
+
+// Search fallback patterns (Soft 404 - product redirected to search)
+const SEARCH_FALLBACK_PATTERNS = [
+  "/s?k=",
+  "/s/ref=",
+  "/s?i=",
+  "/s?rh=",
+];
 
 /**
  * Sleeps for a specified duration
@@ -56,11 +125,28 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
- * Checks if HTML content indicates Amazon out of stock
+ * Returns a jittered delay between MIN and MAX for anti-bot protection
+ */
+export function getJitteredDelay(): number {
+  return Math.floor(Math.random() * (MAX_JITTER_DELAY - MIN_JITTER_DELAY + 1)) + MIN_JITTER_DELAY;
+}
+
+/**
+ * Checks if HTML content indicates Amazon out of stock (primary listing)
  */
 function checkAmazonOOS(html: string): boolean {
   const lowerHtml = html.toLowerCase();
   return AMAZON_OOS_INDICATORS.some(indicator =>
+    lowerHtml.includes(indicator)
+  );
+}
+
+/**
+ * Checks if HTML content indicates third-party sellers only
+ */
+function checkAmazonThirdParty(html: string): boolean {
+  const lowerHtml = html.toLowerCase();
+  return AMAZON_THIRD_PARTY_INDICATORS.some(indicator =>
     lowerHtml.includes(indicator)
   );
 }
@@ -86,9 +172,47 @@ function isErrorPage(html: string): boolean {
 }
 
 /**
- * Fetches a URL with timeout support
+ * Checks if URL is a search results page (Soft 404)
+ * Amazon sometimes redirects dead products to search results
  */
-async function fetchWithTimeout(
+function isSearchFallback(url: string): boolean {
+  return SEARCH_FALLBACK_PATTERNS.some(pattern => url.includes(pattern));
+}
+
+/**
+ * Checks if Amazon affiliate tag is present in URL
+ */
+function hasAffiliateTag(url: string): boolean {
+  return AMAZON_TAG_REGEX.test(url);
+}
+
+/**
+ * Checks if URL is an Amazon domain
+ */
+function isAmazonDomain(url: string): boolean {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.hostname.includes("amazon.") || urlObj.hostname.includes("amzn.");
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Checks if original URL had a product identifier that's now missing
+ * E.g., /dp/B00XYZ/ in original but /s?k= in final
+ */
+function hadProductIntent(originalUrl: string): boolean {
+  return originalUrl.includes("/dp/") ||
+         originalUrl.includes("/gp/product/") ||
+         originalUrl.includes("/exec/obidos/ASIN/");
+}
+
+/**
+ * Browser data fetcher - wraps fetch for easy proxy swap later
+ * TODO: Swap in ScrapingBee/ZenRows API here when ready
+ */
+async function getBrowserData(
   url: string,
   options: RequestInit = {},
   timeout: number = DEFAULT_TIMEOUT
@@ -102,9 +226,20 @@ async function fetchWithTimeout(
       signal: controller.signal,
       redirect: "follow",
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.5",
+        "User-Agent": getRandomUserAgent(),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache",
+        "Sec-Ch-Ua": '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+        "Sec-Ch-Ua-Mobile": "?0",
+        "Sec-Ch-Ua-Platform": '"Windows"',
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
+        "Upgrade-Insecure-Requests": "1",
         ...options.headers,
       },
     });
@@ -114,193 +249,319 @@ async function fetchWithTimeout(
   }
 }
 
+// Legacy alias for backwards compatibility
+const fetchWithTimeout = getBrowserData;
+
 /**
- * Checks a single link's health status
+ * Helper to create a LinkCheckResult with proper structure
+ */
+function createResult(
+  originalUrl: string,
+  status: LinkStatus,
+  reason: string,
+  httpStatus: number | null,
+  finalUrl: string | null
+): LinkCheckResult {
+  return {
+    status,
+    httpStatus,
+    originalUrl,
+    finalUrl,
+    reason,
+    severity: SEVERITY_MAP[status],
+    lastChecked: new Date(),
+    // Legacy fields
+    availabilityStatus: status === "OK" ? "available" : status.toLowerCase(),
+    notes: reason,
+  };
+}
+
+/**
+ * LinkMedic Bot 2.0 - Enhanced link checker with full detection matrix
+ *
+ * Detection Priority:
+ * 1. Unfurling: Follow all redirects to final URL
+ * 2. Search Fallback: Check if redirected to search page (Soft 404)
+ * 3. Missing Tag: Check if affiliate tag was stripped
+ * 4. HTTP Status: Check for 4xx/5xx errors
+ * 5. Dog Page: Check for Amazon's "looking for something?" page
+ * 6. OOS Detection: Check for out of stock indicators
+ * 7. Third Party: Check for "available from these sellers"
+ *
  * @param url - The URL to check
- * @param isAmazon - Whether this is an Amazon link (for OOS detection)
+ * @param isAmazon - Whether this is an Amazon link (for enhanced detection)
+ * @param originalTag - Optional: the original affiliate tag to verify
  */
 export async function checkLink(
   url: string,
-  isAmazon: boolean = false
+  isAmazon: boolean = false,
+  originalTag?: string
 ): Promise<LinkCheckResult> {
   let lastError: Error | null = null;
+  const originalUrl = url;
+  const originalHadTag = hasAffiliateTag(url);
+  const originalHadProduct = hadProductIntent(url);
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     if (attempt > 0) {
-      // Exponential backoff
+      // Exponential backoff between retries
       await sleep(RETRY_DELAY * Math.pow(2, attempt - 1));
     }
 
     try {
-      // First try HEAD request
-      let response: Response;
-      try {
-        response = await fetchWithTimeout(url, { method: "HEAD" });
-      } catch {
-        // Fallback to GET if HEAD fails
-        response = await fetchWithTimeout(url, { method: "GET" });
-      }
-
+      // ============================================
+      // PHASE 1: UNFURLING - Follow all redirects
+      // ============================================
+      // Always use GET for Amazon to capture body content
+      const response = await getBrowserData(url, { method: "GET" });
       const httpStatus = response.status;
       const finalUrl = response.url;
+      const html = await response.text();
 
-      // 404 / 410 - Not found
+      // ============================================
+      // PHASE 2: HTTP STATUS CHECK
+      // ============================================
+      // Terminal 404/410 - Not found
       if (httpStatus === 404 || httpStatus === 410) {
-        return {
-          status: "NOT_FOUND",
+        return createResult(
+          originalUrl,
+          "NOT_FOUND",
+          `HTTP ${httpStatus} - Page not found`,
           httpStatus,
-          finalUrl,
-          availabilityStatus: "broken",
-          notes: `HTTP ${httpStatus}`,
-        };
+          finalUrl
+        );
       }
 
-      // Other error status codes
+      // Other error status codes (5xx, other 4xx)
       if (httpStatus >= 400) {
-        return {
-          status: "NOT_FOUND",
+        return createResult(
+          originalUrl,
+          "NOT_FOUND",
+          `HTTP ${httpStatus} - Server error`,
           httpStatus,
-          finalUrl,
-          availabilityStatus: "error",
-          notes: `HTTP ${httpStatus}`,
-        };
+          finalUrl
+        );
       }
 
-      // For Amazon links, check for out of stock or "dog page" in response body
-      if (isAmazon && httpStatus === 200) {
-        // Need to do a GET request to check the body
-        const getResponse = await fetchWithTimeout(url, { method: "GET" });
-        const html = await getResponse.text();
-
-        // Check for Amazon "dog page" (product not found)
-        if (checkAmazonNotFound(html)) {
-          return {
-            status: "NOT_FOUND",
+      // ============================================
+      // PHASE 3: SEARCH FALLBACK DETECTION (Soft 404)
+      // ============================================
+      // Check if a product link was redirected to search results
+      if (isSearchFallback(finalUrl)) {
+        // If original URL was a product page but ended up on search, it's a soft 404
+        if (originalHadProduct || isAmazon) {
+          return createResult(
+            originalUrl,
+            "NOT_FOUND",
+            "Search Fallback - Product redirected to search results",
             httpStatus,
-            finalUrl: getResponse.url,
-            availabilityStatus: "not_found",
-            notes: "Product no longer exists on Amazon",
-          };
+            finalUrl
+          );
+        }
+      }
+
+      // ============================================
+      // PHASE 4: AMAZON-SPECIFIC CHECKS
+      // ============================================
+      if (isAmazon || isAmazonDomain(finalUrl)) {
+        // Check for Amazon "dog page" (product completely gone)
+        // Look for id="d" or "looking for something?" text
+        if (checkAmazonNotFound(html) || html.includes('id="d"')) {
+          return createResult(
+            originalUrl,
+            "NOT_FOUND",
+            "Dog Page - Product no longer exists on Amazon",
+            httpStatus,
+            finalUrl
+          );
+        }
+
+        // Check for CAPTCHA/bot detection page
+        if (html.includes("enter the characters") || html.includes("automated access")) {
+          return createResult(
+            originalUrl,
+            "UNKNOWN",
+            "Bot detection - CAPTCHA page encountered",
+            httpStatus,
+            finalUrl
+          );
         }
 
         // Check for generic error page
         if (isErrorPage(html)) {
-          return {
-            status: "NOT_FOUND",
+          return createResult(
+            originalUrl,
+            "NOT_FOUND",
+            "Error Page - Redirected to error page",
             httpStatus,
-            finalUrl: getResponse.url,
-            availabilityStatus: "error_page",
-            notes: "Redirected to error page",
-          };
+            finalUrl
+          );
         }
 
-        // Check for out of stock / currently unavailable
+        // ============================================
+        // PHASE 5: MISSING AFFILIATE TAG CHECK
+        // ============================================
+        // If original had a tag but final doesn't, it was stripped
+        if (originalHadTag && !hasAffiliateTag(finalUrl)) {
+          return createResult(
+            originalUrl,
+            "MISSING_TAG",
+            "Affiliate tag stripped - No commission will be earned",
+            httpStatus,
+            finalUrl
+          );
+        }
+
+        // If we have an expected tag, verify it's present
+        if (originalTag && !finalUrl.includes(`tag=${originalTag}`)) {
+          return createResult(
+            originalUrl,
+            "MISSING_TAG",
+            `Expected tag "${originalTag}" not found in final URL`,
+            httpStatus,
+            finalUrl
+          );
+        }
+
+        // ============================================
+        // PHASE 6: OUT OF STOCK DETECTION
+        // ============================================
+        // Check for primary OOS indicators first
         if (checkAmazonOOS(html)) {
-          return {
-            status: "OOS",
+          return createResult(
+            originalUrl,
+            "OOS",
+            "Out of Stock - Product currently unavailable",
             httpStatus,
-            finalUrl: getResponse.url,
-            availabilityStatus: "out_of_stock",
-            notes: "Product is currently unavailable",
-          };
+            finalUrl
+          );
         }
-      }
 
-      // Check if redirected to an error page (non-Amazon)
-      if (httpStatus >= 200 && httpStatus < 300) {
-        // Only check body for potential error pages on suspicious URLs
-        if (finalUrl !== url) {
-          const getResponse = await fetchWithTimeout(url, { method: "GET" });
-          const html = await getResponse.text();
-          if (isErrorPage(html)) {
-            return {
-              status: "NOT_FOUND",
+        // Check for third-party only availability (lower conversion)
+        if (checkAmazonThirdParty(html)) {
+          // Make sure it's not also showing as in-stock from Amazon
+          const hasAddToCart = html.includes("add-to-cart") || html.includes("Add to Cart");
+          const hasBuyNow = html.includes("buy-now") || html.includes("Buy Now");
+
+          if (!hasAddToCart && !hasBuyNow) {
+            return createResult(
+              originalUrl,
+              "OOS_THIRD_PARTY",
+              "Third Party Only - Available from other sellers",
               httpStatus,
-              finalUrl: getResponse.url,
-              availabilityStatus: "error_page",
-              notes: "Redirected to error page",
-            };
+              finalUrl
+            );
           }
         }
-
-        return {
-          status: "OK",
-          httpStatus,
-          finalUrl,
-          availabilityStatus: "available",
-          notes: null,
-        };
       }
 
-      // Redirect status (3xx) - follow was enabled so this shouldn't happen
-      if (httpStatus >= 300 && httpStatus < 400) {
-        return {
-          status: "REDIRECT",
-          httpStatus,
-          finalUrl,
-          availabilityStatus: "redirect",
-          notes: `Redirected to ${finalUrl}`,
-        };
+      // ============================================
+      // PHASE 7: NON-AMAZON REDIRECT CHECK
+      // ============================================
+      // If final URL is on a completely different domain (not Amazon)
+      if (!isAmazon && finalUrl !== originalUrl) {
+        // Check if redirected to an error page
+        if (isErrorPage(html)) {
+          return createResult(
+            originalUrl,
+            "NOT_FOUND",
+            "Error Page - Redirected to error page",
+            httpStatus,
+            finalUrl
+          );
+        }
+
+        // Check if stuck on a link shortener or non-destination page
+        try {
+          const originalDomain = new URL(originalUrl).hostname;
+          const finalDomain = new URL(finalUrl).hostname;
+
+          // If still on a shortener domain, the redirect failed
+          if (originalDomain.includes("bit.ly") || originalDomain.includes("amzn.to") ||
+              originalDomain.includes("goo.gl") || originalDomain.includes("t.co")) {
+            if (finalDomain === originalDomain) {
+              return createResult(
+                originalUrl,
+                "REDIRECT",
+                "Redirect Failed - Link shortener did not resolve",
+                httpStatus,
+                finalUrl
+              );
+            }
+          }
+        } catch {
+          // URL parsing failed, continue with checks
+        }
       }
 
-      // Success
-      return {
-        status: "OK",
+      // ============================================
+      // PHASE 8: ALL CHECKS PASSED - LINK IS OK
+      // ============================================
+      return createResult(
+        originalUrl,
+        "OK",
+        "Active and Buyable",
         httpStatus,
-        finalUrl,
-        availabilityStatus: "available",
-        notes: null,
-      };
+        finalUrl
+      );
+
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
 
       // If it's the last attempt, return unknown status
       if (attempt === MAX_RETRIES) {
         const isTimeout = lastError.name === "AbortError" || lastError.message.includes("timeout");
-        return {
-          status: "UNKNOWN",
-          httpStatus: null,
-          finalUrl: null,
-          availabilityStatus: isTimeout ? "timeout" : "error",
-          notes: isTimeout ? "Request timed out" : `Error: ${lastError.message}`,
-        };
+        return createResult(
+          originalUrl,
+          "UNKNOWN",
+          isTimeout ? "Request timed out" : `Network error: ${lastError.message}`,
+          null,
+          null
+        );
       }
     }
   }
 
   // Should not reach here, but just in case
-  return {
-    status: "UNKNOWN",
-    httpStatus: null,
-    finalUrl: null,
-    availabilityStatus: "error",
-    notes: lastError?.message || "Unknown error",
-  };
+  return createResult(
+    originalUrl,
+    "UNKNOWN",
+    lastError?.message || "Unknown error",
+    null,
+    null
+  );
 }
 
 /**
- * Checks multiple links with rate limiting
+ * Checks multiple links with jittered rate limiting (anti-bot protection)
  * @param urls - Array of URLs to check
  * @param isAmazonMap - Map of URL to whether it's an Amazon link
- * @param delayMs - Delay between checks in milliseconds
+ * @param useJitter - Use random 2-4 second delays between checks (default: true)
  */
 export async function checkLinksWithRateLimit(
   urls: string[],
   isAmazonMap: Map<string, boolean>,
-  delayMs: number = 500
+  useJitter: boolean = true
 ): Promise<Map<string, LinkCheckResult>> {
   const results = new Map<string, LinkCheckResult>();
 
-  for (const url of urls) {
+  for (let i = 0; i < urls.length; i++) {
+    const url = urls[i];
     const isAmazon = isAmazonMap.get(url) || false;
     const result = await checkLink(url, isAmazon);
     results.set(url, result);
 
-    // Rate limiting
-    if (urls.indexOf(url) < urls.length - 1) {
-      await sleep(delayMs);
+    // Jittered rate limiting (anti-bot protection)
+    if (i < urls.length - 1) {
+      const delay = useJitter ? getJitteredDelay() : 500;
+      await sleep(delay);
     }
   }
 
   return results;
 }
+
+/**
+ * Export severity map for use in revenue calculations
+ */
+export { SEVERITY_MAP };

@@ -1,7 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink, Copy, Check, Share2, Lock, Info } from "lucide-react";
+import {
+  ExternalLink,
+  Copy,
+  Check,
+  Share2,
+  Lock,
+  Info,
+  Shield,
+  Zap,
+  Bell,
+  FileText,
+  Users,
+  ArrowRight,
+  Sparkles,
+  AlertTriangle,
+  CheckCircle2
+} from "lucide-react";
 import { formatCurrency, calculateAnnualizedImpact } from "@/lib/revenue-estimator";
 import Link from "next/link";
 
@@ -36,7 +52,22 @@ interface AuditResultsClientProps {
 
 export function AuditResultsClient({ auditId, initialData }: AuditResultsClientProps) {
   const [copied, setCopied] = useState(false);
+  const [waitlistEmail, setWaitlistEmail] = useState("");
+  const [waitlistSubmitted, setWaitlistSubmitted] = useState(false);
   const result = initialData;
+
+  // Calculate key metrics
+  const annualLoss = calculateAnnualizedImpact(result.verifiedMonthlyLoss);
+  const monthlyLoss = result.verifiedMonthlyLoss;
+  const videosWithIssues = result.topIssues.length > 0
+    ? Math.min(result.totalVideos, new Set(result.topIssues.map(i => i.videoId)).size)
+    : 0;
+  const videoCorruptionRate = result.totalVideos > 0
+    ? Math.round((videosWithIssues / result.totalVideos) * 100)
+    : 0;
+
+  // ROI calculation: Annual Loss / $228 (yearly cost of $19/mo)
+  const estimatedROI = annualLoss > 0 ? Math.round((annualLoss / 228) * 10) / 10 : 0;
 
   const handleShare = async () => {
     const shareUrl = `${window.location.origin}/audit/results/${auditId}`;
@@ -46,7 +77,6 @@ export function AuditResultsClient({ auditId, initialData }: AuditResultsClientP
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
 
-      // Track share
       await fetch(`/api/audit/results/${auditId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -55,15 +85,22 @@ export function AuditResultsClient({ auditId, initialData }: AuditResultsClientP
     } catch {
       if (navigator.share) {
         await navigator.share({
-          title: `${result.channelName} could recover ${formatCurrency(calculateAnnualizedImpact(result.verifiedMonthlyLoss))}/year in affiliate revenue`,
+          title: `${result.channelName} could recover ${formatCurrency(annualLoss)}/year in affiliate revenue`,
           url: shareUrl,
         });
       }
     }
   };
 
+  const handleWaitlistSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // TODO: Send to email capture API
+    setWaitlistSubmitted(true);
+    setTimeout(() => setWaitlistSubmitted(false), 3000);
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Channel Info */}
       <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-6">
         <div className="flex items-center gap-4">
@@ -99,26 +136,43 @@ export function AuditResultsClient({ auditId, initialData }: AuditResultsClientP
         </div>
       </div>
 
-      {/* Verified Revenue Loss - The anchor metric */}
-      <div className="bg-gradient-to-br from-emerald-950/50 to-slate-900 border border-emerald-700/50 rounded-xl p-8 text-center">
-        <p className="text-sm text-emerald-400 uppercase tracking-wide mb-2">
-          Verified Annual Loss (from {result.totalVideos} videos)
-        </p>
-        <p className="text-5xl md:text-6xl font-bold text-emerald-400 mb-2">
-          {formatCurrency(calculateAnnualizedImpact(result.verifiedMonthlyLoss))}
-          <span className="text-2xl text-emerald-400/70">/year</span>
-        </p>
-        <p className="text-slate-400">
-          {formatCurrency(result.verifiedMonthlyLoss)}/month from the links we actually checked
-        </p>
-        {/* Corruption rate callout */}
+      {/* ============================================ */}
+      {/* REVENUE RECOVERY HEADLINE - High Impact */}
+      {/* ============================================ */}
+      <div className="bg-gradient-to-br from-red-950/40 via-slate-900 to-emerald-950/30 border border-red-700/30 rounded-xl p-8">
+        <div className="text-center mb-6">
+          <p className="text-sm text-red-400 uppercase tracking-wide mb-3 flex items-center justify-center gap-2">
+            <AlertTriangle className="w-4 h-4" />
+            Revenue Leak Detected
+          </p>
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
+            We found{" "}
+            <span className="text-red-400">{formatCurrency(annualLoss)}</span>
+            {" "}in Recoverable Annual Revenue
+          </h2>
+          <p className="text-lg text-slate-300">
+            You are losing approximately <span className="text-red-400 font-semibold">{formatCurrency(monthlyLoss)}</span> every month
+            across the {result.totalVideos} videos we scanned.
+          </p>
+        </div>
+
+        {/* Corruption Rate - Prominent Display */}
         {result.corruptionRate > 0 && (
-          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-amber-500/10 border border-amber-500/30 rounded-full">
-            <span className="text-amber-400 font-semibold">{result.corruptionRate}% link corruption rate</span>
+          <div className="flex flex-col md:flex-row items-center justify-center gap-4 mt-6">
+            <div className="bg-red-950/50 border border-red-700/50 rounded-xl px-6 py-4 text-center">
+              <p className="text-4xl font-bold text-red-400">{result.corruptionRate}%</p>
+              <p className="text-sm text-red-300">Link Corruption Rate</p>
+            </div>
+            {videoCorruptionRate > 0 && (
+              <div className="bg-amber-950/50 border border-amber-700/50 rounded-xl px-6 py-4 text-center">
+                <p className="text-4xl font-bold text-amber-400">{videoCorruptionRate}%</p>
+                <p className="text-sm text-amber-300">Videos With Leaks</p>
+              </div>
+            )}
           </div>
         )}
-        {/* Tooltip about conservative estimate */}
-        <div className="mt-4 flex items-center justify-center gap-2 text-xs text-slate-500">
+
+        <div className="mt-6 flex items-center justify-center gap-2 text-xs text-slate-500">
           <Info className="w-3 h-3" />
           <span>Conservative estimate using 1% CTR, 1.5% conversion, 3% commission</span>
         </div>
@@ -170,11 +224,19 @@ export function AuditResultsClient({ auditId, initialData }: AuditResultsClientP
                   <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${
                     issue.status === "NOT_FOUND"
                       ? "bg-red-950/50 text-red-400"
+                      : issue.status === "MISSING_TAG"
+                      ? "bg-purple-950/50 text-purple-400"
                       : issue.status === "REDIRECT"
                       ? "bg-orange-950/50 text-orange-400"
+                      : issue.status === "OOS_THIRD_PARTY"
+                      ? "bg-yellow-950/50 text-yellow-400"
                       : "bg-amber-950/50 text-amber-400"
                   }`}>
-                    {issue.status === "NOT_FOUND" ? "Broken" : issue.status === "REDIRECT" ? "Redirect" : "Out of Stock"}
+                    {issue.status === "NOT_FOUND" ? "Broken" :
+                     issue.status === "MISSING_TAG" ? "No Tag" :
+                     issue.status === "REDIRECT" ? "Redirect" :
+                     issue.status === "OOS_THIRD_PARTY" ? "3rd Party" :
+                     "Out of Stock"}
                   </span>
                   <p className="text-sm text-red-400 mt-1">
                     -{formatCurrency(issue.revenueImpact)}/mo
@@ -186,57 +248,260 @@ export function AuditResultsClient({ auditId, initialData }: AuditResultsClientP
         </div>
       )}
 
+      {/* ============================================ */}
+      {/* REVENUE RECOVERY CTA */}
+      {/* ============================================ */}
+      <div className="bg-gradient-to-br from-emerald-950/60 to-slate-900 border-2 border-emerald-600/50 rounded-2xl p-8">
+        <div className="text-center mb-6">
+          <h3 className="text-2xl md:text-3xl font-bold text-white mb-3">
+            Stop the Leak. Recover Your Revenue Today.
+          </h3>
+          <p className="text-slate-300 max-w-2xl mx-auto">
+            We just found <span className="text-red-400 font-semibold">{formatCurrency(annualLoss)}</span> in annual leakage.
+            Don&apos;t let another day go by with broken links. Start your 7-day trial to fix every link
+            in your library and set up automated monitoring to ensure you never lose a commission again.
+          </p>
+        </div>
+
+        <div className="flex justify-center mb-6">
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-3 px-8 py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold text-white text-lg transition shadow-lg shadow-emerald-900/50 hover:shadow-emerald-800/50"
+          >
+            <Zap className="w-5 h-5" />
+            Fix All My Links & Start 7-Day Free Trial
+            <ArrowRight className="w-5 h-5" />
+          </Link>
+        </div>
+
+        {/* Risk Reversal Micro-copy */}
+        <div className="flex flex-wrap justify-center gap-4 text-sm text-slate-400">
+          <span className="flex items-center gap-1">
+            <Check className="w-4 h-4 text-emerald-400" />
+            No charge today
+          </span>
+          <span className="flex items-center gap-1">
+            <Check className="w-4 h-4 text-emerald-400" />
+            Cancel anytime with one click
+          </span>
+          <span className="flex items-center gap-1">
+            <Shield className="w-4 h-4 text-emerald-400" />
+            Stripe-verified secure checkout
+          </span>
+        </div>
+
+        {/* ROI Estimate */}
+        {estimatedROI > 1 && (
+          <div className="mt-6 text-center">
+            <p className="text-emerald-400 font-semibold">
+              Estimated ROI for your channel: <span className="text-2xl">{estimatedROI}x</span> per year
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* ============================================ */}
+      {/* THREE-TIER PRICING */}
+      {/* ============================================ */}
+      <div className="space-y-6">
+        <div className="text-center">
+          <h3 className="text-xl font-bold text-white mb-2">Choose Your Recovery Plan</h3>
+          <p className="text-slate-400">From diagnostic to full protection</p>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-6">
+          {/* Tier 1: The Auditor (Free) */}
+          <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-6">
+            <div className="mb-4">
+              <h4 className="text-lg font-semibold text-slate-300">The Auditor</h4>
+              <p className="text-3xl font-bold text-white mt-1">$0<span className="text-sm text-slate-500">/mo</span></p>
+              <p className="text-sm text-slate-500 mt-1">Diagnostic</p>
+            </div>
+
+            <ul className="space-y-3 mb-6">
+              <li className="flex items-start gap-2 text-sm text-slate-400">
+                <Check className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
+                <span>Scan last 15 videos</span>
+              </li>
+              <li className="flex items-start gap-2 text-sm text-slate-400">
+                <Check className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
+                <span>Basic link status (404s)</span>
+              </li>
+              <li className="flex items-start gap-2 text-sm text-slate-400">
+                <Check className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
+                <span>One-time report</span>
+              </li>
+            </ul>
+
+            <button
+              disabled
+              className="w-full py-3 bg-slate-700/50 rounded-lg text-slate-500 font-medium cursor-not-allowed"
+            >
+              Current Plan
+            </button>
+          </div>
+
+          {/* Tier 2: The Specialist ($19/mo) - RECOMMENDED */}
+          <div className="relative bg-gradient-to-b from-emerald-950/50 to-slate-900 border-2 border-emerald-500/50 rounded-xl p-6 shadow-lg shadow-emerald-900/20">
+            {/* Badge */}
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+              <span className="bg-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                PAYS FOR ITSELF
+              </span>
+            </div>
+
+            <div className="mb-4 mt-2">
+              <h4 className="text-lg font-semibold text-emerald-400">The Specialist</h4>
+              <p className="text-3xl font-bold text-white mt-1">$19<span className="text-sm text-slate-400">/mo</span></p>
+              <p className="text-sm text-emerald-400 mt-1">Recovery & Protection</p>
+            </div>
+
+            <ul className="space-y-3 mb-6">
+              <li className="flex items-start gap-2 text-sm text-slate-300">
+                <Check className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>Scan <strong>Full Channel History</strong></span>
+              </li>
+              <li className="flex items-start gap-2 text-sm text-slate-300">
+                <Check className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>Deep AI Detection (OOS, Redirects, Missing Tags)</span>
+              </li>
+              <li className="flex items-start gap-2 text-sm text-slate-300">
+                <Check className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>One-Click AI Fix Suggestions</span>
+              </li>
+              <li className="flex items-start gap-2 text-sm text-slate-300">
+                <Check className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>24/7 &quot;Link Guard&quot; Monitoring</span>
+              </li>
+              <li className="flex items-start gap-2 text-sm text-slate-300">
+                <Check className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>Weekly Revenue Alerts</span>
+              </li>
+            </ul>
+
+            <Link
+              href="/login"
+              className="block w-full py-3 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-white font-semibold text-center transition"
+            >
+              Start 7-Day Free Trial — Recover My Revenue
+            </Link>
+
+            <p className="text-xs text-slate-500 text-center mt-3">
+              No charge today · Cancel anytime
+            </p>
+          </div>
+
+          {/* Tier 3: The Portfolio Manager ($49/mo) - Greyed Out */}
+          <div className="bg-slate-800/20 border border-slate-700/30 rounded-xl p-6 opacity-60">
+            <div className="mb-4">
+              <h4 className="text-lg font-semibold text-slate-400">The Portfolio Manager</h4>
+              <p className="text-3xl font-bold text-slate-400 mt-1">$49<span className="text-sm text-slate-500">/mo</span></p>
+              <p className="text-sm text-slate-500 mt-1">Scale</p>
+            </div>
+
+            <ul className="space-y-3 mb-6">
+              <li className="flex items-start gap-2 text-sm text-slate-500">
+                <Users className="w-4 h-4 text-slate-600 mt-0.5 flex-shrink-0" />
+                <span>Manage up to 10 Channels</span>
+              </li>
+              <li className="flex items-start gap-2 text-sm text-slate-500">
+                <FileText className="w-4 h-4 text-slate-600 mt-0.5 flex-shrink-0" />
+                <span>Aggregate Dashboard</span>
+              </li>
+              <li className="flex items-start gap-2 text-sm text-slate-500">
+                <FileText className="w-4 h-4 text-slate-600 mt-0.5 flex-shrink-0" />
+                <span>Agency PDF Reporting</span>
+              </li>
+              <li className="flex items-start gap-2 text-sm text-slate-500">
+                <Users className="w-4 h-4 text-slate-600 mt-0.5 flex-shrink-0" />
+                <span>Team Access</span>
+              </li>
+            </ul>
+
+            {/* Waitlist Form */}
+            <form onSubmit={handleWaitlistSubmit} className="space-y-2">
+              <input
+                type="email"
+                placeholder="Enter email for waitlist"
+                value={waitlistEmail}
+                onChange={(e) => setWaitlistEmail(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-sm text-slate-300 placeholder:text-slate-600"
+              />
+              <button
+                type="submit"
+                className="w-full py-3 bg-slate-700/50 hover:bg-slate-700 rounded-lg text-slate-400 font-medium transition"
+              >
+                {waitlistSubmitted ? "Added to Waitlist!" : "Join the Waitlist"}
+              </button>
+            </form>
+            <p className="text-xs text-slate-600 text-center mt-2">Coming Soon</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ============================================ */}
+      {/* AI FIX FEATURE SPOTLIGHT */}
+      {/* ============================================ */}
+      <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-6">
+        <div className="text-center mb-6">
+          <h3 className="text-lg font-semibold text-white mb-2 flex items-center justify-center gap-2">
+            <Sparkles className="w-5 h-5 text-emerald-400" />
+            Feature Spotlight: AI-Powered Fixes
+          </h3>
+          <p className="text-sm text-slate-400">See how LinkMedic saves you hours of manual work</p>
+        </div>
+
+        {/* Mockup showing broken link to AI fix */}
+        <div className="grid md:grid-cols-2 gap-4">
+          {/* Before: Broken Link */}
+          <div className="bg-red-950/20 border border-red-700/30 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-2 h-2 rounded-full bg-red-500"></div>
+              <span className="text-xs font-medium text-red-400 uppercase">Broken Link Detected</span>
+            </div>
+            <div className="bg-slate-900/50 rounded p-3">
+              <p className="text-xs text-slate-500 mb-1">Original Link:</p>
+              <p className="text-sm text-red-400 font-mono break-all">
+                https://amzn.to/3xK9d2F
+              </p>
+              <p className="text-xs text-slate-500 mt-2">Status: <span className="text-red-400">404 - Product Removed</span></p>
+            </div>
+          </div>
+
+          {/* After: AI Suggested Fix */}
+          <div className="bg-emerald-950/20 border border-emerald-700/30 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="w-4 h-4 text-emerald-400" />
+              <span className="text-xs font-medium text-emerald-400 uppercase">AI Suggested Fix</span>
+            </div>
+            <div className="bg-slate-900/50 rounded p-3">
+              <p className="text-xs text-slate-500 mb-1">Replacement Product:</p>
+              <p className="text-sm text-emerald-400 font-mono break-all">
+                https://amazon.com/dp/B0CJ4K...?tag=yourstore-20
+              </p>
+              <p className="text-xs text-slate-500 mt-2">Match: <span className="text-emerald-400">98% Similar · In Stock · $49.99</span></p>
+            </div>
+            <button className="mt-3 w-full py-2 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-600/50 rounded text-emerald-400 text-sm font-medium transition flex items-center justify-center gap-2">
+              <CheckCircle2 className="w-4 h-4" />
+              Apply Fix & Copy to Clipboard
+            </button>
+          </div>
+        </div>
+
+        <p className="text-center text-xs text-slate-500 mt-4">
+          LinkMedic scans Amazon&apos;s catalog to find the best replacement products automatically.
+        </p>
+      </div>
+
       {/* Free Audit Limitations */}
       <div className="bg-slate-800/20 border border-slate-700/30 rounded-lg p-4">
         <div className="flex items-start gap-3">
           <Lock className="w-5 h-5 text-slate-500 mt-0.5 flex-shrink-0" />
           <div className="text-sm text-slate-400">
             <p className="font-medium text-slate-300 mb-1">Free Audit Preview</p>
-            <p>This scan covers the last {result.totalVideos} videos. Sign up to scan your full channel history and see the total impact.</p>
+            <p>This scan covers the last {result.totalVideos} videos. Upgrade to The Specialist to scan your full channel history and see the total impact across all your content.</p>
           </div>
         </div>
-      </div>
-
-      {/* CTA */}
-      <div className="bg-gradient-to-br from-emerald-950/50 to-slate-900 border border-emerald-700/50 rounded-xl p-8 text-center">
-        <h3 className="text-xl font-bold text-white mb-4">
-          Want to Fix These & Start Monitoring?
-        </h3>
-        <div className="grid grid-cols-2 gap-3 text-sm text-slate-300 mb-6 max-w-md mx-auto">
-          <div className="flex items-center gap-2">
-            <Check className="w-4 h-4 text-emerald-400" />
-            <span>Full channel history</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Check className="w-4 h-4 text-emerald-400" />
-            <span>AI fix suggestions</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Check className="w-4 h-4 text-emerald-400" />
-            <span>One-click copy</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Check className="w-4 h-4 text-emerald-400" />
-            <span>Export descriptions</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Check className="w-4 h-4 text-emerald-400" />
-            <span>Weekly monitoring</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Check className="w-4 h-4 text-emerald-400" />
-            <span>Mark as fixed</span>
-          </div>
-        </div>
-        <Link
-          href="/login"
-          className="inline-block px-8 py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold text-white transition"
-        >
-          Sign Up Free — 7-Day Trial
-        </Link>
-        <p className="text-xs text-slate-500 mt-4">
-          7-day free trial · Cancel anytime
-        </p>
       </div>
 
       {/* Share Section */}
