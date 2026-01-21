@@ -62,22 +62,24 @@ const SEVERITY_MAP: Record<LinkStatus, number> = {
 // AMAZON DETECTION INDICATORS
 // ============================================
 
-// Out of stock - main listing unavailable
-// These appear in rendered HTML even without JS
-const AMAZON_OOS_INDICATORS = [
-  "currently unavailable",
+// Out of stock - HIGH PRECISION indicators
+// These are definitive signals that the product is out of stock
+const AMAZON_OOS_INDICATORS_PRECISE = [
+  'id="outofstock"',           // Explicit OOS element ID
+  'id="availability"',         // Availability container (check with unavailable text)
+  "currently unavailable",     // Most reliable text indicator
+];
+
+// Out of stock - SECONDARY indicators (use if precise ones not found)
+const AMAZON_OOS_INDICATORS_SECONDARY = [
   "out of stock",
   "we don't know when or if this item will be back",
   "this item is not available",
-  "we don't know when or if this item will be back in stock",
   "sign up to be notified when this item becomes available",
   "temporarily out of stock",
   "this item cannot be shipped",
   "not available for purchase",
   "no offers available",
-  // ID-based indicators (from HTML attributes)
-  'id="outofstock"',
-  'id="availability"', // Check in conjunction with unavailable text
   "availabilityinsidebuybox_feature_div", // OOS buybox div
 ];
 
@@ -94,13 +96,13 @@ const AMAZON_THIRD_PARTY_INDICATORS = [
 ];
 
 // Amazon "dog page" / product not found indicators (product completely gone)
-const AMAZON_NOT_FOUND_INDICATORS = [
-  "looking for something?", // Dog page specific text
-  "sorry, we couldn't find that page",
-  "the web address you entered is not a functioning page",
-  "sorry! we couldn't find that page",
-  "to discuss automated access", // Bot detection page
-  "enter the characters you see below", // CAPTCHA page
+// HIGH PRECISION: Only the definitive "dog page" indicator
+const AMAZON_DOG_PAGE_INDICATOR = "looking for something?";
+
+// CAPTCHA/Bot detection - separate from broken (temporary state)
+const AMAZON_CAPTCHA_INDICATORS = [
+  "to discuss automated access",
+  "enter the characters you see below",
 ];
 
 // Error page indicators
@@ -124,12 +126,14 @@ const MAX_JITTER_DELAY = 2000; // 2 seconds maximum between checks
 // Amazon affiliate tag regex: tag=something-20 (or similar formats)
 const AMAZON_TAG_REGEX = /[?&]tag=[a-zA-Z0-9_-]+-[0-9]{2}/;
 
-// Search fallback patterns (Soft 404 - product redirected to search)
+// Search fallback patterns (Soft 404 - product redirected to search or brand page)
+// These indicate the original product no longer exists
 const SEARCH_FALLBACK_PATTERNS = [
-  "/s?k=",
-  "/s/ref=",
-  "/s?i=",
-  "/s?rh=",
+  "/s?k=",      // Search results page
+  "/s/ref=",    // Search with referrer
+  "/s?i=",      // Search with index
+  "/s?rh=",     // Search with refined hash
+  "/stores/",   // Brand store page (product redirected to store)
 ];
 
 /**
@@ -148,11 +152,23 @@ export function getJitteredDelay(): number {
 
 /**
  * Checks if HTML content indicates Amazon out of stock (primary listing)
+ * Uses HIGH PRECISION indicators first, then secondary
  */
 function checkAmazonOOS(html: string): boolean {
   const lowerHtml = html.toLowerCase();
-  return AMAZON_OOS_INDICATORS.some(indicator =>
-    lowerHtml.includes(indicator)
+
+  // First check precise indicators (id="outOfStock", id="availability", "currently unavailable")
+  const hasPreciseIndicator = AMAZON_OOS_INDICATORS_PRECISE.some(indicator =>
+    lowerHtml.includes(indicator.toLowerCase())
+  );
+
+  if (hasPreciseIndicator) {
+    return true;
+  }
+
+  // Then check secondary indicators
+  return AMAZON_OOS_INDICATORS_SECONDARY.some(indicator =>
+    lowerHtml.includes(indicator.toLowerCase())
   );
 }
 
@@ -167,12 +183,21 @@ function checkAmazonThirdParty(html: string): boolean {
 }
 
 /**
- * Checks if HTML content indicates Amazon product not found ("dog page")
+ * Checks if HTML content indicates Amazon "dog page" (product completely gone)
+ * HIGH PRECISION: Only checks for the definitive "looking for something?" text
  */
-function checkAmazonNotFound(html: string): boolean {
+function checkAmazonDogPage(html: string): boolean {
   const lowerHtml = html.toLowerCase();
-  return AMAZON_NOT_FOUND_INDICATORS.some(indicator =>
-    lowerHtml.includes(indicator)
+  return lowerHtml.includes(AMAZON_DOG_PAGE_INDICATOR);
+}
+
+/**
+ * Checks if HTML content indicates CAPTCHA/bot detection
+ */
+function checkAmazonCaptcha(html: string): boolean {
+  const lowerHtml = html.toLowerCase();
+  return AMAZON_CAPTCHA_INDICATORS.some(indicator =>
+    lowerHtml.includes(indicator.toLowerCase())
   );
 }
 
@@ -439,24 +464,66 @@ export async function checkLink(
       }
 
       // ============================================
-      // PHASE 2: SEARCH FALLBACK DETECTION (Soft 404) - CHECK FIRST!
+      // HIGH-PRECISION DETECTION ORDER (DO NOT CHANGE!)
+      // 1. SEARCH_REDIRECT - Check URL patterns first
+      // 2. OOS - Check HTML for out of stock BEFORE broken
+      // 3. NOT_FOUND (Broken) - Only 404 status OR "dog page"
+      // 4. MISSING_TAG - Check affiliate tag presence
       // ============================================
-      // This MUST come before HTTP status check because search redirects
-      // often return 200 OK but are actually broken product links
+
+      // ============================================
+      // PHASE 1: SEARCH/CATALOGUE REDIRECT (Check URL first!)
+      // ============================================
+      // If finalUrl contains search or store patterns, product was redirected
       if (isSearchFallback(finalUrl)) {
         return createAndCacheResult(
           originalUrl,
           "SEARCH_REDIRECT",
-          "Search Fallback - Amazon redirected to search results",
+          "Landed on Search/Brand Page - Product no longer available",
           httpStatus,
           finalUrl
         );
       }
 
       // ============================================
-      // PHASE 3: HTTP STATUS CHECK
+      // PHASE 2: OUT OF STOCK (Check BEFORE broken!)
       // ============================================
-      // Terminal 404/410 - Not found
+      // Look for id="outOfStock", id="availability", or "Currently unavailable"
+      if (isAmazon || isAmazonDomain(finalUrl)) {
+        if (checkAmazonOOS(html)) {
+          return createAndCacheResult(
+            originalUrl,
+            "OOS",
+            "Out of Stock - Product currently unavailable",
+            httpStatus,
+            finalUrl
+          );
+        }
+
+        // Check for third-party only availability (lower conversion)
+        const hasAddToCart = html.includes('id="add-to-cart-button"') ||
+                             html.includes('id="buy-now-button"') ||
+                             html.includes('name="submit.add-to-cart"');
+
+        if (checkAmazonThirdParty(html) && !hasAddToCart) {
+          return createAndCacheResult(
+            originalUrl,
+            "OOS_THIRD_PARTY",
+            "Third Party Only - Available from other sellers",
+            httpStatus,
+            finalUrl
+          );
+        }
+      }
+
+      // ============================================
+      // PHASE 3: BROKEN (Dog Page or 404 ONLY)
+      // ============================================
+      // HIGH PRECISION: Only mark as broken if:
+      // - HTTP status is 404/410, OR
+      // - Body contains "looking for something?" (Amazon dog page)
+
+      // Check for HTTP 404/410
       if (httpStatus === 404 || httpStatus === 410) {
         return createAndCacheResult(
           originalUrl,
@@ -467,24 +534,9 @@ export async function checkLink(
         );
       }
 
-      // Other error status codes (5xx, other 4xx)
-      if (httpStatus >= 400) {
-        return createAndCacheResult(
-          originalUrl,
-          "NOT_FOUND",
-          `HTTP ${httpStatus} - Server error`,
-          httpStatus,
-          finalUrl
-        );
-      }
-
-      // ============================================
-      // PHASE 4: AMAZON-SPECIFIC CHECKS
-      // ============================================
+      // Check for Amazon "dog page" (definitive broken indicator)
       if (isAmazon || isAmazonDomain(finalUrl)) {
-        // Check for Amazon "dog page" (product completely gone)
-        // Look for id="d" or "looking for something?" text
-        if (checkAmazonNotFound(html) || html.includes('id="d"')) {
+        if (checkAmazonDogPage(html)) {
           return createAndCacheResult(
             originalUrl,
             "NOT_FOUND",
@@ -494,8 +546,8 @@ export async function checkLink(
           );
         }
 
-        // Check for CAPTCHA/bot detection page
-        if (html.includes("enter the characters") || html.includes("automated access")) {
+        // Check for CAPTCHA/bot detection page (temporary, don't mark as broken)
+        if (checkAmazonCaptcha(html)) {
           // Don't cache CAPTCHA results - they're temporary
           return createResult(
             originalUrl,
@@ -505,21 +557,12 @@ export async function checkLink(
             finalUrl
           );
         }
+      }
 
-        // Check for generic error page
-        if (isErrorPage(html)) {
-          return createAndCacheResult(
-            originalUrl,
-            "NOT_FOUND",
-            "Error Page - Redirected to error page",
-            httpStatus,
-            finalUrl
-          );
-        }
-
-        // ============================================
-        // PHASE 5: MISSING AFFILIATE TAG CHECK
-        // ============================================
+      // ============================================
+      // PHASE 4: MISSING AFFILIATE TAG
+      // ============================================
+      if (isAmazon || isAmazonDomain(finalUrl)) {
         // If original had a tag but final doesn't, it was stripped
         if (originalHadTag && !hasAffiliateTag(finalUrl)) {
           return createAndCacheResult(
@@ -541,41 +584,10 @@ export async function checkLink(
             finalUrl
           );
         }
-
-        // ============================================
-        // PHASE 6: OUT OF STOCK DETECTION
-        // ============================================
-        // Check for Add to Cart button presence (Amazon's main buy button)
-        const hasAddToCart = html.includes('id="add-to-cart-button"') ||
-                             html.includes('id="buy-now-button"') ||
-                             html.includes('name="submit.add-to-cart"');
-
-        // Check for primary OOS indicators first
-        if (checkAmazonOOS(html)) {
-          return createAndCacheResult(
-            originalUrl,
-            "OOS",
-            "Out of Stock - Product currently unavailable",
-            httpStatus,
-            finalUrl
-          );
-        }
-
-        // Check for third-party only availability (lower conversion)
-        // This is when the main Amazon listing is gone but other sellers exist
-        if (checkAmazonThirdParty(html) && !hasAddToCart) {
-          return createAndCacheResult(
-            originalUrl,
-            "OOS_THIRD_PARTY",
-            "Third Party Only - Available from other sellers",
-            httpStatus,
-            finalUrl
-          );
-        }
       }
 
       // ============================================
-      // PHASE 7: REDIRECT DETECTION
+      // PHASE 5: REDIRECT DETECTION (Other redirects)
       // ============================================
       // Check for various redirect scenarios
       try {
