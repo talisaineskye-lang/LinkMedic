@@ -24,17 +24,23 @@ export function PolicyLayout({ title, lastUpdated, children }: PolicyLayoutProps
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-50">
       {/* Header */}
       <header className="border-b border-slate-800/50">
-        <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-0.5 text-xl font-semibold">
             <span className="text-white">Link</span>
             <LinkIcon className="w-5 h-5 text-emerald-500" />
             <span className="text-emerald-500">Medic</span>
           </Link>
+          <nav className="hidden md:flex items-center gap-6 text-sm text-slate-400">
+            <Link href="/" className="hover:text-white transition">Home</Link>
+            <Link href="/audit" className="hover:text-white transition">Free Audit</Link>
+            <Link href="/pricing" className="hover:text-white transition">Pricing</Link>
+            <Link href="/resources" className="hover:text-white transition">Resources</Link>
+          </nav>
           <Link
             href="/login"
-            className="text-sm text-emerald-400 hover:text-emerald-300 transition"
+            className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
           >
-            Sign In
+            Start Free Trial
           </Link>
         </div>
       </header>
@@ -71,13 +77,30 @@ export function PolicyLayout({ title, lastUpdated, children }: PolicyLayoutProps
           {children}
         </div>
 
+        {/* CTA Section */}
+        <div className="mt-16 p-8 bg-gradient-to-br from-emerald-950/50 to-slate-900 border border-emerald-700/50 rounded-xl text-center">
+          <h3 className="text-xl font-bold text-white mb-3">
+            Ready to Protect Your Affiliate Revenue?
+          </h3>
+          <p className="text-slate-400 mb-6">
+            Scan your YouTube channel for broken links and start recovering lost revenue.
+          </p>
+          <Link
+            href="/audit"
+            className="inline-block px-6 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-semibold text-white transition"
+          >
+            Run Free Audit
+          </Link>
+        </div>
+
         {/* Footer */}
-        <div className="mt-16 pt-8 border-t border-slate-700/50 text-sm text-slate-400">
+        <div className="mt-12 pt-8 border-t border-slate-700/50 text-sm text-slate-400">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p>&copy; 2026 LinkMedic. All rights reserved.</p>
             <div className="flex items-center gap-6">
               <Link href="/" className="hover:text-emerald-400 transition">Home</Link>
-              <Link href="/audit" className="hover:text-emerald-400 transition">Free Audit</Link>
+              <Link href="/pricing" className="hover:text-emerald-400 transition">Pricing</Link>
+              <Link href="/resources" className="hover:text-emerald-400 transition">Resources</Link>
               <Link href="/login" className="hover:text-emerald-400 transition">Sign In</Link>
             </div>
           </div>

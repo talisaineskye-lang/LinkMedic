@@ -21,6 +21,12 @@ function LoginContent() {
             <LinkIcon className="w-5 h-5 text-emerald-500" />
             <span className="text-emerald-500">Medic</span>
           </Link>
+          <nav className="hidden md:flex items-center gap-6 text-sm text-slate-400">
+            <Link href="/" className="hover:text-white transition">Home</Link>
+            <Link href="/audit" className="hover:text-white transition">Free Audit</Link>
+            <Link href="/pricing" className="hover:text-white transition">Pricing</Link>
+            <Link href="/resources" className="hover:text-white transition">Resources</Link>
+          </nav>
         </div>
       </header>
 
@@ -95,6 +101,8 @@ function LoginContent() {
           <p className="mb-3">Affiliate link health monitoring for YouTube creators.</p>
           <div className="flex items-center justify-center gap-6">
             <Link href="/" className="hover:text-emerald-400 transition">Home</Link>
+            <Link href="/pricing" className="hover:text-emerald-400 transition">Pricing</Link>
+            <Link href="/resources" className="hover:text-emerald-400 transition">Resources</Link>
             <Link href="/privacy" className="hover:text-emerald-400 transition">Privacy</Link>
             <Link href="/terms" className="hover:text-emerald-400 transition">Terms</Link>
           </div>

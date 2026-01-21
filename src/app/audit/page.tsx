@@ -31,11 +31,17 @@ export default function AuditPage() {
             <LinkIcon className="w-5 h-5 text-emerald-500" />
             <span className="text-emerald-500">Medic</span>
           </Link>
+          <nav className="hidden md:flex items-center gap-6 text-sm text-slate-400">
+            <Link href="/" className="hover:text-white transition">Home</Link>
+            <Link href="/audit" className="text-white">Free Audit</Link>
+            <Link href="/pricing" className="hover:text-white transition">Pricing</Link>
+            <Link href="/resources" className="hover:text-white transition">Resources</Link>
+          </nav>
           <Link
             href="/login"
-            className="text-sm text-slate-400 hover:text-emerald-400 transition"
+            className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
           >
-            Sign In
+            Start Free Trial
           </Link>
         </div>
       </header>
@@ -168,6 +174,28 @@ export default function AuditPage() {
         </div>
       </section>
 
+      {/* CTA Section */}
+      <section className="max-w-4xl mx-auto px-6 py-16 border-t border-slate-800/50">
+        <div className="bg-gradient-to-br from-emerald-950/50 to-slate-900 border border-emerald-700/50 rounded-xl p-8 text-center">
+          <h2 className="text-2xl font-bold text-white mb-4">
+            Ready to Protect Your Affiliate Revenue?
+          </h2>
+          <p className="text-slate-300 mb-8 max-w-xl mx-auto">
+            Sign up for a free 7-day trial to scan your full channel history,
+            get AI-powered fix suggestions, and monitor your links weekly.
+          </p>
+          <Link
+            href="/login"
+            className="inline-block px-8 py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold text-white text-lg transition"
+          >
+            Start Free Trial
+          </Link>
+          <p className="text-sm text-slate-500 mt-4">
+            7-day free trial · Cancel anytime
+          </p>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="border-t border-slate-800/50 py-12">
         <div className="max-w-5xl mx-auto px-6 text-center">
@@ -181,6 +209,8 @@ export default function AuditPage() {
           </p>
           <div className="flex items-center justify-center gap-6 text-sm text-slate-500">
             <Link href="/" className="hover:text-emerald-400 transition">Home</Link>
+            <Link href="/pricing" className="hover:text-emerald-400 transition">Pricing</Link>
+            <Link href="/resources" className="hover:text-emerald-400 transition">Resources</Link>
             <Link href="/login" className="hover:text-emerald-400 transition">Sign In</Link>
             <Link href="/privacy" className="hover:text-emerald-400 transition">Privacy</Link>
             <Link href="/terms" className="hover:text-emerald-400 transition">Terms</Link>

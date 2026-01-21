@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 const RESOURCES = [
   {
-    href: "/free-youtube-affiliate-link-checker",
+    href: "/audit",
     title: "Free YouTube Affiliate Link Checker",
     description: "Find broken links in your video descriptions in minutes. Free tool for YouTube creators.",
     icon: ExternalLink,
@@ -48,16 +48,16 @@ export default function Resources() {
             <span className="text-emerald-500">Medic</span>
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-sm text-slate-400">
+            <Link href="/" className="hover:text-white transition">Home</Link>
             <Link href="/audit" className="hover:text-white transition">Free Audit</Link>
-            <Link href="/#how-it-works" className="hover:text-white transition">How It Works</Link>
-            <Link href="/#pricing" className="hover:text-white transition">Pricing</Link>
+            <Link href="/pricing" className="hover:text-white transition">Pricing</Link>
             <Link href="/resources" className="text-white">Resources</Link>
           </nav>
           <Link
             href="/login"
-            className="text-sm text-emerald-400 hover:text-emerald-300 transition"
+            className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
           >
-            Sign In
+            Start Free Trial
           </Link>
         </div>
       </header>
@@ -147,10 +147,10 @@ export default function Resources() {
               <span className="text-emerald-500">Medic</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-slate-500">
+              <Link href="/" className="hover:text-emerald-400 transition">Home</Link>
+              <Link href="/pricing" className="hover:text-emerald-400 transition">Pricing</Link>
               <Link href="/privacy" className="hover:text-emerald-400 transition">Privacy</Link>
               <Link href="/terms" className="hover:text-emerald-400 transition">Terms</Link>
-              <Link href="/cookies" className="hover:text-emerald-400 transition">Cookies</Link>
-              <Link href="/refund" className="hover:text-emerald-400 transition">Refund</Link>
             </div>
           </div>
           <p className="text-center text-sm text-slate-600 mt-4">

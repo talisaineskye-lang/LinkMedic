@@ -23,9 +23,11 @@ export default async function Home() {
             <span className="text-emerald-500">Medic</span>
           </div>
           <nav className="hidden md:flex items-center gap-8 text-sm text-slate-400">
+            <Link href="/audit" className="hover:text-white transition-colors">Free Audit</Link>
             <a href="#problem" className="hover:text-white transition-colors">The Problem</a>
             <a href="#how-it-works" className="hover:text-white transition-colors">How It Works</a>
-            <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
+            <Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link>
+            <Link href="/resources" className="hover:text-white transition-colors">Resources</Link>
           </nav>
           <Link
             href="/login"
@@ -309,6 +311,9 @@ export default async function Home() {
               Affiliate link health monitoring for YouTube creators.
             </p>
             <div className="flex items-center gap-6 text-sm text-slate-500">
+              <Link href="/audit" className="hover:text-white transition-colors">Free Audit</Link>
+              <Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link>
+              <Link href="/resources" className="hover:text-white transition-colors">Resources</Link>
               <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
               <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
             </div>

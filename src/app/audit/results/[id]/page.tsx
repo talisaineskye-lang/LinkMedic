@@ -55,11 +55,17 @@ export default async function AuditResultsPage({ params }: PageProps) {
             <LinkIcon className="w-5 h-5 text-emerald-500" />
             <span className="text-emerald-500">Medic</span>
           </Link>
+          <nav className="hidden md:flex items-center gap-6 text-sm text-slate-400">
+            <Link href="/" className="hover:text-white transition">Home</Link>
+            <Link href="/audit" className="hover:text-white transition">Free Audit</Link>
+            <Link href="/pricing" className="hover:text-white transition">Pricing</Link>
+            <Link href="/resources" className="hover:text-white transition">Resources</Link>
+          </nav>
           <Link
-            href="/audit"
-            className="text-sm text-emerald-400 hover:text-emerald-300 transition"
+            href="/login"
+            className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
           >
-            Audit Your Channel →
+            Start Free Trial
           </Link>
         </div>
       </header>
@@ -100,6 +106,8 @@ export default async function AuditResultsPage({ params }: PageProps) {
           </p>
           <div className="flex items-center justify-center gap-6 text-sm text-slate-500">
             <Link href="/" className="hover:text-emerald-400 transition">Home</Link>
+            <Link href="/pricing" className="hover:text-emerald-400 transition">Pricing</Link>
+            <Link href="/resources" className="hover:text-emerald-400 transition">Resources</Link>
             <Link href="/privacy" className="hover:text-emerald-400 transition">Privacy</Link>
             <Link href="/terms" className="hover:text-emerald-400 transition">Terms</Link>
           </div>
