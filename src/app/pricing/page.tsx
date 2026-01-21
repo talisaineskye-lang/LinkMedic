@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Zap, TrendingUp, Bell } from 'lucide-react';
+import { Check, Zap, TrendingUp, Bell, Users, Shield, Download } from 'lucide-react';
 import { Link as LinkIcon } from 'lucide-react';
 import Link from 'next/link';
 
@@ -22,126 +22,82 @@ export default function Pricing() {
             <Link href="/resources" className="hover:text-white transition">Resources</Link>
           </nav>
           <Link
-            href="/login"
+            href="/audit"
             className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
           >
-            Start Free Trial
+            Start Free Audit
           </Link>
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-6 py-20">
+      <div className="max-w-7xl mx-auto px-6 py-20">
 
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-5xl font-bold mb-4">
-            Simple, Transparent Pricing
+            Stop Losing Money to Broken Links
           </h1>
           <p className="text-xl text-slate-400 max-w-2xl mx-auto">
-            Start recovering lost revenue from broken affiliate links in minutes.
-            Cancel anytime.
+            Start with a free audit. See exactly which affiliate links are costing you revenue.
           </p>
         </div>
 
-        {/* How It Works Section */}
-        <div className="mb-20">
-          <h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        {/* Pricing Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto mb-20">
 
-            {/* Step 1 */}
-            <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center">
-                <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-emerald-400">1</span>
-                </div>
+          {/* Solo Creator Plan */}
+          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur border-2 border-emerald-500/50 rounded-2xl p-8 shadow-2xl relative">
+
+            {/* Popular Badge */}
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+              <div className="px-4 py-1 bg-emerald-500 rounded-full text-sm font-semibold">
+                Most Popular
               </div>
-              <h3 className="font-semibold mb-2">Connect your YouTube channel</h3>
-              <p className="text-sm text-slate-400">Quick OAuth authentication</p>
             </div>
 
-            {/* Step 2 */}
-            <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center">
-                <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-emerald-400">2</span>
-                </div>
-              </div>
-              <h3 className="font-semibold mb-2">LinkMedic scans all video descriptions</h3>
-              <p className="text-sm text-slate-400">Automated link health checks</p>
-            </div>
-
-            {/* Step 3 */}
-            <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center">
-                <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-emerald-400">3</span>
-                </div>
-              </div>
-              <h3 className="font-semibold mb-2">Review and dead links are flagged</h3>
-              <p className="text-sm text-slate-400">See exactly what&apos;s broken</p>
-            </div>
-
-            {/* Step 4 */}
-            <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center">
-                <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-emerald-400">4</span>
-                </div>
-              </div>
-              <h3 className="font-semibold mb-2">Fix the highest-impact issues first</h3>
-              <p className="text-sm text-slate-400">Prioritized by revenue loss</p>
-            </div>
-
-          </div>
-
-          {/* Subtitle */}
-          <p className="text-center text-slate-400 mt-12 italic max-w-3xl mx-auto">
-            &quot;In one test channel, LinkMedic identified dozens of broken affiliate links across older
-            videos — representing hundreds in potential monthly revenue.&quot;
-          </p>
-        </div>
-
-        {/* Pricing Card */}
-        <div className="max-w-md mx-auto">
-          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur border border-slate-700/50 rounded-2xl p-8 shadow-2xl">
-
-            {/* Badge */}
-            <div className="inline-block px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded-full text-sm text-emerald-400 font-medium mb-6">
-              7-day free trial
-            </div>
-
-            {/* Product Name */}
-            <div className="mb-6">
-              <h3 className="text-2xl font-bold mb-2">Link<span className="text-emerald-400">Medic</span></h3>
-              <div className="flex items-baseline gap-2">
+            {/* Plan Header */}
+            <div className="mb-6 pt-4">
+              <h3 className="text-2xl font-bold mb-2">Solo Creator</h3>
+              <div className="flex items-baseline gap-2 mb-2">
                 <span className="text-5xl font-bold">$19</span>
                 <span className="text-slate-400">/month</span>
               </div>
-              <p className="text-slate-400 mt-2">$190 / year</p>
+              <p className="text-emerald-400 font-medium">or $190/year (save $38)</p>
             </div>
 
             {/* Description */}
             <p className="text-slate-300 mb-6">
-              Designed for serious creators with growing libraries
+              Perfect for full-time or serious part-time creators managing one channel.
             </p>
+
+            {/* Channel Limit */}
+            <div className="mb-6 p-3 bg-slate-700/30 rounded-lg border border-slate-600/50">
+              <p className="text-sm text-slate-300">
+                <strong className="text-slate-100">1 YouTube Channel</strong>
+              </p>
+            </div>
 
             {/* Features */}
             <ul className="space-y-3 mb-8">
               <li className="flex items-start gap-3">
                 <Check className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                <span className="text-slate-300">Monitor hundreds of videos</span>
+                <span className="text-slate-300">Unlimited video scans</span>
               </li>
               <li className="flex items-start gap-3">
                 <Check className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                <span className="text-slate-300">Weekly automated scans</span>
+                <span className="text-slate-300">24/7 Link Guard monitoring</span>
               </li>
               <li className="flex items-start gap-3">
                 <Check className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                <span className="text-slate-300">Revenue impact prioritization</span>
+                <span className="text-slate-300">Instant alerts when links break</span>
               </li>
               <li className="flex items-start gap-3">
                 <Check className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                <span className="text-slate-300">Email alerts</span>
+                <span className="text-slate-300">One-click bulk link replacement</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <Check className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                <span className="text-slate-300">Amazon out-of-stock detection</span>
               </li>
               <li className="flex items-start gap-3">
                 <Check className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
@@ -149,27 +105,164 @@ export default function Pricing() {
               </li>
               <li className="flex items-start gap-3">
                 <Check className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                <span className="text-slate-300">Export reports (CSV)</span>
+                <span className="text-slate-300">Revenue impact prioritization</span>
               </li>
             </ul>
 
             {/* CTA Button */}
             <Link
-              href="/login"
+              href="/audit"
               className="block w-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-4 px-6 rounded-lg transition-all shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 text-center"
             >
-              Start 7-Day Free Trial
+              Start Free Audit
             </Link>
 
             {/* Fine Print */}
             <p className="text-xs text-slate-400 text-center mt-4">
-              Cancel anytime · 14-day money-back guarantee
+              See your top broken links free · No credit card required
             </p>
+          </div>
+
+          {/* Business/Agency Plan */}
+          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur border border-slate-700/50 rounded-2xl p-8 shadow-xl">
+
+            {/* Plan Header */}
+            <div className="mb-6">
+              <h3 className="text-2xl font-bold mb-2">Business / Agency</h3>
+              <div className="flex items-baseline gap-2 mb-2">
+                <span className="text-5xl font-bold">$49</span>
+                <span className="text-slate-400">/month</span>
+              </div>
+              <p className="text-slate-400 font-medium">or $490/year (save $98)</p>
+            </div>
+
+            {/* Description */}
+            <p className="text-slate-300 mb-6">
+              For agencies and creators managing multiple channels or clients.
+            </p>
+
+            {/* Channel Limit */}
+            <div className="mb-6 p-3 bg-slate-700/30 rounded-lg border border-slate-600/50">
+              <p className="text-sm text-slate-300">
+                <strong className="text-slate-100">Up to 5 YouTube Channels</strong>
+              </p>
+            </div>
+
+            {/* Features */}
+            <ul className="space-y-3 mb-8">
+              <li className="flex items-start gap-3">
+                <Check className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                <span className="text-slate-300"><strong>Everything in Solo Creator</strong></span>
+              </li>
+              <li className="flex items-start gap-3">
+                <Users className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                <span className="text-slate-300">Team access & collaboration</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <Download className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                <span className="text-slate-300">Exportable PDF revenue reports</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <Shield className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                <span className="text-slate-300">Priority support</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <Check className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                <span className="text-slate-300">White-label client reports (coming soon)</span>
+              </li>
+            </ul>
+
+            {/* CTA Button */}
+            <Link
+              href="/audit"
+              className="block w-full bg-slate-700 hover:bg-slate-600 text-white font-semibold py-4 px-6 rounded-lg transition-all border border-slate-600/50 text-center"
+            >
+              Start Free Audit
+            </Link>
+
+            {/* Fine Print */}
+            <p className="text-xs text-slate-400 text-center mt-4">
+              Perfect for faceless channels & creator managers
+            </p>
+          </div>
+
+        </div>
+
+        {/* How The Funnel Works */}
+        <div className="max-w-4xl mx-auto mb-20">
+          <h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+
+            {/* Step 1 */}
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center">
+                <span className="text-2xl font-bold text-emerald-400">1</span>
+              </div>
+              <h3 className="font-semibold mb-2">Free Calculator</h3>
+              <p className="text-sm text-slate-400">Enter your channel URL to estimate revenue loss</p>
+              <p className="text-xs text-emerald-400 mt-2 font-medium">$0</p>
+            </div>
+
+            {/* Step 2 */}
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center">
+                <span className="text-2xl font-bold text-emerald-400">2</span>
+              </div>
+              <h3 className="font-semibold mb-2">See Your Leak</h3>
+              <p className="text-sm text-slate-400">View estimated annual revenue loss</p>
+              <p className="text-xs text-emerald-400 mt-2 font-medium">$0</p>
+            </div>
+
+            {/* Step 3 */}
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center">
+                <span className="text-2xl font-bold text-emerald-400">3</span>
+              </div>
+              <h3 className="font-semibold mb-2">Free Audit</h3>
+              <p className="text-sm text-slate-400">Connect with Google to see top 3-5 broken links</p>
+              <p className="text-xs text-emerald-400 mt-2 font-medium">$0 (No CC)</p>
+            </div>
+
+            {/* Step 4 */}
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center">
+                <span className="text-2xl font-bold text-emerald-400">4</span>
+              </div>
+              <h3 className="font-semibold mb-2">Fix Everything</h3>
+              <p className="text-sm text-slate-400">Upgrade to see all links + auto-fix</p>
+              <p className="text-xs text-emerald-400 mt-2 font-medium">$19/mo</p>
+            </div>
+
           </div>
         </div>
 
-        {/* Trust Badges / Features */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-20 max-w-4xl mx-auto">
+        {/* ROI Calculator */}
+        <div className="max-w-3xl mx-auto mb-20 bg-slate-800/30 border border-emerald-500/30 rounded-2xl p-8">
+          <h2 className="text-2xl font-bold text-center mb-6">The ROI is a No-Brainer</h2>
+
+          <div className="space-y-4 text-slate-300">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-700/50">
+              <span>Average creator revenue loss:</span>
+              <span className="text-xl font-bold text-red-400">$1,500/year</span>
+            </div>
+            <div className="flex justify-between items-center pb-3 border-b border-slate-700/50">
+              <span>LinkMedic cost (annual):</span>
+              <span className="text-xl font-bold">$228/year</span>
+            </div>
+            <div className="flex justify-between items-center pt-2">
+              <span className="text-lg font-semibold">Your ROI:</span>
+              <span className="text-3xl font-bold text-emerald-400">6.5x</span>
+            </div>
+          </div>
+
+          <p className="text-center text-sm text-slate-400 mt-6">
+            If you recover just <strong>$20/month</strong> in lost commissions, LinkMedic pays for itself.
+          </p>
+        </div>
+
+        {/* Trust Badges */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-20">
 
           <div className="text-center p-6">
             <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-emerald-500/10 flex items-center justify-center">
@@ -177,7 +270,7 @@ export default function Pricing() {
             </div>
             <h4 className="font-semibold mb-2">Instant Setup</h4>
             <p className="text-sm text-slate-400">
-              Connect your channel and start scanning in under 60 seconds
+              Connect your channel and scan in under 60 seconds
             </p>
           </div>
 
@@ -185,7 +278,7 @@ export default function Pricing() {
             <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-emerald-500/10 flex items-center justify-center">
               <TrendingUp className="w-6 h-6 text-emerald-400" />
             </div>
-            <h4 className="font-semibold mb-2">Recover Lost Revenue</h4>
+            <h4 className="font-semibold mb-2">Recover Revenue</h4>
             <p className="text-sm text-slate-400">
               Fix broken links and stop leaving money on the table
             </p>
@@ -195,68 +288,67 @@ export default function Pricing() {
             <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-emerald-500/10 flex items-center justify-center">
               <Bell className="w-6 h-6 text-emerald-400" />
             </div>
-            <h4 className="font-semibold mb-2">Stay Informed</h4>
+            <h4 className="font-semibold mb-2">24/7 Monitoring</h4>
             <p className="text-sm text-slate-400">
-              Get notified when links break so you can fix them fast
+              Get instant alerts when links break
             </p>
           </div>
 
         </div>
 
         {/* FAQ Section */}
-        <div className="mt-24 max-w-3xl mx-auto">
+        <div className="max-w-3xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12">Frequently Asked Questions</h2>
 
           <div className="space-y-6">
 
             <div className="bg-slate-800/30 border border-slate-700/50 rounded-lg p-6">
-              <h3 className="font-semibold mb-2">How does the 7-day free trial work?</h3>
+              <h3 className="font-semibold mb-2">Do I need a credit card for the free audit?</h3>
               <p className="text-slate-400">
-                Sign up with Google, connect your YouTube channel, and start scanning immediately.
-                After 7 days, you&apos;ll be prompted to add payment to continue.
+                No! The free audit shows you the top 3-5 broken links costing you the most money.
+                No credit card required. You only add payment when you&apos;re ready to see all broken links
+                and enable automatic monitoring.
+              </p>
+            </div>
+
+            <div className="bg-slate-800/30 border border-slate-700/50 rounded-lg p-6">
+              <h3 className="font-semibold mb-2">Why is the Solo plan $19 and not cheaper?</h3>
+              <p className="text-slate-400">
+                If you&apos;re not losing at least $20/month in affiliate commissions, you&apos;re not our target customer yet.
+                LinkMedic is for serious creators with an actual revenue problem to solve. The ROI is 6.5x or better.
               </p>
             </div>
 
             <div className="bg-slate-800/30 border border-slate-700/50 rounded-lg p-6">
               <h3 className="font-semibold mb-2">Can I cancel anytime?</h3>
               <p className="text-slate-400">
-                Yes! Cancel from your account settings or email us at hello@linkmedic.pro.
+                Absolutely. Cancel from your account settings or email us at hello@linkmedic.pro.
                 You&apos;ll retain access until the end of your billing period. We also offer a 14-day
                 money-back guarantee for new subscribers.
               </p>
             </div>
 
             <div className="bg-slate-800/30 border border-slate-700/50 rounded-lg p-6">
-              <h3 className="font-semibold mb-2">How many videos can I monitor?</h3>
+              <h3 className="font-semibold mb-2">What&apos;s the difference between monthly and annual pricing?</h3>
               <p className="text-slate-400">
-                Unlimited! Whether you have 50 videos or 5,000, LinkMedic scans them all.
-                We&apos;re designed for creators with growing catalogs.
+                Annual plans save you 2 months of subscription costs. Solo: $190/year (vs $228/year monthly).
+                Business: $490/year (vs $588/year monthly). Perfect if you&apos;re committed to maintaining link health long-term.
               </p>
             </div>
 
             <div className="bg-slate-800/30 border border-slate-700/50 rounded-lg p-6">
-              <h3 className="font-semibold mb-2">What affiliate platforms do you support?</h3>
+              <h3 className="font-semibold mb-2">I manage 3 channels. Do I need the Business plan?</h3>
               <p className="text-slate-400">
-                We check all links, but we&apos;re especially good at Amazon Associates, LTK (LikeToKnow.it),
-                and other major affiliate programs. If a link is broken, we&apos;ll flag it regardless of platform.
+                Yes. The Solo plan is limited to 1 channel. Business plan supports up to 5 channels,
+                plus you get team access and exportable PDF reports—perfect for showing clients their ROI.
               </p>
             </div>
 
             <div className="bg-slate-800/30 border border-slate-700/50 rounded-lg p-6">
-              <h3 className="font-semibold mb-2">How accurate are the revenue loss estimates?</h3>
+              <h3 className="font-semibold mb-2">What happens if I have more than 5 channels?</h3>
               <p className="text-slate-400">
-                We use conservative industry benchmarks (CTR, conversion rates, average order value)
-                to estimate potential losses. These are approximations to help you prioritize fixes.
-                Your actual impact may vary based on your audience and products.
-              </p>
-            </div>
-
-            <div className="bg-slate-800/30 border border-slate-700/50 rounded-lg p-6">
-              <h3 className="font-semibold mb-2">Is my YouTube data safe?</h3>
-              <p className="text-slate-400">
-                Absolutely. We only access public video metadata (titles, descriptions, views) via
-                YouTube&apos;s official API. We never access private videos, comments, or personal data.
-                See our <Link href="/privacy" className="text-emerald-400 hover:underline">Privacy Policy</Link> for details.
+                Contact us at hello@linkmedic.pro for enterprise pricing. We can create a custom plan
+                for larger agencies or networks managing 10+ channels.
               </p>
             </div>
 
@@ -267,15 +359,15 @@ export default function Pricing() {
         <div className="text-center mt-20 py-12 border-t border-slate-700/50">
           <h2 className="text-3xl font-bold mb-4">Ready to stop losing money?</h2>
           <p className="text-xl text-slate-400 mb-8">
-            Start your free trial and see which links are costing you revenue.
+            Start with a free audit. See your top broken links in 60 seconds.
           </p>
           <Link
-            href="/login"
+            href="/audit"
             className="inline-block bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-4 px-8 rounded-lg transition-all shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40"
           >
-            Start Free Trial
+            Run Free Audit
           </Link>
-          <p className="text-sm text-slate-400 mt-4">7-day free trial · Cancel anytime</p>
+          <p className="text-sm text-slate-400 mt-4">No credit card required · See results instantly</p>
         </div>
 
       </div>
