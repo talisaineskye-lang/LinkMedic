@@ -6,14 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { ExportDescriptionButton } from "@/components/export-description-button";
-
-type AffiliateLink = {
-  id: string;
-  originalUrl: string;
-  merchant: string | null;
-  status: "OK" | "OOS" | "OOS_THIRD_PARTY" | "NOT_FOUND" | "MISSING_TAG" | "REDIRECT" | "UNKNOWN";
-  lastCheckedAt: Date | null;
-};
+import type { LinkStatus } from "@prisma/client";
 
 export default async function VideoDetailPage({
   params,
@@ -158,8 +151,8 @@ export default async function VideoDetailPage({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-700/30">
-              {video.affiliateLinks.map((link: AffiliateLink) => {
-                const isBroken = link.status === "NOT_FOUND" || link.status === "OOS";
+              {video.affiliateLinks.map((link) => {
+                const isBroken = link.status === "NOT_FOUND" || link.status === "SEARCH_REDIRECT" || link.status === "OOS" || link.status === "MISSING_TAG";
                 const estimatedLoss = isBroken
                   ? calculateEstimatedLoss(video.viewCount, revenueSettings)
                   : 0;
@@ -187,17 +180,27 @@ export default async function VideoDetailPage({
                         className={`inline-flex px-2 py-1 text-xs font-medium rounded-full border ${
                           link.status === "OK"
                             ? "bg-emerald-950/30 border-emerald-700/50 text-emerald-400"
-                            : link.status === "NOT_FOUND"
+                            : link.status === "NOT_FOUND" || link.status === "MISSING_TAG"
                             ? "bg-red-950/30 border-red-700/50 text-red-400"
-                            : link.status === "OOS"
+                            : link.status === "SEARCH_REDIRECT" || link.status === "REDIRECT"
+                            ? "bg-orange-950/30 border-orange-700/50 text-orange-400"
+                            : link.status === "OOS" || link.status === "OOS_THIRD_PARTY"
                             ? "bg-amber-950/30 border-amber-700/50 text-amber-400"
                             : "bg-slate-700/30 border-slate-600/50 text-slate-400"
                         }`}
                       >
                         {link.status === "NOT_FOUND"
                           ? "Broken"
+                          : link.status === "SEARCH_REDIRECT"
+                          ? "Redirect Error"
+                          : link.status === "MISSING_TAG"
+                          ? "No Tag"
                           : link.status === "OOS"
                           ? "Out of Stock"
+                          : link.status === "OOS_THIRD_PARTY"
+                          ? "3rd Party"
+                          : link.status === "REDIRECT"
+                          ? "Redirect"
                           : link.status}
                       </span>
                     </td>
