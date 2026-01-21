@@ -238,76 +238,30 @@ export default async function Home() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {/* Solo Creator */}
-            <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur border-2 border-emerald-500/50 rounded-2xl p-8 relative">
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                <div className="px-4 py-1 bg-emerald-500 rounded-full text-sm font-semibold text-white">
-                  Most Popular
-                </div>
-              </div>
-
-              <div className="pt-4 mb-6">
-                <h3 className="text-2xl font-bold text-white mb-2">Solo Creator</h3>
-                <div className="flex items-baseline gap-2 mb-2">
-                  <span className="text-5xl font-bold text-white">$19</span>
-                  <span className="text-slate-400">/month</span>
-                </div>
-                <p className="text-emerald-400 font-medium">or $190/year (save $38)</p>
-              </div>
-
-              <p className="text-slate-300 mb-6">
-                Perfect for creators managing one channel.
-              </p>
-
-              <ul className="space-y-3 mb-8">
-                {[
-                  "1 YouTube Channel",
-                  "Unlimited video scans",
-                  "24/7 Link Guard monitoring",
-                  "AI-powered link suggestions",
-                  "Revenue impact prioritization",
-                ].map((feature, i) => (
-                  <li key={i} className="flex items-center gap-3 text-slate-300">
-                    <Check className="w-5 h-5 text-emerald-500 flex-shrink-0" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-
-              <Link
-                href="/audit"
-                className="block w-full bg-emerald-500 hover:bg-emerald-600 text-white text-center py-4 rounded-xl font-semibold transition-all shadow-lg shadow-emerald-500/20"
-              >
-                Start Free Audit
-              </Link>
-            </div>
-
-            {/* Business/Agency */}
+          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {/* Tier 1: The Auditor (Free) */}
             <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur border border-slate-700/50 rounded-2xl p-8">
               <div className="mb-6">
-                <h3 className="text-2xl font-bold text-white mb-2">Business / Agency</h3>
+                <h3 className="text-2xl font-bold text-slate-300 mb-2">The Auditor</h3>
                 <div className="flex items-baseline gap-2 mb-2">
-                  <span className="text-5xl font-bold text-white">$49</span>
+                  <span className="text-5xl font-bold text-white">$0</span>
                   <span className="text-slate-400">/month</span>
                 </div>
-                <p className="text-slate-400 font-medium">or $490/year (save $98)</p>
+                <p className="text-slate-500 font-medium">Diagnostic</p>
               </div>
 
-              <p className="text-slate-300 mb-6">
-                For agencies managing multiple channels.
+              <p className="text-slate-400 mb-6">
+                See what&apos;s leaking before you commit.
               </p>
 
               <ul className="space-y-3 mb-8">
                 {[
-                  "Up to 5 YouTube Channels",
-                  "Everything in Solo Creator",
-                  "Team access & collaboration",
-                  "Exportable PDF reports",
-                  "Priority support",
+                  "Scan last 15 videos",
+                  "Basic link status (404s)",
+                  "One-time report",
                 ].map((feature, i) => (
-                  <li key={i} className="flex items-center gap-3 text-slate-300">
-                    <Check className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                  <li key={i} className="flex items-center gap-3 text-slate-400">
+                    <Check className="w-5 h-5 text-slate-500 flex-shrink-0" />
                     {feature}
                   </li>
                 ))}
@@ -319,6 +273,88 @@ export default async function Home() {
               >
                 Start Free Audit
               </Link>
+            </div>
+
+            {/* Tier 2: The Specialist ($19/mo) - RECOMMENDED */}
+            <div className="bg-gradient-to-br from-emerald-950/50 to-slate-900/50 backdrop-blur border-2 border-emerald-500/50 rounded-2xl p-8 relative">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                <div className="px-4 py-1 bg-emerald-500 rounded-full text-sm font-semibold text-white">
+                  PAYS FOR ITSELF
+                </div>
+              </div>
+
+              <div className="pt-4 mb-6">
+                <h3 className="text-2xl font-bold text-emerald-400 mb-2">The Specialist</h3>
+                <div className="flex items-baseline gap-2 mb-2">
+                  <span className="text-5xl font-bold text-white">$19</span>
+                  <span className="text-slate-400">/month</span>
+                </div>
+                <p className="text-emerald-400 font-medium">Recovery & Protection</p>
+              </div>
+
+              <p className="text-slate-300 mb-6">
+                Full protection for serious creators.
+              </p>
+
+              <ul className="space-y-3 mb-8">
+                {[
+                  "Scan Full Channel History",
+                  "Deep AI Detection (OOS, Redirects)",
+                  "One-Click AI Fix Suggestions",
+                  "24/7 \"Link Guard\" Monitoring",
+                  "Weekly Revenue Alerts",
+                ].map((feature, i) => (
+                  <li key={i} className="flex items-center gap-3 text-slate-300">
+                    <Check className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+
+              <Link
+                href="/login"
+                className="block w-full bg-emerald-500 hover:bg-emerald-600 text-white text-center py-4 rounded-xl font-semibold transition-all shadow-lg shadow-emerald-500/20"
+              >
+                Start 7-Day Free Trial
+              </Link>
+              <p className="text-xs text-slate-500 text-center mt-3">No charge today · Cancel anytime</p>
+            </div>
+
+            {/* Tier 3: The Portfolio Manager ($49/mo) - Greyed Out */}
+            <div className="bg-gradient-to-br from-slate-800/30 to-slate-900/30 backdrop-blur border border-slate-700/30 rounded-2xl p-8 opacity-60">
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-slate-400 mb-2">The Portfolio Manager</h3>
+                <div className="flex items-baseline gap-2 mb-2">
+                  <span className="text-5xl font-bold text-slate-400">$49</span>
+                  <span className="text-slate-500">/month</span>
+                </div>
+                <p className="text-slate-500 font-medium">Scale</p>
+              </div>
+
+              <p className="text-slate-500 mb-6">
+                For agencies managing multiple channels.
+              </p>
+
+              <ul className="space-y-3 mb-8">
+                {[
+                  "Manage up to 10 Channels",
+                  "Aggregate Dashboard",
+                  "Agency PDF Reporting",
+                  "Team Access",
+                ].map((feature, i) => (
+                  <li key={i} className="flex items-center gap-3 text-slate-500">
+                    <Check className="w-5 h-5 text-slate-600 flex-shrink-0" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+
+              <button
+                disabled
+                className="block w-full bg-slate-700/50 text-slate-500 text-center py-4 rounded-xl font-semibold cursor-not-allowed"
+              >
+                Coming Soon
+              </button>
             </div>
           </div>
 

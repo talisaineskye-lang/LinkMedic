@@ -109,11 +109,10 @@ const ERROR_PAGE_INDICATORS = [
 // ============================================
 // CONFIGURATION
 // ============================================
-const DEFAULT_TIMEOUT = 15000; // 15 seconds (increased for redirect chains)
 const MAX_RETRIES = 2;
 const RETRY_DELAY = 1000; // 1 second
-const MIN_JITTER_DELAY = 2000; // 2 seconds minimum between checks
-const MAX_JITTER_DELAY = 4000; // 4 seconds maximum between checks
+const MIN_JITTER_DELAY = 1000; // 1 second minimum between checks (ScrapingBee handles rate limiting)
+const MAX_JITTER_DELAY = 2000; // 2 seconds maximum between checks
 
 // Amazon affiliate tag regex: tag=something-20 (or similar formats)
 const AMAZON_TAG_REGEX = /[?&]tag=[a-zA-Z0-9_-]+-[0-9]{2}/;
@@ -217,49 +216,99 @@ function hadProductIntent(originalUrl: string): boolean {
          originalUrl.includes("/exec/obidos/ASIN/");
 }
 
+// ============================================
+// SCRAPINGBEE INTEGRATION
+// ============================================
+
+interface ShieldedDataResult {
+  body: string | null;
+  status: number;
+  finalUrl: string;
+}
+
 /**
- * Browser data fetcher - wraps fetch for easy proxy swap later
- * TODO: Swap in ScrapingBee/ZenRows API here when ready
+ * Fetches URL data through ScrapingBee's premium proxy network
+ * - Uses residential IPs to bypass Amazon bot detection
+ * - Returns the final resolved URL after all redirects (crucial for search fallback detection)
+ * - Falls back to direct fetch if ScrapingBee is unavailable
  */
-async function getBrowserData(
-  url: string,
-  options: RequestInit = {},
-  timeout: number = DEFAULT_TIMEOUT
-): Promise<Response> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
+async function getShieldedData(targetUrl: string): Promise<ShieldedDataResult> {
+  const apiKey = process.env.SCRAPINGBEE_API_KEY;
+
+  // If no API key, fall back to direct fetch (for development/testing)
+  if (!apiKey) {
+    console.warn("[LinkChecker] No SCRAPINGBEE_API_KEY found, using direct fetch (may be blocked by Amazon)");
+    return getDirectData(targetUrl);
+  }
 
   try {
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal,
-      redirect: "follow",
+    // Build ScrapingBee API URL with params
+    const params = new URLSearchParams({
+      api_key: apiKey,
+      url: targetUrl,
+      premium_proxy: "true",           // Uses residential IPs to bypass Amazon blocks
+      country_code: "us",              // Keeps results consistent
+      return_page_source: "true",
+      transparent_status_code: "true", // Returns the 404/200 code from Amazon, not ScrapingBee
+    });
+
+    const response = await fetch(`https://app.scrapingbee.com/api/v1/?${params.toString()}`, {
+      method: "GET",
       headers: {
-        "User-Agent": getRandomUserAgent(),
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Cache-Control": "no-cache",
-        "Pragma": "no-cache",
-        "Sec-Ch-Ua": '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-        "Sec-Ch-Ua-Mobile": "?0",
-        "Sec-Ch-Ua-Platform": '"Windows"',
-        "Sec-Fetch-Dest": "document",
-        "Sec-Fetch-Mode": "navigate",
-        "Sec-Fetch-Site": "none",
-        "Sec-Fetch-User": "?1",
-        "Upgrade-Insecure-Requests": "1",
-        ...options.headers,
+        "Accept": "text/html",
       },
     });
-    return response;
-  } finally {
-    clearTimeout(timeoutId);
+
+    // ScrapingBee returns the final URL after redirects in the 'Spb-resolved-url' header
+    const finalUrl = response.headers.get("spb-resolved-url") || targetUrl;
+    const body = await response.text();
+
+    console.log(`[ScrapingBee] ${targetUrl.substring(0, 50)}... -> ${response.status} | Final: ${finalUrl.substring(0, 60)}...`);
+
+    return {
+      body,
+      status: response.status,
+      finalUrl,
+    };
+  } catch (error) {
+    console.error("[ScrapingBee Error]", error instanceof Error ? error.message : error);
+    // Fall back to direct fetch on ScrapingBee error
+    return getDirectData(targetUrl);
   }
 }
 
-// Legacy alias for backwards compatibility
-const fetchWithTimeout = getBrowserData;
+/**
+ * Direct fetch fallback when ScrapingBee is unavailable
+ * Uses User-Agent rotation but may be blocked by Amazon
+ */
+async function getDirectData(targetUrl: string): Promise<ShieldedDataResult> {
+  try {
+    const response = await fetch(targetUrl, {
+      method: "GET",
+      redirect: "follow",
+      headers: {
+        "User-Agent": getRandomUserAgent(),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+      },
+    });
+
+    const body = await response.text();
+
+    return {
+      body,
+      status: response.status,
+      finalUrl: response.url,
+    };
+  } catch (error) {
+    console.error("[DirectFetch Error]", error instanceof Error ? error.message : error);
+    return {
+      body: null,
+      status: 500,
+      finalUrl: targetUrl,
+    };
+  }
+}
 
 /**
  * Helper to create a LinkCheckResult with proper structure
@@ -319,13 +368,18 @@ export async function checkLink(
 
     try {
       // ============================================
-      // PHASE 1: UNFURLING - Follow all redirects
+      // PHASE 1: UNFURLING - Follow all redirects via ScrapingBee
       // ============================================
-      // Always use GET for Amazon to capture body content
-      const response = await getBrowserData(url, { method: "GET" });
-      const httpStatus = response.status;
-      const finalUrl = response.url;
-      const html = await response.text();
+      // ScrapingBee returns the final resolved URL in headers
+      const shieldedResult = await getShieldedData(url);
+      const httpStatus = shieldedResult.status;
+      const finalUrl = shieldedResult.finalUrl;
+      const html = shieldedResult.body || "";
+
+      // If ScrapingBee returned no body, treat as error
+      if (!shieldedResult.body) {
+        throw new Error("Empty response body from proxy");
+      }
 
       // ============================================
       // PHASE 2: HTTP STATUS CHECK
