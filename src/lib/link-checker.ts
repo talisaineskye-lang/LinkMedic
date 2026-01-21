@@ -337,13 +337,13 @@ function createResult(
 /**
  * LinkMedic Bot 2.0 - Enhanced link checker with full detection matrix
  *
- * Detection Priority:
- * 1. Unfurling: Follow all redirects to final URL
- * 2. Search Fallback: Check if redirected to search page (Soft 404)
- * 3. Missing Tag: Check if affiliate tag was stripped
- * 4. HTTP Status: Check for 4xx/5xx errors
- * 5. Dog Page: Check for Amazon's "looking for something?" page
- * 6. OOS Detection: Check for out of stock indicators
+ * Detection Priority (order matters!):
+ * 1. Unfurling: Follow all redirects to final URL via ScrapingBee
+ * 2. Search Fallback: Check finalUrl for /s?k= or /s/ref= (BEFORE status code!)
+ * 3. HTTP Status: Check for 4xx/5xx errors
+ * 4. Dog Page: Check for Amazon's "looking for something?" page
+ * 5. Missing Tag: Check if affiliate tag was stripped
+ * 6. OOS Detection: Check for "currently unavailable" indicators
  * 7. Third Party: Check for "available from these sellers"
  *
  * @param url - The URL to check
@@ -382,7 +382,22 @@ export async function checkLink(
       }
 
       // ============================================
-      // PHASE 2: HTTP STATUS CHECK
+      // PHASE 2: SEARCH FALLBACK DETECTION (Soft 404) - CHECK FIRST!
+      // ============================================
+      // This MUST come before HTTP status check because search redirects
+      // often return 200 OK but are actually broken product links
+      if (isSearchFallback(finalUrl)) {
+        return createResult(
+          originalUrl,
+          "NOT_FOUND",
+          "Search Fallback - Amazon redirected to search results",
+          httpStatus,
+          finalUrl
+        );
+      }
+
+      // ============================================
+      // PHASE 3: HTTP STATUS CHECK
       // ============================================
       // Terminal 404/410 - Not found
       if (httpStatus === 404 || httpStatus === 410) {
@@ -404,23 +419,6 @@ export async function checkLink(
           httpStatus,
           finalUrl
         );
-      }
-
-      // ============================================
-      // PHASE 3: SEARCH FALLBACK DETECTION (Soft 404)
-      // ============================================
-      // Check if a product link was redirected to search results
-      if (isSearchFallback(finalUrl)) {
-        // If original URL was a product page but ended up on search, it's a soft 404
-        if (originalHadProduct || isAmazon) {
-          return createResult(
-            originalUrl,
-            "NOT_FOUND",
-            "Search Fallback - Product redirected to search results",
-            httpStatus,
-            finalUrl
-          );
-        }
       }
 
       // ============================================
