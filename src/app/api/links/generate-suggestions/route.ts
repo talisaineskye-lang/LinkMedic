@@ -73,15 +73,14 @@ export async function POST(request: Request) {
       });
     } else {
       // Get all broken links without suggestions for this user
-      // Include both "amazon" and "unknown" merchants (unknown may be Amazon links that weren't detected)
+      // Don't filter by merchant - we'll check isAmazonUrl in the loop
+      // This catches Amazon links that were incorrectly classified during initial import
       linksToProcess = await prisma.affiliateLink.findMany({
         where: {
           video: { userId: session.user.id },
           status: { in: BROKEN_STATUSES },
           isFixed: false,
           suggestedLink: null, // Only links without suggestions
-          // Include amazon and unknown (unknown may be Amazon links from before proper detection)
-          merchant: { in: ["amazon", "unknown"] },
         },
         select: {
           id: true,
@@ -102,11 +101,36 @@ export async function POST(request: Request) {
     console.log(`[generate-suggestions] Found ${linksToProcess.length} links to process`);
 
     if (linksToProcess.length === 0) {
+      // Debug: Check why no links found
+      const debugCounts = await prisma.affiliateLink.groupBy({
+        by: ['status', 'merchant'],
+        where: {
+          video: { userId: session.user.id },
+          isFixed: false,
+        },
+        _count: true,
+      });
+      console.log(`[generate-suggestions] Debug - Link counts by status/merchant:`, JSON.stringify(debugCounts, null, 2));
+
+      const linksWithSuggestions = await prisma.affiliateLink.count({
+        where: {
+          video: { userId: session.user.id },
+          status: { in: BROKEN_STATUSES },
+          isFixed: false,
+          suggestedLink: { not: null },
+        },
+      });
+      console.log(`[generate-suggestions] Debug - Links already with suggestions: ${linksWithSuggestions}`);
+
       return NextResponse.json({
         success: true,
         processed: 0,
         generated: 0,
         message: "No links to process",
+        debug: process.env.NODE_ENV === "development" ? {
+          statusCounts: debugCounts,
+          alreadyHaveSuggestions: linksWithSuggestions,
+        } : undefined,
       });
     }
 
@@ -246,13 +270,14 @@ export async function GET() {
       LinkStatus.MISSING_TAG,
     ];
 
+    // Count all broken links without suggestions
+    // We check isAmazonUrl during generation, so don't filter by merchant here
     const count = await prisma.affiliateLink.count({
       where: {
         video: { userId: session.user.id },
         status: { in: BROKEN_STATUSES },
         isFixed: false,
         suggestedLink: null,
-        merchant: { in: ["amazon", "unknown"] },
       },
     });
 

@@ -1,8 +1,18 @@
 import Anthropic from "@anthropic-ai/sdk";
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+// Initialize Anthropic client lazily to ensure env vars are loaded
+let anthropicClient: Anthropic | null = null;
+
+function getAnthropicClient(): Anthropic {
+  if (!anthropicClient) {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    console.log(`[claude] Initializing Anthropic client, API key ${apiKey ? `present (${apiKey.slice(0, 8)}...)` : 'MISSING!'}`);
+    anthropicClient = new Anthropic({
+      apiKey: apiKey,
+    });
+  }
+  return anthropicClient;
+}
 
 interface ProductSuggestion {
   productName: string;
@@ -84,6 +94,7 @@ ${asin ? `Original ASIN: ${asin}` : ""}
     `.trim();
 
     console.log(`[claude] Calling Anthropic API...`);
+    const anthropic = getAnthropicClient();
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 500,
@@ -96,25 +107,24 @@ ${context}
 
 The Amazon product at this URL is no longer available (broken link, discontinued, or out of stock).
 
-Based on the video context and URL, identify:
-1. What the original product likely was
-2. A current equivalent product available on Amazon in 2025/2026
+Your task:
+1. Analyze the URL and video context to understand what product category was originally linked
+2. Suggest a good SEARCH QUERY that will find similar/replacement products on Amazon
+
+IMPORTANT:
+- Provide a concise, effective Amazon search query (2-6 words)
+- Focus on the product TYPE and key features, not specific brand/model
+- Example: "wireless gaming headset" or "mechanical keyboard RGB"
+- Even if uncertain, provide your best guess based on the video context
 
 Respond in this exact JSON format only (no markdown, no explanation):
 {
   "originalProduct": "what you think the original product was",
-  "suggestedProduct": "name of the current equivalent product",
-  "suggestedAsin": "the ASIN (10-character code) if you know it, otherwise null",
-  "reason": "brief explanation of why this is a good replacement"
+  "suggestedSearch": "concise Amazon search query to find similar products",
+  "reason": "brief explanation"
 }
 
-If you cannot determine a suitable replacement, respond with:
-{
-  "originalProduct": "unknown",
-  "suggestedProduct": null,
-  "suggestedAsin": null,
-  "reason": "explanation of why no suggestion could be made"
-}`,
+Only return suggestedSearch as null if absolutely no product context can be determined.`,
         },
       ],
     });
@@ -125,7 +135,7 @@ If you cannot determine a suitable replacement, respond with:
     const responseText =
       message.content[0].type === "text" ? message.content[0].text : "";
 
-    console.log(`[claude] Raw response: ${responseText.slice(0, 200)}...`);
+    console.log(`[claude] Raw response: ${responseText}`);
 
     // Try to parse as JSON
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
@@ -135,20 +145,31 @@ If you cannot determine a suitable replacement, respond with:
     }
 
     const parsed = JSON.parse(jsonMatch[0]);
-    console.log(`[claude] Parsed response:`, JSON.stringify(parsed).slice(0, 200));
+    console.log(`[claude] Parsed response:`, JSON.stringify(parsed, null, 2));
 
-    if (!parsed.suggestedProduct) {
-      console.log(`[claude] No suggestedProduct in response`);
+    // Support both old format (suggestedProduct) and new format (suggestedSearch)
+    const searchQuery = parsed.suggestedSearch || parsed.suggestedProduct;
+
+    if (!searchQuery) {
+      console.log(`[claude] No search query in response - Claude returned null suggestion`);
+      console.log(`[claude] Original product guess: ${parsed.originalProduct}`);
+      console.log(`[claude] Reason: ${parsed.reason}`);
       return null;
     }
 
     return {
-      productName: parsed.suggestedProduct,
-      asin: parsed.suggestedAsin || null,
+      productName: searchQuery,
+      asin: null, // Never use ASIN - always use search links
       reason: parsed.reason || "",
     };
   } catch (error) {
     console.error("[claude] Error getting suggestion from Claude:", error);
+    // Log more details about the error
+    if (error instanceof Error) {
+      console.error("[claude] Error name:", error.name);
+      console.error("[claude] Error message:", error.message);
+      console.error("[claude] Error stack:", error.stack);
+    }
     return null;
   }
 }
@@ -211,18 +232,12 @@ export async function generateSuggestedLink(
     return null;
   }
 
-  console.log(`[claude] Got suggestion: ${suggestion.productName}, ASIN: ${suggestion.asin || 'none'}`);
+  console.log(`[claude] Got suggestion: ${suggestion.productName}`);
 
-  // If Claude provided an ASIN, use it directly
-  if (suggestion.asin) {
-    const link = buildAmazonAffiliateLink(suggestion.asin, affiliateTag);
-    console.log(`[claude] Built affiliate link: ${link}`);
-    return link;
-  }
-
-  // Otherwise, build a search link with the suggested product name
+  // Always use search links - they're more reliable than guessed ASINs
+  // Search links will show relevant products and always work
   const searchLink = buildAmazonSearchLink(suggestion.productName, affiliateTag);
-  console.log(`[claude] Built search link: ${searchLink.slice(0, 80)}...`);
+  console.log(`[claude] Built search link: ${searchLink}`);
   return searchLink;
 }
 
