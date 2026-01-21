@@ -1,6 +1,6 @@
 import { calculateRevenueImpact, RevenueSettings, DEFAULT_SETTINGS } from "./revenue-estimator";
 
-export type LinkStatus = "OK" | "OOS" | "NOT_FOUND" | "REDIRECT" | "MISSING_TAG" | "UNKNOWN";
+export type LinkStatus = "OK" | "OOS" | "OOS_THIRD_PARTY" | "NOT_FOUND" | "SEARCH_REDIRECT" | "REDIRECT" | "MISSING_TAG" | "UNKNOWN";
 
 /**
  * Represents an issue (broken or OOS link) for prioritization
@@ -85,10 +85,19 @@ export function toIssue(link: RawLinkData, settings: RevenueSettings = DEFAULT_S
 
 /**
  * Filters links to only include broken/OOS issues (excludes fixed issues by default)
+ * Includes all problematic statuses: NOT_FOUND, OOS, OOS_THIRD_PARTY, SEARCH_REDIRECT, MISSING_TAG
  */
 export function filterIssues(links: RawLinkData[], includeFixed: boolean = false): RawLinkData[] {
+  const PROBLEM_STATUSES: LinkStatus[] = [
+    "NOT_FOUND",
+    "OOS",
+    "OOS_THIRD_PARTY",
+    "SEARCH_REDIRECT",
+    "MISSING_TAG",
+  ];
+
   return links.filter(link =>
-    (link.status === "NOT_FOUND" || link.status === "OOS") &&
+    PROBLEM_STATUSES.includes(link.status) &&
     (includeFixed || !link.isFixed)
   );
 }
@@ -97,7 +106,7 @@ export function filterIssues(links: RawLinkData[], includeFixed: boolean = false
  * Sorts issues by priority:
  * 1. Estimated revenue impact (highest first)
  * 2. Video views (highest first)
- * 3. Status severity (NOT_FOUND > OOS > UNKNOWN)
+ * 3. Status severity (MISSING_TAG > NOT_FOUND > SEARCH_REDIRECT > OOS > OOS_THIRD_PARTY)
  */
 export function sortByPriority(issues: Issue[]): Issue[] {
   return [...issues].sort((a, b) => {
@@ -111,14 +120,16 @@ export function sortByPriority(issues: Issue[]): Issue[] {
       return b.videoViewCount - a.videoViewCount;
     }
 
-    // Finally by status severity
+    // Finally by status severity (higher = more severe = fix first)
     const statusPriority: Record<LinkStatus, number> = {
-      MISSING_TAG: 4,  // Highest priority - link works but no credit
-      NOT_FOUND: 3,
-      OOS: 2,
-      UNKNOWN: 1,
-      REDIRECT: 0,
-      OK: -1,
+      MISSING_TAG: 6,       // Highest - link works but no credit (100% loss)
+      NOT_FOUND: 5,         // Dead link / dog page (100% loss)
+      SEARCH_REDIRECT: 4,   // Product gone, redirected to search (100% loss)
+      OOS: 3,               // Out of stock (partial loss)
+      OOS_THIRD_PARTY: 2,   // Third party only (lower loss)
+      REDIRECT: 1,          // Generic redirect
+      UNKNOWN: 0,           // Unknown status
+      OK: -1,               // Healthy - shouldn't appear in issues
     };
     return statusPriority[b.status] - statusPriority[a.status];
   });
@@ -170,6 +181,8 @@ export function getIssueStats(issues: Issue[]): {
   total: number;
   broken: number;
   outOfStock: number;
+  searchRedirects: number;
+  missingTags: number;
   totalEstimatedLoss: number;
   affectedVideos: number;
 } {
@@ -178,7 +191,9 @@ export function getIssueStats(issues: Issue[]): {
   return {
     total: issues.length,
     broken: issues.filter(i => i.status === "NOT_FOUND").length,
-    outOfStock: issues.filter(i => i.status === "OOS").length,
+    outOfStock: issues.filter(i => i.status === "OOS" || i.status === "OOS_THIRD_PARTY").length,
+    searchRedirects: issues.filter(i => i.status === "SEARCH_REDIRECT").length,
+    missingTags: issues.filter(i => i.status === "MISSING_TAG").length,
     totalEstimatedLoss: Math.round(
       issues.reduce((sum, i) => sum + i.estimatedLoss, 0) * 100
     ) / 100,
