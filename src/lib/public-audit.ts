@@ -372,6 +372,10 @@ export async function runPublicAudit(channelInput: string, ipAddress?: string): 
       const isAmazon = link.merchant === "amazon";
       const result = await checkLink(link.url, isAmazon);
       link.status = result.status;
+      // Debug logging to see what's being detected
+      console.log(`[LinkCheck ${i + 1}/${linksToCheck.length}] ${link.url.substring(0, 60)}...`);
+      console.log(`  -> Status: ${result.status} | Reason: ${result.reason}`);
+      console.log(`  -> Final URL: ${result.finalUrl?.substring(0, 60) || "N/A"}...`);
       // Calculate revenue impact using CONSERVATIVE settings for free audit
       // Uses lower CTR (1%), lower conversion (1.5%), lower commission (3%)
       // and conservative severity factors

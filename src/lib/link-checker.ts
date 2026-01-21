@@ -56,6 +56,7 @@ const SEVERITY_MAP: Record<LinkStatus, number> = {
 // ============================================
 
 // Out of stock - main listing unavailable
+// These appear in rendered HTML even without JS
 const AMAZON_OOS_INDICATORS = [
   "currently unavailable",
   "out of stock",
@@ -67,14 +68,22 @@ const AMAZON_OOS_INDICATORS = [
   "this item cannot be shipped",
   "not available for purchase",
   "no offers available",
+  // ID-based indicators (from HTML attributes)
+  'id="outofstock"',
+  'id="availability"', // Check in conjunction with unavailable text
+  "availabilityinsidebuybox_feature_div", // OOS buybox div
 ];
 
 // Third-party sellers available (lower trust, still some conversion)
+// Note: Look for these WITHOUT "add-to-cart-button" present
 const AMAZON_THIRD_PARTY_INDICATORS = [
   "available from these sellers",
   "see all buying options",
   "other sellers on amazon",
   "new & used",
+  "olp-padding-right", // Other sellers panel
+  "a]offers-table", // Offers table
+  "mbc-offer-row", // Marketplace offer rows
 ];
 
 // Amazon "dog page" / product not found indicators (product completely gone)
@@ -426,6 +435,11 @@ export async function checkLink(
         // ============================================
         // PHASE 6: OUT OF STOCK DETECTION
         // ============================================
+        // Check for Add to Cart button presence (Amazon's main buy button)
+        const hasAddToCart = html.includes('id="add-to-cart-button"') ||
+                             html.includes('id="buy-now-button"') ||
+                             html.includes('name="submit.add-to-cart"');
+
         // Check for primary OOS indicators first
         if (checkAmazonOOS(html)) {
           return createResult(
@@ -438,30 +452,74 @@ export async function checkLink(
         }
 
         // Check for third-party only availability (lower conversion)
-        if (checkAmazonThirdParty(html)) {
-          // Make sure it's not also showing as in-stock from Amazon
-          const hasAddToCart = html.includes("add-to-cart") || html.includes("Add to Cart");
-          const hasBuyNow = html.includes("buy-now") || html.includes("Buy Now");
+        // This is when the main Amazon listing is gone but other sellers exist
+        if (checkAmazonThirdParty(html) && !hasAddToCart) {
+          return createResult(
+            originalUrl,
+            "OOS_THIRD_PARTY",
+            "Third Party Only - Available from other sellers",
+            httpStatus,
+            finalUrl
+          );
+        }
+      }
 
-          if (!hasAddToCart && !hasBuyNow) {
+      // ============================================
+      // PHASE 7: REDIRECT DETECTION
+      // ============================================
+      // Check for various redirect scenarios
+      try {
+        const originalDomain = new URL(originalUrl).hostname;
+        const finalDomain = new URL(finalUrl).hostname;
+
+        // Check if redirected to a completely different domain
+        const originalIsAmazon = originalDomain.includes("amazon.") || originalDomain.includes("amzn.");
+        const finalIsAmazon = finalDomain.includes("amazon.") || finalDomain.includes("amzn.");
+
+        // Case 1: Link shortener that didn't resolve
+        const isShortener = originalDomain.includes("bit.ly") || originalDomain.includes("amzn.to") ||
+                           originalDomain.includes("goo.gl") || originalDomain.includes("t.co") ||
+                           originalDomain.includes("tinyurl.") || originalDomain.includes("ow.ly");
+
+        if (isShortener && finalDomain === originalDomain) {
+          return createResult(
+            originalUrl,
+            "REDIRECT",
+            "Redirect Failed - Link shortener did not resolve",
+            httpStatus,
+            finalUrl
+          );
+        }
+
+        // Case 2: Amazon link redirected to non-Amazon (external redirect)
+        if (originalIsAmazon && !finalIsAmazon) {
+          return createResult(
+            originalUrl,
+            "REDIRECT",
+            "External Redirect - Amazon link redirected off-site",
+            httpStatus,
+            finalUrl
+          );
+        }
+
+        // Case 3: Product redirect to different product (ASIN changed)
+        if (originalIsAmazon && finalIsAmazon) {
+          const originalAsin = originalUrl.match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})/i);
+          const finalAsin = finalUrl.match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})/i);
+
+          if (originalAsin && finalAsin && originalAsin[1] !== finalAsin[1]) {
             return createResult(
               originalUrl,
-              "OOS_THIRD_PARTY",
-              "Third Party Only - Available from other sellers",
+              "REDIRECT",
+              `Product Redirect - ASIN changed from ${originalAsin[1]} to ${finalAsin[1]}`,
               httpStatus,
               finalUrl
             );
           }
         }
-      }
 
-      // ============================================
-      // PHASE 7: NON-AMAZON REDIRECT CHECK
-      // ============================================
-      // If final URL is on a completely different domain (not Amazon)
-      if (!isAmazon && finalUrl !== originalUrl) {
-        // Check if redirected to an error page
-        if (isErrorPage(html)) {
+        // Case 4: Non-Amazon link redirected to error page
+        if (!isAmazon && isErrorPage(html)) {
           return createResult(
             originalUrl,
             "NOT_FOUND",
@@ -470,28 +528,8 @@ export async function checkLink(
             finalUrl
           );
         }
-
-        // Check if stuck on a link shortener or non-destination page
-        try {
-          const originalDomain = new URL(originalUrl).hostname;
-          const finalDomain = new URL(finalUrl).hostname;
-
-          // If still on a shortener domain, the redirect failed
-          if (originalDomain.includes("bit.ly") || originalDomain.includes("amzn.to") ||
-              originalDomain.includes("goo.gl") || originalDomain.includes("t.co")) {
-            if (finalDomain === originalDomain) {
-              return createResult(
-                originalUrl,
-                "REDIRECT",
-                "Redirect Failed - Link shortener did not resolve",
-                httpStatus,
-                finalUrl
-              );
-            }
-          }
-        } catch {
-          // URL parsing failed, continue with checks
-        }
+      } catch {
+        // URL parsing failed, continue with checks
       }
 
       // ============================================
