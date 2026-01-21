@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { DollarSign, Video, Link as LinkIcon } from "lucide-react";
+import { DollarSign, Video, Link as LinkIcon, TrendingUp } from "lucide-react";
 
 export function RevenueCalculator() {
   const [monthlyViews, setMonthlyViews] = useState(100000);
@@ -11,17 +11,43 @@ export function RevenueCalculator() {
     setMounted(true);
   }, []);
 
-  // Calculate estimated loss (assuming 15% broken links, 2% CTR, 3% conversion, $45 avg order, 4% commission)
-  const brokenLinkRate = 0.15;
-  const ctr = 0.02;
-  const conversionRate = 0.03;
-  const avgOrderValue = 45;
-  const commissionRate = 0.04;
+  // Revenue calculation for affiliate-focused YouTube creators
+  //
+  // Our target customer: creators who actively use affiliate links
+  // (tech reviewers, beauty creators, gear channels, etc.)
+  //
+  // For these creators:
+  // - Most videos have affiliate links in descriptions
+  // - Viewers come specifically for product recommendations
+  // - CTR on affiliate links is higher than general YouTube
+  //
+  // Model assumptions (conservative for affiliate-focused creators):
+  // - 60% of videos have affiliate links
+  // - 4% of views result in affiliate link clicks (higher intent audience)
+  // - 3% conversion rate after click
+  // - $50 average order value
+  // - 4% commission rate
+  // - 15% of links are broken/OOS
 
-  const potentialClicks = monthlyViews * ctr;
-  const lostClicks = potentialClicks * brokenLinkRate;
-  const lostConversions = lostClicks * conversionRate;
-  const monthlyLoss = Math.round(lostConversions * avgOrderValue * commissionRate);
+  const brokenLinkRate = 0.15;        // 15% of links broken/OOS
+  const affiliateVideoShare = 0.60;   // 60% of videos have affiliate links
+  const affiliateCTR = 0.04;          // 4% click affiliate links
+  const conversionRate = 0.03;        // 3% conversion after click
+  const avgOrderValue = 50;           // $50 average order
+  const commissionRate = 0.04;        // 4% commission
+
+  // Calculate monthly affiliate revenue potential
+  const affiliateViews = monthlyViews * affiliateVideoShare;
+  const totalClicks = affiliateViews * affiliateCTR;
+  const totalConversions = totalClicks * conversionRate;
+  const totalMonthlyRevenue = totalConversions * avgOrderValue * commissionRate;
+
+  // Loss from broken links
+  const monthlyLoss = Math.round(totalMonthlyRevenue * brokenLinkRate);
+  const annualLoss = monthlyLoss * 12;
+
+  // Lost clicks for display
+  const lostClicks = Math.round(totalClicks * brokenLinkRate);
 
   if (!mounted) {
     return (
@@ -51,7 +77,9 @@ export function RevenueCalculator() {
         <div className="flex justify-between text-sm text-slate-500 mt-2">
           <span>10K</span>
           <span className="text-xl font-bold text-white">
-            {(monthlyViews / 1000).toFixed(0)}K views/month
+            {monthlyViews >= 1000000
+              ? `${(monthlyViews / 1000000).toFixed(1)}M`
+              : `${(monthlyViews / 1000).toFixed(0)}K`} views/month
           </span>
           <span>1M</span>
         </div>
@@ -61,7 +89,7 @@ export function RevenueCalculator() {
         <div className="bg-slate-900/50 rounded-xl p-4">
           <Video className="w-6 h-6 text-slate-400 mx-auto mb-2" />
           <div className="text-2xl font-bold text-white">
-            {Math.round(lostClicks).toLocaleString()}
+            {lostClicks.toLocaleString()}
           </div>
           <div className="text-xs text-slate-500">Lost clicks/month</div>
         </div>
@@ -73,10 +101,17 @@ export function RevenueCalculator() {
         <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
           <DollarSign className="w-6 h-6 text-red-500 mx-auto mb-2" />
           <div className="text-2xl font-bold text-red-500">
-            ${monthlyLoss.toLocaleString()}
+            ${annualLoss.toLocaleString()}
           </div>
-          <div className="text-xs text-slate-500">Est. monthly loss</div>
+          <div className="text-xs text-slate-500">Est. annual loss</div>
         </div>
+      </div>
+
+      {/* Breakdown tooltip */}
+      <div className="mt-6 pt-4 border-t border-slate-700/50">
+        <p className="text-xs text-slate-500 text-center">
+          Based on 15% broken link rate, 4% affiliate CTR, 3% conversion, $50 AOV, 4% commission
+        </p>
       </div>
     </div>
   );
