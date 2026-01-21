@@ -5,6 +5,16 @@ import { prisma } from "@/lib/db";
 import Link from "next/link";
 import { Link as LinkIcon } from "lucide-react";
 import { UserMenu } from "@/components/user-menu";
+import { LinkStatus } from "@prisma/client";
+
+// All statuses that indicate a broken/problematic link
+const PROBLEM_STATUSES: LinkStatus[] = [
+  LinkStatus.NOT_FOUND,
+  LinkStatus.OOS,
+  LinkStatus.OOS_THIRD_PARTY,
+  LinkStatus.SEARCH_REDIRECT,
+  LinkStatus.MISSING_TAG,
+];
 
 export default async function DashboardLayout({
   children,
@@ -26,6 +36,15 @@ export default async function DashboardLayout({
   if (!user?.youtubeChannelId) {
     redirect("/onboarding/select-channel");
   }
+
+  // Get count of broken links for badge
+  const brokenCount = await prisma.affiliateLink.count({
+    where: {
+      video: { userId: session.user.id },
+      status: { in: PROBLEM_STATUSES },
+      isFixed: false,
+    },
+  });
 
   // Check if trial has expired
   const trialEndsAt = session.user.trialEndsAt;
@@ -57,16 +76,21 @@ export default async function DashboardLayout({
                   Dashboard
                 </Link>
                 <Link
-                  href="/fix"
-                  className="text-slate-400 hover:text-white text-sm font-medium transition-colors"
+                  href="/fix-center"
+                  className="text-slate-400 hover:text-white text-sm font-medium transition-colors flex items-center gap-2"
                 >
                   Fix Center
+                  {brokenCount > 0 && (
+                    <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold rounded-full bg-red-500 text-white min-w-[20px]">
+                      {brokenCount > 99 ? "99+" : brokenCount}
+                    </span>
+                  )}
                 </Link>
                 <Link
-                  href="/videos"
+                  href="/history"
                   className="text-slate-400 hover:text-white text-sm font-medium transition-colors"
                 >
-                  Videos
+                  History
                 </Link>
               </nav>
             </div>
