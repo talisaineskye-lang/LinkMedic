@@ -154,13 +154,14 @@ If you cannot determine a suitable replacement, respond with:
 }
 
 /**
- * Builds an Amazon affiliate link from an ASIN and tag
+ * Builds an Amazon affiliate link from an ASIN and optional tag
  */
 export function buildAmazonAffiliateLink(
   asin: string,
-  affiliateTag: string
+  affiliateTag?: string | null
 ): string {
-  return `https://www.amazon.com/dp/${asin}?tag=${affiliateTag}`;
+  const baseUrl = `https://www.amazon.com/dp/${asin}`;
+  return affiliateTag ? `${baseUrl}?tag=${affiliateTag}` : baseUrl;
 }
 
 /**
@@ -169,10 +170,11 @@ export function buildAmazonAffiliateLink(
  */
 export function buildAmazonSearchLink(
   productName: string,
-  affiliateTag: string
+  affiliateTag?: string | null
 ): string {
   const searchQuery = encodeURIComponent(productName);
-  return `https://www.amazon.com/s?k=${searchQuery}&tag=${affiliateTag}`;
+  const baseUrl = `https://www.amazon.com/s?k=${searchQuery}`;
+  return affiliateTag ? `${baseUrl}&tag=${affiliateTag}` : baseUrl;
 }
 
 /**
@@ -189,12 +191,13 @@ export async function generateSuggestedLink(
   // Extract the affiliate tag from the original URL
   const affiliateTag = extractAffiliateTag(originalUrl) || fallbackAffiliateTag;
 
+  // If no affiliate tag, we'll generate a link without one (user can add their own)
+  // This is better than returning null and not helping at all
   if (!affiliateTag) {
-    console.error("[claude] No affiliate tag found in URL and no fallback provided:", originalUrl);
-    return null;
+    console.log("[claude] No affiliate tag found - will generate link without tag (user can add their own)");
+  } else {
+    console.log(`[claude] Found affiliate tag: ${affiliateTag}`);
   }
-
-  console.log(`[claude] Found affiliate tag: ${affiliateTag}`);
 
   // Get suggestion from Claude
   const suggestion = await suggestReplacementProduct(
@@ -222,3 +225,9 @@ export async function generateSuggestedLink(
   console.log(`[claude] Built search link: ${searchLink.slice(0, 80)}...`);
   return searchLink;
 }
+
+/**
+ * Placeholder tag to indicate user needs to add their own
+ * Used when no affiliate tag can be found
+ */
+export const PLACEHOLDER_TAG = "YOUR-TAG-HERE";

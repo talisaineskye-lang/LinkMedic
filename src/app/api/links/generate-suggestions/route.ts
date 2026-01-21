@@ -22,6 +22,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Check if Anthropic API key is configured
+    if (!process.env.ANTHROPIC_API_KEY) {
+      console.error("[generate-suggestions] ANTHROPIC_API_KEY is not configured!");
+      return NextResponse.json({
+        success: false,
+        error: "AI suggestions are not configured. Please set ANTHROPIC_API_KEY.",
+        processed: 0,
+        generated: 0,
+      }, { status: 500 });
+    }
+
     const body = await request.json();
     const { linkIds } = body;
 
@@ -186,13 +197,27 @@ export async function POST(request: Request) {
 
     console.log(`[generate-suggestions] Complete: processed=${linksToProcess.length}, generated=${generated}, skipped=${skipped.length}, errors=${errors.length}`);
 
+    // Build a more informative message
+    let message = `Generated ${generated} suggestion(s) for ${linksToProcess.length} link(s)`;
+    if (skipped.length > 0) {
+      message += ` (${skipped.length} non-Amazon links skipped)`;
+    }
+    if (errors.length > 0) {
+      message += ` (${errors.length} errors)`;
+    }
+
     return NextResponse.json({
       success: true,
       processed: linksToProcess.length,
       generated,
       skipped: skipped.length,
       errors: errors.length > 0 ? errors : undefined,
-      message: `Generated ${generated} suggestion(s) for ${linksToProcess.length} link(s)`,
+      message,
+      // Include debug info in development
+      debug: process.env.NODE_ENV === "development" ? {
+        hasApiKey: !!process.env.ANTHROPIC_API_KEY,
+        fallbackTag: fallbackAffiliateTag || null,
+      } : undefined,
     });
   } catch (error) {
     console.error("Error generating suggestions:", error);
