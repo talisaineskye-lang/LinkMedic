@@ -111,7 +111,7 @@ export interface RevenueSettings {
 }
 
 /**
- * Default revenue estimation settings
+ * Default revenue estimation settings (industry average for paid tool)
  */
 export const DEFAULT_SETTINGS: RevenueSettings = {
   ctrPercent: 2.0,
@@ -119,6 +119,37 @@ export const DEFAULT_SETTINGS: RevenueSettings = {
   avgOrderValue: 45.0,
   commissionPercent: 4.0,
   niche: "default",
+};
+
+/**
+ * Conservative settings for free audit tool
+ * Uses lower estimates to build trust and avoid "snake oil" accusations
+ *
+ * Rationale:
+ * - CTR: 1.0% (vs 2.5% industry avg) - assumes not all viewers see description
+ * - Conversion: 1.5% (vs 3.0% avg) - conservative for cold traffic
+ * - Commission: 3.0% (vs 4.0% avg) - assumes mostly Amazon at lower rates
+ * - OOS Severity: 0.4 (vs 0.5) - more credit to Amazon's "similar items"
+ */
+export const CONSERVATIVE_SETTINGS: RevenueSettings = {
+  ctrPercent: 1.0,
+  conversionPercent: 1.5,
+  avgOrderValue: 45.0,
+  commissionPercent: 3.0,
+  niche: "default",
+};
+
+/**
+ * Conservative severity factors for free audit
+ * More generous assumptions about partial recovery
+ */
+export const CONSERVATIVE_SEVERITY_FACTORS: Record<string, number> = {
+  MISSING_TAG: 1.0,  // Full loss - no commission earned
+  NOT_FOUND: 1.0,    // Full loss - dead link
+  OOS: 0.4,          // 60% "saved" by Amazon's similar items
+  REDIRECT: 0.2,     // 80% still converts via redirect
+  OK: 0,
+  UNKNOWN: 0.2,
 };
 
 /**
@@ -225,6 +256,7 @@ export function estimateCurrentMonthlyViews(
  * @param videoAgeMonths - Age of video in months
  * @param isEvergreen - Whether this is evergreen/search content
  * @param actualMonthlyViews - Actual monthly views from Analytics API (if available)
+ * @param useConservativeSeverity - Use conservative severity factors (for free audit)
  * @returns Potential monthly revenue impact in USD (creator's commission)
  */
 export function calculateRevenueImpact(
@@ -233,7 +265,8 @@ export function calculateRevenueImpact(
   settings: RevenueSettings = DEFAULT_SETTINGS,
   videoAgeMonths: number = 12,
   isEvergreen: boolean = false,
-  actualMonthlyViews?: number
+  actualMonthlyViews?: number,
+  useConservativeSeverity: boolean = false
 ): number {
   const { ctrPercent, conversionPercent, avgOrderValue, commissionPercent = 4.0 } = settings;
 
@@ -243,7 +276,8 @@ export function calculateRevenueImpact(
   const commissionRate = commissionPercent / 100;
 
   // Get severity factor for this status
-  const severityFactor = SEVERITY_FACTORS[status] ?? 0.3;
+  const severityFactors = useConservativeSeverity ? CONSERVATIVE_SEVERITY_FACTORS : SEVERITY_FACTORS;
+  const severityFactor = severityFactors[status] ?? 0.3;
 
   // If status is OK, no impact
   if (severityFactor === 0) {

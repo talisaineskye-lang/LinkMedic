@@ -23,6 +23,8 @@ interface AuditResult {
   outOfStockLinks: number;
   redirectLinks: number;
   healthyLinks: number;
+  verifiedMonthlyLoss: number;
+  corruptionRate: number;
   potentialMonthlyImpact: number;
   topIssues: AuditIssue[];
 }
@@ -53,7 +55,7 @@ export function AuditResultsClient({ auditId, initialData }: AuditResultsClientP
     } catch {
       if (navigator.share) {
         await navigator.share({
-          title: `${result.channelName} could recover ${formatCurrency(calculateAnnualizedImpact(result.potentialMonthlyImpact))}/year in affiliate revenue`,
+          title: `${result.channelName} could recover ${formatCurrency(calculateAnnualizedImpact(result.verifiedMonthlyLoss))}/year in affiliate revenue`,
           url: shareUrl,
         });
       }
@@ -62,25 +64,6 @@ export function AuditResultsClient({ auditId, initialData }: AuditResultsClientP
 
   return (
     <div className="space-y-6">
-      {/* Big Revenue Number - Show both monthly and annual */}
-      <div className="bg-gradient-to-br from-emerald-950/50 to-slate-900 border border-emerald-700/50 rounded-xl p-8 text-center">
-        <p className="text-sm text-emerald-400 uppercase tracking-wide mb-2">
-          Recoverable Annual Revenue
-        </p>
-        <p className="text-5xl md:text-6xl font-bold text-emerald-400 mb-2">
-          {formatCurrency(calculateAnnualizedImpact(result.potentialMonthlyImpact))}
-          <span className="text-2xl text-emerald-400/70">/year</span>
-        </p>
-        <p className="text-slate-400">
-          {formatCurrency(result.potentialMonthlyImpact)}/month in affiliate commissions you could recover
-        </p>
-        {/* Tooltip about conservative estimate */}
-        <div className="mt-4 flex items-center justify-center gap-2 text-xs text-slate-500">
-          <Info className="w-3 h-3" />
-          <span>Conservative estimate — doesn&apos;t include &quot;halo&quot; commissions from other items viewers buy</span>
-        </div>
-      </div>
-
       {/* Channel Info */}
       <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-6">
         <div className="flex items-center gap-4">
@@ -94,7 +77,7 @@ export function AuditResultsClient({ auditId, initialData }: AuditResultsClientP
           <div className="flex-1">
             <h3 className="font-semibold text-white">{result.channelName}</h3>
             <p className="text-sm text-slate-400">
-              Scanned last {result.totalVideos} videos • {result.totalLinks} affiliate links found
+              Scanned last {result.totalVideos} videos · {result.totalLinks} affiliate links found
             </p>
           </div>
           <button
@@ -113,6 +96,31 @@ export function AuditResultsClient({ auditId, initialData }: AuditResultsClientP
               </>
             )}
           </button>
+        </div>
+      </div>
+
+      {/* Verified Revenue Loss - The anchor metric */}
+      <div className="bg-gradient-to-br from-emerald-950/50 to-slate-900 border border-emerald-700/50 rounded-xl p-8 text-center">
+        <p className="text-sm text-emerald-400 uppercase tracking-wide mb-2">
+          Verified Annual Loss (from {result.totalVideos} videos)
+        </p>
+        <p className="text-5xl md:text-6xl font-bold text-emerald-400 mb-2">
+          {formatCurrency(calculateAnnualizedImpact(result.verifiedMonthlyLoss))}
+          <span className="text-2xl text-emerald-400/70">/year</span>
+        </p>
+        <p className="text-slate-400">
+          {formatCurrency(result.verifiedMonthlyLoss)}/month from the links we actually checked
+        </p>
+        {/* Corruption rate callout */}
+        {result.corruptionRate > 0 && (
+          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-amber-500/10 border border-amber-500/30 rounded-full">
+            <span className="text-amber-400 font-semibold">{result.corruptionRate}% link corruption rate</span>
+          </div>
+        )}
+        {/* Tooltip about conservative estimate */}
+        <div className="mt-4 flex items-center justify-center gap-2 text-xs text-slate-500">
+          <Info className="w-3 h-3" />
+          <span>Conservative estimate using 1% CTR, 1.5% conversion, 3% commission</span>
         </div>
       </div>
 
@@ -169,7 +177,7 @@ export function AuditResultsClient({ auditId, initialData }: AuditResultsClientP
                     {issue.status === "NOT_FOUND" ? "Broken" : issue.status === "REDIRECT" ? "Redirect" : "Out of Stock"}
                   </span>
                   <p className="text-sm text-red-400 mt-1">
-                    -{formatCurrency(issue.revenueImpact)}
+                    -{formatCurrency(issue.revenueImpact)}/mo
                   </p>
                 </div>
               </div>
@@ -184,7 +192,7 @@ export function AuditResultsClient({ auditId, initialData }: AuditResultsClientP
           <Lock className="w-5 h-5 text-slate-500 mt-0.5 flex-shrink-0" />
           <div className="text-sm text-slate-400">
             <p className="font-medium text-slate-300 mb-1">Free Audit Preview</p>
-            <p>This one-time scan covers the last 15 videos. Sign up to scan your full channel history and unlock all features.</p>
+            <p>This scan covers the last {result.totalVideos} videos. Sign up to scan your full channel history and see the total impact.</p>
           </div>
         </div>
       </div>

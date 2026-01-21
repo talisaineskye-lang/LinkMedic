@@ -1,6 +1,6 @@
 import { extractLinksFromDescription, filterAffiliateLinks, ParsedLink } from "./link-parser";
 import { checkLink, LinkCheckResult } from "./link-checker";
-import { calculateRevenueImpact, DEFAULT_SETTINGS } from "./revenue-estimator";
+import { calculateRevenueImpact, CONSERVATIVE_SETTINGS } from "./revenue-estimator";
 import { prisma } from "./db";
 import crypto from "crypto";
 
@@ -48,7 +48,10 @@ export interface AuditResult {
   outOfStockLinks: number;
   redirectLinks: number;
   healthyLinks: number;
-  potentialMonthlyImpact: number;
+  // Split-metric approach for transparency
+  verifiedMonthlyLoss: number;      // Loss from scanned videos only (100% verifiable)
+  corruptionRate: number;           // % of scanned links that are broken
+  potentialMonthlyImpact: number;   // Conservative total estimate (for display)
   topIssues: {
     videoTitle: string;
     videoId: string;
@@ -370,12 +373,17 @@ export async function runPublicAudit(channelInput: string, ipAddress?: string): 
       const isAmazon = link.merchant === "amazon";
       const result = await checkLink(link.url, isAmazon);
       link.status = result.status;
-      // Calculate revenue impact using new model with severity factor
+      // Calculate revenue impact using CONSERVATIVE settings for free audit
+      // Uses lower CTR (1%), lower conversion (1.5%), lower commission (3%)
+      // and conservative severity factors
       link.revenueImpact = calculateRevenueImpact(
         link.viewCount,
         link.status,
-        DEFAULT_SETTINGS,
-        link.videoAgeMonths
+        CONSERVATIVE_SETTINGS,
+        link.videoAgeMonths,
+        false,  // isEvergreen
+        undefined,  // actualMonthlyViews
+        true  // useConservativeSeverity
       );
     } catch (error) {
       console.error(`Error checking link ${link.url}:`, error);
@@ -383,8 +391,11 @@ export async function runPublicAudit(channelInput: string, ipAddress?: string): 
       link.revenueImpact = calculateRevenueImpact(
         link.viewCount,
         "UNKNOWN",
-        DEFAULT_SETTINGS,
-        link.videoAgeMonths
+        CONSERVATIVE_SETTINGS,
+        link.videoAgeMonths,
+        false,
+        undefined,
+        true
       );
     }
 
@@ -406,14 +417,30 @@ export async function runPublicAudit(channelInput: string, ipAddress?: string): 
   const redirectLinks = allLinks.filter(l => l.status === "REDIRECT").length;
   const healthyLinks = allLinks.filter(l => l.status === "OK").length;
 
-  // Calculate total potential impact (no artificial multipliers)
-  // Only count confirmed issues (NOT_FOUND, OOS, REDIRECT) - not UNKNOWN or OK
+  // ============================================
+  // SPLIT-METRIC APPROACH FOR TRANSPARENCY
+  // ============================================
+
+  // 1. VERIFIED LOSS: Only from scanned videos (100% verifiable)
+  // This is the most accurate number - what we actually found and checked
   const confirmedIssues = allLinks.filter(l =>
     l.status === "NOT_FOUND" || l.status === "OOS" || l.status === "REDIRECT"
   );
-  const potentialMonthlyImpact = Math.round(
+  const verifiedMonthlyLoss = Math.round(
     confirmedIssues.reduce((sum, link) => sum + (link.revenueImpact || 0), 0) * 100
   ) / 100;
+
+  // 2. CORRUPTION RATE: What % of checked links have issues?
+  // This tells us how "sick" the channel is
+  const checkedLinks = allLinks.filter(l => l.status !== "UNKNOWN");
+  const corruptionRate = checkedLinks.length > 0
+    ? Math.round((confirmedIssues.length / checkedLinks.length) * 100)
+    : 0;
+
+  // 3. POTENTIAL IMPACT: Conservative estimate for display
+  // We use the verified loss as-is since we're already using conservative settings
+  // No extrapolation multiplier for free audit - just show what we found
+  const potentialMonthlyImpact = verifiedMonthlyLoss;
 
   // Get top issues (broken/OOS/redirect links sorted by revenue impact)
   const issues = allLinks
@@ -438,6 +465,8 @@ export async function runPublicAudit(channelInput: string, ipAddress?: string): 
     outOfStockLinks,
     redirectLinks,
     healthyLinks,
+    verifiedMonthlyLoss,
+    corruptionRate,
     potentialMonthlyImpact,
     topIssues: issues,
   };
@@ -475,6 +504,11 @@ export async function getAuditById(auditId: string): Promise<AuditResult | null>
 
   if (!audit) return null;
 
+  // Calculate corruption rate from stored data
+  const checkedLinks = audit.brokenLinks + audit.outOfStockLinks + audit.redirectLinks + audit.healthyLinks;
+  const issueLinks = audit.brokenLinks + audit.outOfStockLinks + audit.redirectLinks;
+  const corruptionRate = checkedLinks > 0 ? Math.round((issueLinks / checkedLinks) * 100) : 0;
+
   return {
     channelId: audit.channelId,
     channelName: audit.channelName,
@@ -485,7 +519,9 @@ export async function getAuditById(auditId: string): Promise<AuditResult | null>
     outOfStockLinks: audit.outOfStockLinks,
     redirectLinks: audit.redirectLinks,
     healthyLinks: audit.healthyLinks,
-    potentialMonthlyImpact: audit.estimatedMonthlyLoss, // DB field name unchanged for compatibility
+    verifiedMonthlyLoss: audit.estimatedMonthlyLoss, // DB field stores verified loss
+    corruptionRate,
+    potentialMonthlyImpact: audit.estimatedMonthlyLoss, // Same as verified for now
     topIssues: audit.topIssues as AuditResult["topIssues"],
   };
 }
