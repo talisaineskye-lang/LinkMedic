@@ -57,10 +57,10 @@ export default async function DashboardLayout({
                   Dashboard
                 </Link>
                 <Link
-                  href="/issues"
+                  href="/fix"
                   className="text-slate-400 hover:text-white text-sm font-medium transition-colors"
                 >
-                  Issues
+                  Fix Center
                 </Link>
                 <Link
                   href="/videos"

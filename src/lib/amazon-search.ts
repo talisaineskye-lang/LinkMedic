@@ -11,6 +11,7 @@ export interface AmazonSearchResult {
   asin: string | null;
   price: string | null;
   imageUrl: string | null;
+  confidenceScore: number; // 0-100 based on search relevance
 }
 
 export interface SearchResponse {
@@ -74,10 +75,10 @@ export async function searchAmazon(
     const html = await response.text();
 
     // Parse the first search result
-    const result = parseFirstSearchResult(html, affiliateTag);
+    const result = parseFirstSearchResult(html, affiliateTag, searchQuery);
 
     if (result) {
-      console.log(`[AmazonSearch] Found: "${result.title.slice(0, 50)}..." (${result.asin})`);
+      console.log(`[AmazonSearch] Found: "${result.title.slice(0, 50)}..." (${result.asin}) - ${result.confidenceScore}% confidence`);
       return { success: true, result };
     } else {
       console.log(`[AmazonSearch] No results found for: "${searchQuery}"`);
@@ -105,7 +106,8 @@ export async function searchAmazon(
  */
 function parseFirstSearchResult(
   html: string,
-  affiliateTag?: string | null
+  affiliateTag?: string | null,
+  searchQuery?: string
 ): AmazonSearchResult | null {
   try {
     // Find products with data-asin attribute (sponsored products have different structure)
@@ -144,12 +146,16 @@ function parseFirstSearchResult(
       const baseUrl = `https://www.amazon.com/dp/${asin}`;
       const url = affiliateTag ? `${baseUrl}?tag=${affiliateTag}` : baseUrl;
 
+      const cleanedTitle = cleanTitle(title);
+      const confidenceScore = calculateConfidenceScore(cleanedTitle, searchQuery);
+
       return {
-        title: cleanTitle(title),
+        title: cleanedTitle,
         url,
         asin,
         price,
         imageUrl,
+        confidenceScore,
       };
     }
 
@@ -162,13 +168,16 @@ function parseFirstSearchResult(
       if (title && title.length > 5) {
         const baseUrl = `https://www.amazon.com/dp/${asin}`;
         const url = affiliateTag ? `${baseUrl}?tag=${affiliateTag}` : baseUrl;
+        const cleanedTitle = cleanTitle(title);
+        const confidenceScore = calculateConfidenceScore(cleanedTitle, searchQuery);
 
         return {
-          title: cleanTitle(title),
+          title: cleanedTitle,
           url,
           asin,
           price: null,
           imageUrl: null,
+          confidenceScore,
         };
       }
     }
@@ -251,4 +260,46 @@ function cleanTitle(title: string): string {
     .replace(/&gt;/g, ">")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+/**
+ * Calculate confidence score (0-100) based on how well the product title matches the search query
+ *
+ * Scoring factors:
+ * - Base score: 70 (we found a result in top position)
+ * - +15 if all search words appear in title
+ * - +10 if exact phrase match
+ * - +5 bonus for being first result
+ */
+function calculateConfidenceScore(productTitle: string, searchQuery?: string): number {
+  if (!searchQuery) {
+    return 75; // Default confidence when no query to compare
+  }
+
+  const titleLower = productTitle.toLowerCase();
+  const queryLower = searchQuery.toLowerCase();
+  const queryWords = queryLower.split(/\s+/).filter(w => w.length > 2);
+
+  let score = 70; // Base score for finding a top result
+
+  // Check if all significant words from query appear in title
+  const matchingWords = queryWords.filter(word => titleLower.includes(word));
+  const wordMatchRatio = queryWords.length > 0 ? matchingWords.length / queryWords.length : 0;
+
+  if (wordMatchRatio === 1) {
+    score += 15; // All words match
+  } else if (wordMatchRatio >= 0.5) {
+    score += Math.round(wordMatchRatio * 10); // Partial match
+  }
+
+  // Check for exact phrase match
+  if (titleLower.includes(queryLower)) {
+    score += 10;
+  }
+
+  // First result bonus (already implied since we take first result)
+  score += 5;
+
+  // Cap at 100
+  return Math.min(score, 100);
 }

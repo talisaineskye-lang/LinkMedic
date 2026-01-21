@@ -88,11 +88,14 @@ model AffiliateLink {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
   // Fix tracking fields
-  suggestedLink  String?      // The corrected affiliate link URL
-  suggestedTitle String?      // Title of the suggested replacement product
-  suggestedAsin  String?      // ASIN of the suggested replacement product
-  isFixed        Boolean      @default(false) // Has user marked this as fixed?
-  dateFixed      DateTime?    // When was it fixed?
+  suggestedLink    String?      // The corrected affiliate link URL
+  suggestedTitle   String?      // Title of the suggested replacement product
+  suggestedAsin    String?      // ASIN of the suggested replacement product
+  suggestedPrice   String?      // Price of the suggested product
+  confidenceScore  Int?         // AI confidence score (0-100) for match quality
+  searchQuery      String?      // The search query used to find this replacement
+  isFixed          Boolean      @default(false) // Has user marked this as fixed?
+  dateFixed        DateTime?    // When was it fixed?
   video         Video        @relation(fields: [videoId], references: [id], onDelete: Cascade)
   scanResults   ScanResult[]
 }

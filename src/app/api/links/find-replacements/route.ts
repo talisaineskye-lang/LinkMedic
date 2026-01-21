@@ -143,6 +143,7 @@ export async function POST(request: Request) {
       linkId: string;
       productTitle: string | null;
       productUrl: string | null;
+      confidenceScore?: number;
     }> = [];
 
     for (const link of linksToProcess) {
@@ -184,9 +185,9 @@ export async function POST(request: Request) {
         }
 
         // Step 3: Save the result
-        const { title, url, asin } = searchResult.result;
+        const { title, url, asin, price, confidenceScore } = searchResult.result;
 
-        console.log(`[find-replacements] Found replacement for ${link.id}: "${title.slice(0, 40)}..."`);
+        console.log(`[find-replacements] Found replacement for ${link.id}: "${title.slice(0, 40)}..." (${confidenceScore}% confidence)`);
 
         await prisma.affiliateLink.update({
           where: { id: link.id },
@@ -194,11 +195,14 @@ export async function POST(request: Request) {
             suggestedLink: url,
             suggestedTitle: title,
             suggestedAsin: asin,
+            suggestedPrice: price,
+            confidenceScore: confidenceScore,
+            searchQuery: searchQuery,
           },
         });
 
         found++;
-        results.push({ linkId: link.id, productTitle: title, productUrl: url });
+        results.push({ linkId: link.id, productTitle: title, productUrl: url, confidenceScore });
 
       } catch (error) {
         console.error(`[find-replacements] Error processing ${link.id}:`, error);

@@ -20,6 +20,9 @@ export interface Issue {
   suggestedLink: string | null;
   suggestedTitle: string | null;
   suggestedAsin: string | null;
+  suggestedPrice: string | null;
+  confidenceScore: number | null;
+  searchQuery: string | null;
   isFixed: boolean;
   dateFixed: Date | null;
 }
@@ -36,12 +39,16 @@ export interface RawLinkData {
   suggestedLink: string | null;
   suggestedTitle: string | null;
   suggestedAsin: string | null;
+  suggestedPrice: string | null;
+  confidenceScore: number | null;
+  searchQuery: string | null;
   isFixed: boolean;
   dateFixed: Date | null;
   video: {
     id: string;
     title: string;
     viewCount: number;
+    thumbnailUrl?: string | null;
     publishedAt?: Date;
   };
 }
@@ -84,6 +91,9 @@ export function toIssue(link: RawLinkData, settings: RevenueSettings = DEFAULT_S
     suggestedLink: link.suggestedLink,
     suggestedTitle: link.suggestedTitle,
     suggestedAsin: link.suggestedAsin,
+    suggestedPrice: link.suggestedPrice,
+    confidenceScore: link.confidenceScore,
+    searchQuery: link.searchQuery,
     isFixed: link.isFixed,
     dateFixed: link.dateFixed,
   };
