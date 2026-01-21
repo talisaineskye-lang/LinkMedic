@@ -1,5 +1,5 @@
 import { extractLinksFromDescription, filterAffiliateLinks, ParsedLink } from "./link-parser";
-import { checkLink, getJitteredDelay, LinkCheckResult } from "./link-checker";
+import { checkLinksParallel, LinkCheckResult } from "./link-checker";
 import { calculateRevenueImpact, CONSERVATIVE_SETTINGS } from "./revenue-estimator";
 import { prisma } from "./db";
 import crypto from "crypto";
@@ -7,6 +7,7 @@ import crypto from "crypto";
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 const MAX_VIDEOS_TO_SCAN = 15; // Free audit: last 15 videos only (not full channel history)
 const MAX_LINKS_TO_CHECK = 20; // Limit link checks to avoid timeout
+const PARALLEL_CONCURRENCY = 5; // Check 5 links simultaneously
 
 // Required for YouTube API key with HTTP referrer restrictions
 const YOUTUBE_API_HEADERS = {
@@ -364,18 +365,33 @@ export async function runPublicAudit(channelInput: string, ipAddress?: string): 
   }
 
   // Check link health (limited to avoid timeout)
+  // Using parallel processing for 5-10x faster audits
   const linksToCheck = allLinks.slice(0, MAX_LINKS_TO_CHECK);
 
-  for (let i = 0; i < linksToCheck.length; i++) {
-    const link = linksToCheck[i];
-    try {
-      const isAmazon = link.merchant === "amazon";
-      const result = await checkLink(link.url, isAmazon);
-      link.status = result.status;
-      // Debug logging to see what's being detected
-      console.log(`[LinkCheck ${i + 1}/${linksToCheck.length}] ${link.url.substring(0, 60)}...`);
+  console.log(`[PublicAudit] Starting parallel link check for ${linksToCheck.length} links...`);
+  const startTime = Date.now();
+
+  // Prepare links for parallel checking
+  const linksForCheck = linksToCheck.map(link => ({
+    url: link.url,
+    isAmazon: link.merchant === "amazon",
+  }));
+
+  // Run checks in parallel with concurrency limit
+  const results = await checkLinksParallel(linksForCheck, {
+    concurrency: PARALLEL_CONCURRENCY,
+    onProgress: (completed, total, result) => {
+      // Log each result as it completes
+      console.log(`[LinkCheck ${completed}/${total}] ${result.originalUrl.substring(0, 50)}...`);
       console.log(`  -> Status: ${result.status} | Reason: ${result.reason}`);
-      console.log(`  -> Final URL: ${result.finalUrl?.substring(0, 60) || "N/A"}...`);
+    },
+  });
+
+  // Map results back to our links and calculate revenue impact
+  for (const link of linksToCheck) {
+    const result = results.get(link.url);
+    if (result) {
+      link.status = result.status;
       // Calculate revenue impact using CONSERVATIVE settings for free audit
       // Uses lower CTR (1%), lower conversion (1.5%), lower commission (3%)
       // and conservative severity factors
@@ -388,26 +404,15 @@ export async function runPublicAudit(channelInput: string, ipAddress?: string): 
         undefined,  // actualMonthlyViews
         true  // useConservativeSeverity
       );
-    } catch (error) {
-      console.error(`Error checking link ${link.url}:`, error);
+    } else {
+      // Should not happen, but handle gracefully
       link.status = "UNKNOWN";
-      link.revenueImpact = calculateRevenueImpact(
-        link.viewCount,
-        "UNKNOWN",
-        CONSERVATIVE_SETTINGS,
-        link.videoAgeMonths,
-        false,
-        undefined,
-        true
-      );
-    }
-
-    // Jittered rate limiting (2-4 seconds) for anti-bot protection
-    if (i < linksToCheck.length - 1) {
-      const delay = getJitteredDelay();
-      await new Promise(resolve => setTimeout(resolve, delay));
+      link.revenueImpact = 0;
     }
   }
+
+  const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
+  console.log(`[PublicAudit] Completed ${linksToCheck.length} link checks in ${totalTime}s`);
 
   // For remaining unchecked links, mark as UNKNOWN with no impact (we don't know their status)
   for (let i = MAX_LINKS_TO_CHECK; i < allLinks.length; i++) {
@@ -416,13 +421,18 @@ export async function runPublicAudit(channelInput: string, ipAddress?: string): 
   }
 
   // Calculate metrics - include new status types
+  // 'Broken' bucket: NOT_FOUND, MISSING_TAG (complete failures)
   const brokenLinks = allLinks.filter(l =>
     l.status === "NOT_FOUND" || l.status === "MISSING_TAG"
   ).length;
+  // 'Out of Stock/Alerts' bucket: OOS, OOS_THIRD_PARTY
   const outOfStockLinks = allLinks.filter(l =>
     l.status === "OOS" || l.status === "OOS_THIRD_PARTY"
   ).length;
-  const redirectLinks = allLinks.filter(l => l.status === "REDIRECT").length;
+  // 'Redirect Errors' bucket: SEARCH_REDIRECT, REDIRECT
+  const redirectLinks = allLinks.filter(l =>
+    l.status === "REDIRECT" || l.status === "SEARCH_REDIRECT"
+  ).length;
   const healthyLinks = allLinks.filter(l => l.status === "OK").length;
 
   // ============================================
@@ -431,9 +441,10 @@ export async function runPublicAudit(channelInput: string, ipAddress?: string): 
 
   // 1. VERIFIED LOSS: Only from scanned videos (100% verifiable)
   // This is the most accurate number - what we actually found and checked
-  // Includes all issue types: NOT_FOUND, OOS, OOS_THIRD_PARTY, REDIRECT, MISSING_TAG
+  // Includes all issue types: NOT_FOUND, SEARCH_REDIRECT, OOS, OOS_THIRD_PARTY, REDIRECT, MISSING_TAG
   const confirmedIssues = allLinks.filter(l =>
     l.status === "NOT_FOUND" ||
+    l.status === "SEARCH_REDIRECT" ||
     l.status === "MISSING_TAG" ||
     l.status === "OOS" ||
     l.status === "OOS_THIRD_PARTY" ||
@@ -459,6 +470,7 @@ export async function runPublicAudit(channelInput: string, ipAddress?: string): 
   const issues = allLinks
     .filter(l =>
       l.status === "NOT_FOUND" ||
+      l.status === "SEARCH_REDIRECT" ||
       l.status === "MISSING_TAG" ||
       l.status === "OOS" ||
       l.status === "OOS_THIRD_PARTY" ||

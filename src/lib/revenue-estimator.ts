@@ -145,7 +145,8 @@ export const CONSERVATIVE_SETTINGS: RevenueSettings = {
  */
 export const CONSERVATIVE_SEVERITY_FACTORS: Record<string, number> = {
   MISSING_TAG: 1.0,      // Full loss - no commission earned
-  NOT_FOUND: 1.0,        // Full loss - dead link / dog page / search fallback
+  NOT_FOUND: 1.0,        // Full loss - dead link / dog page
+  SEARCH_REDIRECT: 1.0,  // Full loss - product redirected to search results
   OOS: 0.4,              // 60% "saved" by Amazon's similar items
   OOS_THIRD_PARTY: 0.2,  // 80% still converts via third party (conservative)
   REDIRECT: 0.2,         // 80% still converts via redirect
@@ -181,14 +182,16 @@ export function isNicheEvergreen(niche: CreatorNiche): boolean {
  *
  * Key insights:
  * - MISSING_TAG: Link works but no commission earned (100% loss)
- * - NOT_FOUND: Complete loss, no sale possible (includes soft 404s like search fallback)
+ * - NOT_FOUND: Complete loss, no sale possible (404, dog page)
+ * - SEARCH_REDIRECT: Product redirected to search results (soft 404) - complete loss
  * - OOS: Amazon shows "Similar Items", some halo effect
  * - OOS_THIRD_PARTY: Third party sellers available, lower trust but still converts
  * - REDIRECT: Often goes to newer/better products that still convert
  */
 export const SEVERITY_FACTORS: Record<string, number> = {
   MISSING_TAG: 1.0,      // Link works but affiliate tag missing/stripped - full loss
-  NOT_FOUND: 1.0,        // Dead / 404 / Dog Page / Search Fallback - complete loss
+  NOT_FOUND: 1.0,        // Dead / 404 / Dog Page - complete loss
+  SEARCH_REDIRECT: 1.0,  // Product redirected to search results - complete loss
   OOS: 0.5,              // Out of stock - Amazon shows "Similar Items", some halo effect
   OOS_THIRD_PARTY: 0.3,  // Third party sellers only - lower trust, still converts
   REDIRECT: 0.3,         // Redirect to different product - often still converts
@@ -524,14 +527,12 @@ export function calculateVideoLeakage(
 
     switch (link.status) {
       case "NOT_FOUND":
-        // Check if it's a search redirect
-        if (link.reason?.includes("Search Fallback")) {
-          breakdown.searchRedirects.count++;
-          breakdown.searchRedirects.annualLoss += annualLinkLoss;
-        } else {
-          breakdown.deadLinks.count++;
-          breakdown.deadLinks.annualLoss += annualLinkLoss;
-        }
+        breakdown.deadLinks.count++;
+        breakdown.deadLinks.annualLoss += annualLinkLoss;
+        break;
+      case "SEARCH_REDIRECT":
+        breakdown.searchRedirects.count++;
+        breakdown.searchRedirects.annualLoss += annualLinkLoss;
         break;
       case "MISSING_TAG":
         breakdown.missingTags.count++;
@@ -546,9 +547,9 @@ export function calculateVideoLeakage(
         breakdown.thirdPartyOnly.annualLoss += annualLinkLoss;
         break;
       case "REDIRECT":
-        // Treat non-search redirects as potential issues
-        breakdown.deadLinks.count++;
-        breakdown.deadLinks.annualLoss += annualLinkLoss;
+        // Treat non-search redirects as redirect errors
+        breakdown.searchRedirects.count++;
+        breakdown.searchRedirects.annualLoss += annualLinkLoss;
         break;
     }
   });

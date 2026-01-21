@@ -224,6 +224,8 @@ export function AuditResultsClient({ auditId, initialData }: AuditResultsClientP
                   <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${
                     issue.status === "NOT_FOUND"
                       ? "bg-red-950/50 text-red-400"
+                      : issue.status === "SEARCH_REDIRECT"
+                      ? "bg-orange-950/50 text-orange-400"
                       : issue.status === "MISSING_TAG"
                       ? "bg-purple-950/50 text-purple-400"
                       : issue.status === "REDIRECT"
@@ -233,6 +235,7 @@ export function AuditResultsClient({ auditId, initialData }: AuditResultsClientP
                       : "bg-amber-950/50 text-amber-400"
                   }`}>
                     {issue.status === "NOT_FOUND" ? "Broken" :
+                     issue.status === "SEARCH_REDIRECT" ? "Redirect Error" :
                      issue.status === "MISSING_TAG" ? "No Tag" :
                      issue.status === "REDIRECT" ? "Redirect" :
                      issue.status === "OOS_THIRD_PARTY" ? "3rd Party" :

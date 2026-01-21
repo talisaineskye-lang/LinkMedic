@@ -110,6 +110,7 @@ enum LinkStatus {
   OOS
   OOS_THIRD_PARTY   // Available from third-party sellers only
   NOT_FOUND
+  SEARCH_REDIRECT   // Product redirected to Amazon search results (soft 404)
   MISSING_TAG       // Affiliate tag stripped from URL
   REDIRECT
   UNKNOWN
@@ -135,4 +136,27 @@ model PublicAudit {
 
   @@index([channelId])
   @@index([createdAt])
+}
+
+// ============================================
+// ASIN-BASED LINK CACHE
+// ============================================
+// Caches ScrapingBee results by ASIN to avoid duplicate API calls
+// Same product across different videos will use cached result
+model LinkCache {
+  id           String     @id @default(cuid())
+  asin         String     @unique  // 10-character Amazon product ID (e.g., B0CJ4K9XYZ)
+  status       LinkStatus           // Cached link status
+  finalUrl     String?              // Final resolved URL after redirects
+  reason       String?              // Detection reason (e.g., "Search Fallback", "Out of Stock")
+  httpStatus   Int?                 // HTTP status code from the check
+  lastChecked  DateTime   @default(now())
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  // Stats for monitoring cache effectiveness
+  hitCount     Int        @default(0)  // How many times this cache was used
+
+  @@index([asin])
+  @@index([lastChecked])
 }

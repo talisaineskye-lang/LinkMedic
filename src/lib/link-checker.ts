@@ -1,8 +1,12 @@
+import { extractAsin, getCachedResult, setCachedResult } from "./link-cache";
+import pLimit from "p-limit";
+
 export type LinkStatus =
   | "OK"
   | "OOS"
   | "OOS_THIRD_PARTY"  // Available from other sellers (lower trust)
   | "NOT_FOUND"
+  | "SEARCH_REDIRECT"  // Product redirected to Amazon search results (soft 404)
   | "MISSING_TAG"      // Valid page but affiliate tag stripped
   | "REDIRECT"         // Stuck in redirect or non-Amazon destination
   | "UNKNOWN";
@@ -18,6 +22,8 @@ export interface LinkCheckResult {
   // Legacy fields for backwards compatibility
   availabilityStatus: string | null;
   notes: string | null;
+  // Cache metadata
+  fromCache?: boolean;
 }
 
 // ============================================
@@ -42,13 +48,14 @@ function getRandomUserAgent(): string {
 // SEVERITY FACTORS (Revenue Impact)
 // ============================================
 const SEVERITY_MAP: Record<LinkStatus, number> = {
-  NOT_FOUND: 1.0,       // Complete loss - dead link
-  MISSING_TAG: 1.0,     // Complete loss - no commission earned
-  OOS: 0.5,             // Partial loss - Amazon shows similar items
-  OOS_THIRD_PARTY: 0.3, // Lower loss - third party sellers available
-  REDIRECT: 0.3,        // Partial loss - may still convert
-  OK: 0,                // No loss
-  UNKNOWN: 0.2,         // Conservative estimate
+  NOT_FOUND: 1.0,        // Complete loss - dead link
+  SEARCH_REDIRECT: 1.0,  // Complete loss - product redirected to search results
+  MISSING_TAG: 1.0,      // Complete loss - no commission earned
+  OOS: 0.5,              // Partial loss - Amazon shows similar items
+  OOS_THIRD_PARTY: 0.3,  // Lower loss - third party sellers available
+  REDIRECT: 0.3,         // Partial loss - may still convert
+  OK: 0,                 // No loss
+  UNKNOWN: 0.2,          // Conservative estimate
 };
 
 // ============================================
@@ -243,12 +250,14 @@ async function getShieldedData(targetUrl: string): Promise<ShieldedDataResult> {
 
   try {
     // Build ScrapingBee API URL with params
+    // Optimized for speed: no JS rendering, explicit redirect following
     const params = new URLSearchParams({
       api_key: apiKey,
       url: targetUrl,
       premium_proxy: "true",           // Uses residential IPs to bypass Amazon blocks
       country_code: "us",              // Keeps results consistent
-      return_page_source: "true",
+      render_js: "false",              // SPEED: Skip JS rendering - we only need HTML
+      forward_headers: "true",         // Forward our headers to target
       transparent_status_code: "true", // Returns the 404/200 code from Amazon, not ScrapingBee
     });
 
@@ -318,7 +327,8 @@ function createResult(
   status: LinkStatus,
   reason: string,
   httpStatus: number | null,
-  finalUrl: string | null
+  finalUrl: string | null,
+  fromCache: boolean = false
 ): LinkCheckResult {
   return {
     status,
@@ -331,7 +341,33 @@ function createResult(
     // Legacy fields
     availabilityStatus: status === "OK" ? "available" : status.toLowerCase(),
     notes: reason,
+    fromCache,
   };
+}
+
+/**
+ * Creates a result and saves it to the ASIN cache (if ASIN can be extracted)
+ * This ensures all link check results are cached for future lookups
+ */
+async function createAndCacheResult(
+  originalUrl: string,
+  status: LinkStatus,
+  reason: string,
+  httpStatus: number | null,
+  finalUrl: string | null
+): Promise<LinkCheckResult> {
+  const result = createResult(originalUrl, status, reason, httpStatus, finalUrl, false);
+
+  // Try to extract ASIN from the final URL (more reliable than original for shortlinks)
+  const asin = extractAsin(finalUrl || "") || extractAsin(originalUrl);
+  if (asin) {
+    // Save to cache asynchronously (don't await - fire and forget)
+    setCachedResult(asin, status, finalUrl, reason, httpStatus).catch(() => {
+      // Ignore cache errors
+    });
+  }
+
+  return result;
 }
 
 /**
@@ -360,6 +396,27 @@ export async function checkLink(
   const originalHadTag = hasAffiliateTag(url);
   const originalHadProduct = hadProductIntent(url);
 
+  // ============================================
+  // PHASE 0: ASIN CACHE CHECK (Saves ScrapingBee credits!)
+  // ============================================
+  // Try to extract ASIN from URL and check cache first
+  // This works for resolved URLs - shortlinks will be resolved first
+  const asinFromUrl = extractAsin(url);
+  if (asinFromUrl && isAmazon) {
+    const cached = await getCachedResult(asinFromUrl);
+    if (cached) {
+      // Return cached result immediately - no API call needed!
+      return createResult(
+        originalUrl,
+        cached.status,
+        cached.reason ? `${cached.reason} (cached)` : "Cached result",
+        cached.httpStatus,
+        cached.finalUrl,
+        true // fromCache = true
+      );
+    }
+  }
+
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     if (attempt > 0) {
       // Exponential backoff between retries
@@ -387,9 +444,9 @@ export async function checkLink(
       // This MUST come before HTTP status check because search redirects
       // often return 200 OK but are actually broken product links
       if (isSearchFallback(finalUrl)) {
-        return createResult(
+        return createAndCacheResult(
           originalUrl,
-          "NOT_FOUND",
+          "SEARCH_REDIRECT",
           "Search Fallback - Amazon redirected to search results",
           httpStatus,
           finalUrl
@@ -401,7 +458,7 @@ export async function checkLink(
       // ============================================
       // Terminal 404/410 - Not found
       if (httpStatus === 404 || httpStatus === 410) {
-        return createResult(
+        return createAndCacheResult(
           originalUrl,
           "NOT_FOUND",
           `HTTP ${httpStatus} - Page not found`,
@@ -412,7 +469,7 @@ export async function checkLink(
 
       // Other error status codes (5xx, other 4xx)
       if (httpStatus >= 400) {
-        return createResult(
+        return createAndCacheResult(
           originalUrl,
           "NOT_FOUND",
           `HTTP ${httpStatus} - Server error`,
@@ -428,7 +485,7 @@ export async function checkLink(
         // Check for Amazon "dog page" (product completely gone)
         // Look for id="d" or "looking for something?" text
         if (checkAmazonNotFound(html) || html.includes('id="d"')) {
-          return createResult(
+          return createAndCacheResult(
             originalUrl,
             "NOT_FOUND",
             "Dog Page - Product no longer exists on Amazon",
@@ -439,6 +496,7 @@ export async function checkLink(
 
         // Check for CAPTCHA/bot detection page
         if (html.includes("enter the characters") || html.includes("automated access")) {
+          // Don't cache CAPTCHA results - they're temporary
           return createResult(
             originalUrl,
             "UNKNOWN",
@@ -450,7 +508,7 @@ export async function checkLink(
 
         // Check for generic error page
         if (isErrorPage(html)) {
-          return createResult(
+          return createAndCacheResult(
             originalUrl,
             "NOT_FOUND",
             "Error Page - Redirected to error page",
@@ -464,7 +522,7 @@ export async function checkLink(
         // ============================================
         // If original had a tag but final doesn't, it was stripped
         if (originalHadTag && !hasAffiliateTag(finalUrl)) {
-          return createResult(
+          return createAndCacheResult(
             originalUrl,
             "MISSING_TAG",
             "Affiliate tag stripped - No commission will be earned",
@@ -475,7 +533,7 @@ export async function checkLink(
 
         // If we have an expected tag, verify it's present
         if (originalTag && !finalUrl.includes(`tag=${originalTag}`)) {
-          return createResult(
+          return createAndCacheResult(
             originalUrl,
             "MISSING_TAG",
             `Expected tag "${originalTag}" not found in final URL`,
@@ -494,7 +552,7 @@ export async function checkLink(
 
         // Check for primary OOS indicators first
         if (checkAmazonOOS(html)) {
-          return createResult(
+          return createAndCacheResult(
             originalUrl,
             "OOS",
             "Out of Stock - Product currently unavailable",
@@ -506,7 +564,7 @@ export async function checkLink(
         // Check for third-party only availability (lower conversion)
         // This is when the main Amazon listing is gone but other sellers exist
         if (checkAmazonThirdParty(html) && !hasAddToCart) {
-          return createResult(
+          return createAndCacheResult(
             originalUrl,
             "OOS_THIRD_PARTY",
             "Third Party Only - Available from other sellers",
@@ -534,6 +592,7 @@ export async function checkLink(
                            originalDomain.includes("tinyurl.") || originalDomain.includes("ow.ly");
 
         if (isShortener && finalDomain === originalDomain) {
+          // Don't cache shortener failures - they might resolve later
           return createResult(
             originalUrl,
             "REDIRECT",
@@ -545,7 +604,7 @@ export async function checkLink(
 
         // Case 2: Amazon link redirected to non-Amazon (external redirect)
         if (originalIsAmazon && !finalIsAmazon) {
-          return createResult(
+          return createAndCacheResult(
             originalUrl,
             "REDIRECT",
             "External Redirect - Amazon link redirected off-site",
@@ -560,7 +619,7 @@ export async function checkLink(
           const finalAsin = finalUrl.match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})/i);
 
           if (originalAsin && finalAsin && originalAsin[1] !== finalAsin[1]) {
-            return createResult(
+            return createAndCacheResult(
               originalUrl,
               "REDIRECT",
               `Product Redirect - ASIN changed from ${originalAsin[1]} to ${finalAsin[1]}`,
@@ -587,7 +646,7 @@ export async function checkLink(
       // ============================================
       // PHASE 8: ALL CHECKS PASSED - LINK IS OK
       // ============================================
-      return createResult(
+      return createAndCacheResult(
         originalUrl,
         "OK",
         "Active and Buyable",
@@ -624,6 +683,7 @@ export async function checkLink(
 
 /**
  * Checks multiple links with jittered rate limiting (anti-bot protection)
+ * @deprecated Use checkLinksParallel for better performance
  * @param urls - Array of URLs to check
  * @param isAmazonMap - Map of URL to whether it's an Amazon link
  * @param useJitter - Use random 2-4 second delays between checks (default: true)
@@ -647,6 +707,86 @@ export async function checkLinksWithRateLimit(
       await sleep(delay);
     }
   }
+
+  return results;
+}
+
+// ============================================
+// PARALLEL LINK CHECKING (Performance Optimized)
+// ============================================
+
+// Default concurrency limit - balance between speed and not overwhelming APIs
+const DEFAULT_CONCURRENCY = 5;
+
+/**
+ * Callback for progress updates during parallel link checking
+ */
+export type LinkCheckProgressCallback = (
+  completed: number,
+  total: number,
+  result: LinkCheckResult
+) => void;
+
+/**
+ * Options for parallel link checking
+ */
+export interface ParallelCheckOptions {
+  concurrency?: number;           // Max concurrent requests (default: 5)
+  onProgress?: LinkCheckProgressCallback;  // Callback for streaming results
+}
+
+/**
+ * Checks multiple links in parallel with concurrency control
+ * Uses p-limit to run up to N checks simultaneously while respecting rate limits
+ *
+ * This is 5-10x faster than sequential checking for larger audits.
+ *
+ * @param links - Array of link objects with url and isAmazon flag
+ * @param options - Concurrency and progress options
+ * @returns Map of URL to LinkCheckResult
+ */
+export async function checkLinksParallel(
+  links: Array<{ url: string; isAmazon: boolean }>,
+  options: ParallelCheckOptions = {}
+): Promise<Map<string, LinkCheckResult>> {
+  const { concurrency = DEFAULT_CONCURRENCY, onProgress } = options;
+  const results = new Map<string, LinkCheckResult>();
+  const limit = pLimit(concurrency);
+
+  let completed = 0;
+  const total = links.length;
+
+  console.log(`[LinkChecker] Starting parallel check: ${total} links with concurrency ${concurrency}`);
+  const startTime = Date.now();
+
+  // Create array of limited promises
+  const promises = links.map(({ url, isAmazon }) =>
+    limit(async () => {
+      const result = await checkLink(url, isAmazon);
+      results.set(url, result);
+
+      completed++;
+
+      // Call progress callback if provided (for UI streaming)
+      if (onProgress) {
+        onProgress(completed, total, result);
+      }
+
+      // Log progress every 5 links
+      if (completed % 5 === 0 || completed === total) {
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+        console.log(`[LinkChecker] Progress: ${completed}/${total} (${elapsed}s elapsed)`);
+      }
+
+      return result;
+    })
+  );
+
+  // Wait for all checks to complete
+  await Promise.all(promises);
+
+  const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
+  console.log(`[LinkChecker] Completed ${total} links in ${totalTime}s (${(total / parseFloat(totalTime)).toFixed(1)} links/sec)`);
 
   return results;
 }
