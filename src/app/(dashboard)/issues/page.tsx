@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { getAllIssues, RawLinkData } from "@/lib/prioritizer";
 import { formatCurrency } from "@/lib/revenue-estimator";
 import { IssuesTable } from "@/components/issues-table";
-import { GenerateSuggestionsButton } from "@/components/generate-suggestions-button";
+import { FindReplacementsButton } from "@/components/find-replacements-button";
 
 export default async function IssuesPage() {
   const session = await getServerSession(authOptions);
@@ -29,7 +29,7 @@ export default async function IssuesPage() {
     avgOrderValue: user?.avgOrderValue ?? 45.0,
   };
 
-  // Get all links with video data (including new fix tracking fields)
+  // Get all links with video data (including fix tracking fields)
   const links = await prisma.affiliateLink.findMany({
     where: { video: { userId: session.user.id } },
     select: {
@@ -39,6 +39,8 @@ export default async function IssuesPage() {
       merchant: true,
       lastCheckedAt: true,
       suggestedLink: true,
+      suggestedTitle: true,
+      suggestedAsin: true,
       isFixed: true,
       dateFixed: true,
       video: {
@@ -80,7 +82,7 @@ export default async function IssuesPage() {
           </p>
         </div>
         <div className="flex items-start gap-4">
-          <GenerateSuggestionsButton />
+          <FindReplacementsButton />
           {fixedLinks.length > 0 && (
             <div className="text-right">
               <p className="text-sm text-slate-400">Revenue Recovered</p>

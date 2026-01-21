@@ -18,6 +18,8 @@ export interface Issue {
   estimatedLoss: number;
   // Fix tracking fields
   suggestedLink: string | null;
+  suggestedTitle: string | null;
+  suggestedAsin: string | null;
   isFixed: boolean;
   dateFixed: Date | null;
 }
@@ -32,6 +34,8 @@ export interface RawLinkData {
   merchant: string;
   lastCheckedAt: Date | null;
   suggestedLink: string | null;
+  suggestedTitle: string | null;
+  suggestedAsin: string | null;
   isFixed: boolean;
   dateFixed: Date | null;
   video: {
@@ -78,6 +82,8 @@ export function toIssue(link: RawLinkData, settings: RevenueSettings = DEFAULT_S
       videoAgeMonths
     ),
     suggestedLink: link.suggestedLink,
+    suggestedTitle: link.suggestedTitle,
+    suggestedAsin: link.suggestedAsin,
     isFixed: link.isFixed,
     dateFixed: link.dateFixed,
   };

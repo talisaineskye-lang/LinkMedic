@@ -246,3 +246,72 @@ export async function generateSuggestedLink(
  * Used when no affiliate tag can be found
  */
 export const PLACEHOLDER_TAG = "YOUR-TAG-HERE";
+
+/**
+ * Uses Claude to extract the product name/type from a broken link and video context
+ * Returns a search query that can be used to find replacement products
+ */
+export async function extractProductSearchQuery(
+  originalUrl: string,
+  videoTitle: string,
+  videoDescription?: string
+): Promise<string | null> {
+  console.log(`[claude] extractProductSearchQuery called`);
+
+  // Check if API key is configured
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.error("[claude] ANTHROPIC_API_KEY is not set!");
+    return null;
+  }
+
+  try {
+    const { asin } = extractProductInfoFromUrl(originalUrl);
+
+    // Build context for Claude
+    const context = `
+Video Title: ${videoTitle}
+${videoDescription ? `Video Description snippet: ${videoDescription.slice(0, 500)}...` : ""}
+Original broken Amazon URL: ${originalUrl}
+${asin ? `Original ASIN: ${asin}` : ""}
+    `.trim();
+
+    console.log(`[claude] Extracting product search query...`);
+    const anthropic = getAnthropicClient();
+    const message = await anthropic.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 200,
+      messages: [
+        {
+          role: "user",
+          content: `Analyze this broken Amazon affiliate link and video context. Extract a SHORT search query (2-5 words) that would find similar products on Amazon.
+
+${context}
+
+Rules:
+- Output ONLY the search query, nothing else
+- Use generic product terms, not specific brand names
+- Example outputs: "wireless gaming headset", "usb c hub", "led ring light"
+- If the context gives no clues, respond with "unknown"
+
+Search query:`,
+        },
+      ],
+    });
+
+    const responseText =
+      message.content[0].type === "text" ? message.content[0].text : "";
+
+    const searchQuery = responseText.trim().toLowerCase();
+
+    console.log(`[claude] Extracted search query: "${searchQuery}"`);
+
+    if (!searchQuery || searchQuery === "unknown" || searchQuery.length < 3) {
+      return null;
+    }
+
+    return searchQuery;
+  } catch (error) {
+    console.error("[claude] Error extracting product search query:", error);
+    return null;
+  }
+}

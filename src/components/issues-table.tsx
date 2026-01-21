@@ -18,6 +18,8 @@ interface Issue {
   lastCheckedAt: Date | null;
   estimatedLoss: number;
   suggestedLink: string | null;
+  suggestedTitle: string | null;
+  suggestedAsin: string | null;
   isFixed: boolean;
   dateFixed: Date | null;
 }
@@ -87,7 +89,7 @@ export function IssuesTable({ issues }: IssuesTableProps) {
               Broken Link
             </th>
             <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-              Suggested Fix
+              Replacement Product
             </th>
             <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
               Status
@@ -139,36 +141,56 @@ export function IssuesTable({ issues }: IssuesTableProps) {
                 </div>
               </td>
 
-              {/* Suggested Fix */}
+              {/* Replacement Product */}
               <td className="px-4 py-4">
                 {issue.suggestedLink ? (
-                  <div className="flex items-center gap-2">
-                    <a
-                      href={issue.suggestedLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-emerald-400 hover:underline truncate block max-w-[180px]"
-                      title={issue.suggestedLink}
-                    >
-                      {issue.suggestedLink.length > 40
-                        ? issue.suggestedLink.slice(0, 40) + "..."
-                        : issue.suggestedLink}
-                    </a>
-                    <button
-                      onClick={() => copyToClipboard(issue.suggestedLink!, issue.id)}
-                      className="p-1.5 rounded-md bg-emerald-950/50 border border-emerald-700/50 hover:bg-emerald-900/50 transition flex-shrink-0"
-                      title="Copy suggested link"
-                    >
-                      {copiedId === issue.id ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5 text-emerald-400" />
+                  <div className="space-y-1">
+                    {/* Product Title */}
+                    {issue.suggestedTitle && (
+                      <a
+                        href={issue.suggestedLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-emerald-400 hover:underline block max-w-[220px] truncate"
+                        title={issue.suggestedTitle}
+                      >
+                        {issue.suggestedTitle.length > 50
+                          ? issue.suggestedTitle.slice(0, 50) + "..."
+                          : issue.suggestedTitle}
+                      </a>
+                    )}
+                    {/* Copy Button Row */}
+                    <div className="flex items-center gap-2">
+                      {!issue.suggestedTitle && (
+                        <a
+                          href={issue.suggestedLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-slate-400 hover:text-emerald-400 truncate block max-w-[160px]"
+                          title={issue.suggestedLink}
+                        >
+                          {issue.suggestedLink.length > 35
+                            ? issue.suggestedLink.slice(0, 35) + "..."
+                            : issue.suggestedLink}
+                        </a>
                       )}
-                    </button>
+                      <button
+                        onClick={() => copyToClipboard(issue.suggestedLink!, issue.id)}
+                        className="p-1.5 rounded-md bg-emerald-950/50 border border-emerald-700/50 hover:bg-emerald-900/50 transition flex-shrink-0"
+                        title="Copy replacement link"
+                      >
+                        {copiedId === issue.id ? (
+                          <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5 text-emerald-400" />
+                        )}
+                      </button>
+                      <ExternalLink className="w-3 h-3 text-slate-500 flex-shrink-0" />
+                    </div>
                   </div>
                 ) : (
                   <span className="text-xs text-slate-500 italic">
-                    No suggestion yet
+                    Click &quot;Find Replacements&quot;
                   </span>
                 )}
               </td>
@@ -177,17 +199,25 @@ export function IssuesTable({ issues }: IssuesTableProps) {
               <td className="px-4 py-4">
                 <span
                   className={`inline-flex px-2 py-1 text-xs font-medium rounded-full border ${
-                    issue.status === "NOT_FOUND"
+                    issue.status === "NOT_FOUND" || issue.status === "MISSING_TAG"
                       ? "bg-red-950/30 border-red-700/50 text-red-400"
-                      : issue.status === "OOS"
+                      : issue.status === "SEARCH_REDIRECT"
+                      ? "bg-orange-950/30 border-orange-700/50 text-orange-400"
+                      : issue.status === "OOS" || issue.status === "OOS_THIRD_PARTY"
                       ? "bg-amber-950/30 border-amber-700/50 text-amber-400"
                       : "bg-slate-700/30 border-slate-600/50 text-slate-400"
                   }`}
                 >
                   {issue.status === "NOT_FOUND"
                     ? "Broken"
+                    : issue.status === "SEARCH_REDIRECT"
+                    ? "Redirect"
+                    : issue.status === "MISSING_TAG"
+                    ? "No Tag"
                     : issue.status === "OOS"
                     ? "Out of Stock"
+                    : issue.status === "OOS_THIRD_PARTY"
+                    ? "3rd Party"
                     : issue.status}
                 </span>
               </td>
