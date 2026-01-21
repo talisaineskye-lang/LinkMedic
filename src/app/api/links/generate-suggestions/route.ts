@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { generateSuggestedLink, extractAffiliateTag } from "@/lib/claude";
 import { isAmazonUrl } from "@/lib/link-parser";
+import { LinkStatus } from "@prisma/client";
 
 // Rate limiting: max 10 suggestions at a time to avoid API overload
 const MAX_SUGGESTIONS_PER_REQUEST = 10;
@@ -27,13 +28,22 @@ export async function POST(request: Request) {
     // If specific link IDs provided, use those; otherwise get all broken links without suggestions
     let linksToProcess;
 
+    // All statuses that indicate a broken or problematic link needing a replacement
+    const BROKEN_STATUSES: LinkStatus[] = [
+      LinkStatus.NOT_FOUND,
+      LinkStatus.OOS,
+      LinkStatus.OOS_THIRD_PARTY,
+      LinkStatus.SEARCH_REDIRECT,
+      LinkStatus.MISSING_TAG,
+    ];
+
     if (linkIds && Array.isArray(linkIds) && linkIds.length > 0) {
       // Process specific links
       linksToProcess = await prisma.affiliateLink.findMany({
         where: {
           id: { in: linkIds },
           video: { userId: session.user.id },
-          status: { in: ["NOT_FOUND", "OOS"] },
+          status: { in: BROKEN_STATUSES },
           isFixed: false,
         },
         select: {
@@ -56,7 +66,7 @@ export async function POST(request: Request) {
       linksToProcess = await prisma.affiliateLink.findMany({
         where: {
           video: { userId: session.user.id },
-          status: { in: ["NOT_FOUND", "OOS"] },
+          status: { in: BROKEN_STATUSES },
           isFixed: false,
           suggestedLink: null, // Only links without suggestions
           // Include amazon and unknown (unknown may be Amazon links from before proper detection)
@@ -202,10 +212,19 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // All statuses that indicate a broken or problematic link needing a replacement
+    const BROKEN_STATUSES: LinkStatus[] = [
+      LinkStatus.NOT_FOUND,
+      LinkStatus.OOS,
+      LinkStatus.OOS_THIRD_PARTY,
+      LinkStatus.SEARCH_REDIRECT,
+      LinkStatus.MISSING_TAG,
+    ];
+
     const count = await prisma.affiliateLink.count({
       where: {
         video: { userId: session.user.id },
-        status: { in: ["NOT_FOUND", "OOS"] },
+        status: { in: BROKEN_STATUSES },
         isFixed: false,
         suggestedLink: null,
         merchant: { in: ["amazon", "unknown"] },
