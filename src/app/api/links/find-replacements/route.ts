@@ -2,14 +2,13 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { extractProductSearchQuery, extractAffiliateTag } from "@/lib/claude";
-import { searchAmazon } from "@/lib/amazon-search";
-import { isAmazonUrl } from "@/lib/link-parser";
+import { findReplacementProduct, getConfidenceLevel } from "@/lib/suggestion-engine";
+import { extractAffiliateTag, isAmazonDomain } from "@/lib/link-audit-engine";
 import { LinkStatus } from "@prisma/client";
 
-// Rate limiting: max 5 at a time to avoid API overload
+// Rate limiting: max 5 at a time
 const MAX_PER_REQUEST = 5;
-const DELAY_BETWEEN_REQUESTS = 1500; // 1.5 seconds
+const DELAY_BETWEEN_REQUESTS = 2000; // 2 seconds
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -23,7 +22,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check if required API keys are configured
+    // Check required API keys
     if (!process.env.ANTHROPIC_API_KEY) {
       return NextResponse.json({
         success: false,
@@ -45,7 +44,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { linkIds } = body;
 
-    // All statuses that indicate a broken link needing replacement
+    // All statuses that need replacement
     const BROKEN_STATUSES: LinkStatus[] = [
       LinkStatus.NOT_FOUND,
       LinkStatus.OOS,
@@ -58,7 +57,6 @@ export async function POST(request: Request) {
     let linksToProcess;
 
     if (linkIds && Array.isArray(linkIds) && linkIds.length > 0) {
-      // Process specific links
       linksToProcess = await prisma.affiliateLink.findMany({
         where: {
           id: { in: linkIds },
@@ -70,7 +68,6 @@ export async function POST(request: Request) {
           id: true,
           originalUrl: true,
           merchant: true,
-          suggestedLink: true,
           video: {
             select: {
               title: true,
@@ -93,7 +90,6 @@ export async function POST(request: Request) {
           id: true,
           originalUrl: true,
           merchant: true,
-          suggestedLink: true,
           video: {
             select: {
               title: true,
@@ -105,7 +101,7 @@ export async function POST(request: Request) {
       });
     }
 
-    console.log(`[find-replacements] Found ${linksToProcess.length} links to process`);
+    console.log(`[find-replacements] Processing ${linksToProcess.length} links`);
 
     if (linksToProcess.length === 0) {
       return NextResponse.json({
@@ -116,9 +112,9 @@ export async function POST(request: Request) {
       });
     }
 
-    // Try to find a fallback affiliate tag from user's existing Amazon links
-    let fallbackAffiliateTag: string | null = null;
-    const allUserLinks = await prisma.affiliateLink.findMany({
+    // Find user's affiliate tag from existing links
+    let userAffiliateTag: string | null = null;
+    const existingLinks = await prisma.affiliateLink.findMany({
       where: {
         video: { userId: session.user.id },
         merchant: "amazon",
@@ -127,111 +123,130 @@ export async function POST(request: Request) {
       take: 50,
     });
 
-    for (const link of allUserLinks) {
+    for (const link of existingLinks) {
       const tag = extractAffiliateTag(link.originalUrl);
       if (tag) {
-        fallbackAffiliateTag = tag;
-        console.log(`[find-replacements] Found fallback affiliate tag: ${tag}`);
+        userAffiliateTag = tag;
+        console.log(`[find-replacements] Found user affiliate tag: ${tag}`);
         break;
       }
     }
 
+    // Default tag if none found
+    const affiliateTag = userAffiliateTag || "projectfarmyo-20";
+
     let found = 0;
-    const errors: string[] = [];
-    const skipped: string[] = [];
     const results: Array<{
       linkId: string;
+      success: boolean;
       productTitle: string | null;
       productUrl: string | null;
-      confidenceScore?: number;
+      productImage: string | null;
+      productPrice: string | null;
+      confidenceScore: number | null;
+      confidenceLevel: string;
+      error?: string;
     }> = [];
 
     for (const link of linksToProcess) {
-      // Check if this is an Amazon link
-      const isAmazon = link.merchant === "amazon" || isAmazonUrl(link.originalUrl);
-
-      if (!isAmazon) {
+      // Only process Amazon links
+      if (!isAmazonDomain(link.originalUrl) && link.merchant !== "amazon") {
         console.log(`[find-replacements] Skipping non-Amazon link: ${link.id}`);
-        skipped.push(link.id);
+        results.push({
+          linkId: link.id,
+          success: false,
+          productTitle: null,
+          productUrl: null,
+          productImage: null,
+          productPrice: null,
+          confidenceScore: null,
+          confidenceLevel: "none",
+          error: "Not an Amazon link",
+        });
         continue;
       }
 
       try {
-        // Step 1: Extract product search query using Claude
-        console.log(`[find-replacements] Extracting search query for: ${link.originalUrl.slice(0, 50)}...`);
-
-        const searchQuery = await extractProductSearchQuery(
+        // Find replacement using new engine
+        const suggestion = await findReplacementProduct(
           link.originalUrl,
           link.video.title,
-          link.video.description || undefined
+          link.video.description || undefined,
+          undefined, // We don't have original product title
+          affiliateTag
         );
 
-        if (!searchQuery) {
-          console.log(`[find-replacements] No search query extracted for ${link.id}`);
-          results.push({ linkId: link.id, productTitle: null, productUrl: null });
-          continue;
-        }
+        if (suggestion.success && suggestion.bestMatch) {
+          const { product, confidenceScore, matchReason } = suggestion.bestMatch;
 
-        // Step 2: Search Amazon for the product
-        console.log(`[find-replacements] Searching Amazon for: "${searchQuery}"`);
+          console.log(`[find-replacements] Found: "${product.title.slice(0, 40)}..." (${confidenceScore}%)`);
 
-        const affiliateTag = extractAffiliateTag(link.originalUrl) || fallbackAffiliateTag;
-        const searchResult = await searchAmazon(searchQuery, affiliateTag);
+          // Save to database
+          await prisma.affiliateLink.update({
+            where: { id: link.id },
+            data: {
+              suggestedLink: product.url,
+              suggestedTitle: product.title,
+              suggestedAsin: product.asin,
+              suggestedPrice: product.price,
+              confidenceScore: confidenceScore,
+              searchQuery: suggestion.searchQuery,
+            },
+          });
 
-        if (!searchResult.success || !searchResult.result) {
-          console.log(`[find-replacements] No search results for ${link.id}: ${searchResult.error}`);
-          results.push({ linkId: link.id, productTitle: null, productUrl: null });
-          continue;
-        }
-
-        // Step 3: Save the result
-        const { title, url, asin, price, confidenceScore } = searchResult.result;
-
-        console.log(`[find-replacements] Found replacement for ${link.id}: "${title.slice(0, 40)}..." (${confidenceScore}% confidence)`);
-
-        await prisma.affiliateLink.update({
-          where: { id: link.id },
-          data: {
-            suggestedLink: url,
-            suggestedTitle: title,
-            suggestedAsin: asin,
-            suggestedPrice: price,
+          found++;
+          results.push({
+            linkId: link.id,
+            success: true,
+            productTitle: product.title,
+            productUrl: product.url,
+            productImage: product.imageUrl,
+            productPrice: product.price,
             confidenceScore: confidenceScore,
-            searchQuery: searchQuery,
-          },
-        });
-
-        found++;
-        results.push({ linkId: link.id, productTitle: title, productUrl: url, confidenceScore });
-
+            confidenceLevel: getConfidenceLevel(confidenceScore),
+          });
+        } else {
+          console.log(`[find-replacements] No match for ${link.id}: ${suggestion.error}`);
+          results.push({
+            linkId: link.id,
+            success: false,
+            productTitle: null,
+            productUrl: null,
+            productImage: null,
+            productPrice: null,
+            confidenceScore: null,
+            confidenceLevel: "none",
+            error: suggestion.error || "No reliable match found",
+          });
+        }
       } catch (error) {
-        console.error(`[find-replacements] Error processing ${link.id}:`, error);
-        errors.push(link.id);
+        console.error(`[find-replacements] Error for ${link.id}:`, error);
+        results.push({
+          linkId: link.id,
+          success: false,
+          productTitle: null,
+          productUrl: null,
+          productImage: null,
+          productPrice: null,
+          confidenceScore: null,
+          confidenceLevel: "none",
+          error: error instanceof Error ? error.message : "Unknown error",
+        });
       }
 
-      // Rate limiting between requests
+      // Rate limiting
       if (linksToProcess.indexOf(link) < linksToProcess.length - 1) {
         await sleep(DELAY_BETWEEN_REQUESTS);
       }
     }
 
-    console.log(`[find-replacements] Complete: processed=${linksToProcess.length}, found=${found}, skipped=${skipped.length}, errors=${errors.length}`);
-
-    // Build response message
-    let message = `Found ${found} replacement(s) for ${linksToProcess.length} link(s)`;
-    if (skipped.length > 0) {
-      message += ` (${skipped.length} non-Amazon links skipped)`;
-    }
-    if (errors.length > 0) {
-      message += ` (${errors.length} errors)`;
-    }
+    const message = `Found ${found} replacement(s) for ${linksToProcess.length} link(s)`;
+    console.log(`[find-replacements] ${message}`);
 
     return NextResponse.json({
       success: true,
       processed: linksToProcess.length,
       found,
-      skipped: skipped.length,
-      errors: errors.length > 0 ? errors : undefined,
       results,
       message,
     });

@@ -1,8 +1,7 @@
 import { prisma } from "./db";
 import { extractLinksFromDescription, filterAffiliateLinks } from "./link-parser";
-import { checkLink, LinkCheckResult } from "./link-checker";
-
-const RATE_LIMIT_DELAY = 500; // 500ms between checks
+import { auditLinks, AuditResult, isAmazonDomain } from "./link-audit-engine";
+import { LinkStatus } from "@prisma/client";
 
 /**
  * Extracts and stores affiliate links from a video's description
@@ -84,9 +83,9 @@ export async function extractLinksForUser(userId: string): Promise<{ videos: num
 }
 
 /**
- * Checks a single link and stores the result
+ * Checks a single link and stores the result using the new audit engine
  */
-export async function checkAndStoreLinkStatus(linkId: string): Promise<LinkCheckResult> {
+export async function checkAndStoreLinkStatus(linkId: string): Promise<AuditResult> {
   const link = await prisma.affiliateLink.findUnique({
     where: { id: linkId },
     select: { originalUrl: true, merchant: true },
@@ -96,8 +95,9 @@ export async function checkAndStoreLinkStatus(linkId: string): Promise<LinkCheck
     throw new Error(`Link not found: ${linkId}`);
   }
 
-  const isAmazon = link.merchant === "amazon";
-  const result = await checkLink(link.originalUrl, isAmazon);
+  // Use new audit engine (handles caching internally)
+  const results = await auditLinks({ urls: [link.originalUrl] });
+  const result = results[0];
 
   // Update link status
   await prisma.affiliateLink.update({
@@ -113,8 +113,8 @@ export async function checkAndStoreLinkStatus(linkId: string): Promise<LinkCheck
     data: {
       affiliateLinkId: linkId,
       httpStatus: result.httpStatus,
-      availabilityStatus: result.availabilityStatus,
-      notes: result.notes,
+      availabilityStatus: result.status === "OK" ? "available" : result.status.toLowerCase(),
+      notes: result.reason,
     },
   });
 
@@ -123,6 +123,11 @@ export async function checkAndStoreLinkStatus(linkId: string): Promise<LinkCheck
 
 /**
  * Scans all unchecked or stale links for a user
+ * Uses the new high-speed audit engine with:
+ * - ASIN-based 24h caching
+ * - Parallel processing (5 concurrent)
+ * - Cheerio-based HTML parsing
+ *
  * @param userId - User ID
  * @param staleThresholdDays - Links older than this many days are considered stale
  */
@@ -150,14 +155,38 @@ export async function scanUserLinks(
     take: 100, // Limit per scan to avoid timeouts
   });
 
-  let checked = 0;
+  if (links.length === 0) {
+    return { checked: 0, issues: 0 };
+  }
+
+  console.log(`[Scanner] Starting audit of ${links.length} links for user ${userId}`);
+
+  // Use the new parallel audit engine
+  const urls = links.map(l => l.originalUrl);
+  const results = await auditLinks({
+    urls,
+    onProgress: (completed, total) => {
+      console.log(`[Scanner] Progress: ${completed}/${total}`);
+    },
+  });
+
+  // Problem statuses that count as issues
+  const PROBLEM_STATUSES: LinkStatus[] = [
+    "NOT_FOUND",
+    "OOS",
+    "OOS_THIRD_PARTY",
+    "SEARCH_REDIRECT",
+    "MISSING_TAG",
+  ];
+
   let issues = 0;
 
-  for (const link of links) {
-    try {
-      const isAmazon = link.merchant === "amazon";
-      const result = await checkLink(link.originalUrl, isAmazon);
+  // Update database with results
+  for (let i = 0; i < links.length; i++) {
+    const link = links[i];
+    const result = results[i];
 
+    try {
       // Update link status
       await prisma.affiliateLink.update({
         where: { id: link.id },
@@ -172,24 +201,23 @@ export async function scanUserLinks(
         data: {
           affiliateLinkId: link.id,
           httpStatus: result.httpStatus,
-          availabilityStatus: result.availabilityStatus,
-          notes: result.notes,
+          availabilityStatus: result.status === "OK" ? "available" : result.status.toLowerCase(),
+          notes: result.reason,
         },
       });
 
-      checked++;
-      if (result.status === "NOT_FOUND" || result.status === "OOS") {
+      if (PROBLEM_STATUSES.includes(result.status)) {
         issues++;
       }
-
-      // Rate limiting
-      await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DELAY));
     } catch (error) {
-      console.error(`Error checking link ${link.id}:`, error);
+      console.error(`[Scanner] Error updating link ${link.id}:`, error);
     }
   }
 
-  return { checked, issues };
+  const cached = results.filter(r => r.fromCache).length;
+  console.log(`[Scanner] Completed: ${links.length} links checked, ${issues} issues found (${cached} from cache)`);
+
+  return { checked: links.length, issues };
 }
 
 /**
