@@ -59,53 +59,103 @@ const SEVERITY_MAP: Record<LinkStatus, number> = {
 };
 
 // ============================================
-// AMAZON DETECTION INDICATORS
+// AMAZON VISUAL ELEMENT DETECTION (Most Robust)
+// ============================================
+// Visual element detection using HTML IDs, classes, and data attributes
+// is MORE RELIABLE than text matching because:
+// 1. Text varies by locale (EN, DE, JP, etc.)
+// 2. Text can change with A/B tests
+// 3. Element IDs/classes are stable across regions
 // ============================================
 
-// Out of stock - HIGH PRECISION indicators
-// These are definitive signals that the product is out of stock
-const AMAZON_OOS_INDICATORS_PRECISE = [
-  'id="outofstock"',           // Explicit OOS element ID
-  'id="availability"',         // Availability container (check with unavailable text)
-  "currently unavailable",     // Most reliable text indicator
+// ----------------------------------------
+// POSITIVE SIGNALS: Product is buyable
+// ----------------------------------------
+// If ANY of these elements exist, the product is purchasable (OK status)
+const AMAZON_BUYABLE_ELEMENTS = [
+  'id="add-to-cart-button"',           // Primary Add to Cart button
+  'id="buy-now-button"',               // Buy Now button
+  'name="submit.add-to-cart"',         // Form submit for add to cart
+  'id="one-click-button"',             // 1-Click buy button
+  'id="submit.add-to-cart"',           // Alternative add to cart
+  'data-action="add-to-cart"',         // Data attribute for add to cart
+  'id="add-to-cart-button-ubb"',       // Subscribe & Save add to cart
+  'class="a-button-oneclick"',         // One-click button class
 ];
 
-// Out of stock - SECONDARY indicators (use if precise ones not found)
-const AMAZON_OOS_INDICATORS_SECONDARY = [
+// ----------------------------------------
+// OUT OF STOCK: Visual elements
+// ----------------------------------------
+// Element IDs/classes that indicate out of stock
+const AMAZON_OOS_ELEMENTS = [
+  'id="outOfStock"',                   // Explicit OOS element
+  'id="out-of-stock"',                 // Alternative OOS element
+  'id="availabilityInsideBuyBox_feature_div"', // OOS buybox container
+  'class="a-color-price a-text-bold"', // Price shown as unavailable
+  'id="availability"',                 // Availability container (check content)
+];
+
+// Text patterns that confirm OOS when found near availability elements
+const AMAZON_OOS_TEXT_PATTERNS = [
+  "currently unavailable",
   "out of stock",
-  "we don't know when or if this item will be back",
-  "this item is not available",
-  "sign up to be notified when this item becomes available",
   "temporarily out of stock",
-  "this item cannot be shipped",
+  "we don't know when or if this item will be back",
   "not available for purchase",
-  "no offers available",
-  "availabilityinsidebuybox_feature_div", // OOS buybox div
 ];
 
-// Third-party sellers available (lower trust, still some conversion)
-// Note: Look for these WITHOUT "add-to-cart-button" present
-const AMAZON_THIRD_PARTY_INDICATORS = [
+// ----------------------------------------
+// THIRD PARTY ONLY: Visual elements
+// ----------------------------------------
+// Elements indicating only third-party sellers (no Amazon/Prime)
+const AMAZON_THIRD_PARTY_ELEMENTS = [
+  'id="olp-upd-new"',                  // Other sellers panel (new)
+  'id="olp-upd-used"',                 // Other sellers panel (used)
+  'id="mbc"',                          // Marketplace buy container
+  'id="mbc-upd-new"',                  // Marketplace update new
+  'class="olp-padding-right"',         // Other sellers padding
+  'class="mbc-offer-row"',             // Marketplace offer rows
+  'id="buybox-see-all-buying-choices"', // See all buying choices link
+];
+
+// Text patterns for third party
+const AMAZON_THIRD_PARTY_TEXT = [
   "available from these sellers",
   "see all buying options",
   "other sellers on amazon",
   "new & used",
-  "olp-padding-right", // Other sellers panel
-  "a]offers-table", // Offers table
-  "mbc-offer-row", // Marketplace offer rows
 ];
 
-// Amazon "dog page" / product not found indicators (product completely gone)
-// HIGH PRECISION: Only the definitive "dog page" indicator
-const AMAZON_DOG_PAGE_INDICATOR = "looking for something?";
+// ----------------------------------------
+// DOG PAGE / 404: Visual elements
+// ----------------------------------------
+// Amazon's "dog page" shown when product doesn't exist
+const AMAZON_DOG_PAGE_ELEMENTS = [
+  'id="d"',                            // Dog page container
+  'class="a-box-inner a-alert-container"', // Alert container on dog page
+];
 
-// CAPTCHA/Bot detection - separate from broken (temporary state)
-const AMAZON_CAPTCHA_INDICATORS = [
-  "to discuss automated access",
+// The definitive dog page text (rarely changes)
+const AMAZON_DOG_PAGE_TEXT = "looking for something?";
+
+// ----------------------------------------
+// CAPTCHA / BOT DETECTION: Visual elements
+// ----------------------------------------
+const AMAZON_CAPTCHA_ELEMENTS = [
+  'id="captchacharacters"',            // CAPTCHA input field
+  'action="/errors/validateCaptcha"',  // CAPTCHA form action
+  'class="a-box a-color-offset-background"', // CAPTCHA box styling
+];
+
+const AMAZON_CAPTCHA_TEXT = [
   "enter the characters you see below",
+  "to discuss automated access",
+  "sorry, we just need to make sure you're not a robot",
 ];
 
-// Error page indicators
+// ----------------------------------------
+// ERROR PAGE: Generic indicators
+// ----------------------------------------
 const ERROR_PAGE_INDICATORS = [
   "Page not found",
   "404",
@@ -150,55 +200,124 @@ export function getJitteredDelay(): number {
   return Math.floor(Math.random() * (MAX_JITTER_DELAY - MIN_JITTER_DELAY + 1)) + MIN_JITTER_DELAY;
 }
 
+// ============================================
+// VISUAL ELEMENT DETECTION FUNCTIONS
+// ============================================
+// These functions use a "visual element first" approach:
+// 1. Check for HTML elements (IDs, classes, data attributes)
+// 2. Fall back to text patterns only if needed
+// ============================================
+
 /**
- * Checks if HTML content indicates Amazon out of stock (primary listing)
- * Uses HIGH PRECISION indicators first, then secondary
+ * Checks if HTML contains any of the given element patterns
+ * Case-insensitive matching for robustness
+ */
+function hasElement(html: string, elements: string[]): boolean {
+  const lowerHtml = html.toLowerCase();
+  return elements.some(el => lowerHtml.includes(el.toLowerCase()));
+}
+
+/**
+ * Checks if HTML contains any of the given text patterns
+ * Case-insensitive matching
+ */
+function hasText(html: string, patterns: string[]): boolean {
+  const lowerHtml = html.toLowerCase();
+  return patterns.some(pattern => lowerHtml.includes(pattern.toLowerCase()));
+}
+
+/**
+ * Checks if the product is buyable (Add to Cart / Buy Now exists)
+ * This is the PRIMARY positive signal - if present, product is OK
+ */
+function checkAmazonBuyable(html: string): boolean {
+  return hasElement(html, AMAZON_BUYABLE_ELEMENTS);
+}
+
+/**
+ * Checks if HTML content indicates Amazon out of stock
+ * Uses VISUAL ELEMENTS first, then text patterns as confirmation
+ *
+ * Logic:
+ * 1. If buyable elements exist -> NOT out of stock (return false)
+ * 2. If OOS elements exist AND OOS text patterns match -> out of stock
+ * 3. If only OOS text patterns match (strong ones) -> out of stock
  */
 function checkAmazonOOS(html: string): boolean {
-  const lowerHtml = html.toLowerCase();
+  // If buyable elements exist, it's NOT out of stock
+  if (checkAmazonBuyable(html)) {
+    return false;
+  }
 
-  // First check precise indicators (id="outOfStock", id="availability", "currently unavailable")
-  const hasPreciseIndicator = AMAZON_OOS_INDICATORS_PRECISE.some(indicator =>
-    lowerHtml.includes(indicator.toLowerCase())
-  );
+  // Check for OOS visual elements
+  const hasOOSElement = hasElement(html, AMAZON_OOS_ELEMENTS);
 
-  if (hasPreciseIndicator) {
+  // Check for OOS text patterns
+  const hasOOSText = hasText(html, AMAZON_OOS_TEXT_PATTERNS);
+
+  // If we have both element AND text confirmation, it's definitely OOS
+  if (hasOOSElement && hasOOSText) {
     return true;
   }
 
-  // Then check secondary indicators
-  return AMAZON_OOS_INDICATORS_SECONDARY.some(indicator =>
-    lowerHtml.includes(indicator.toLowerCase())
-  );
+  // If we have strong OOS text patterns alone (no buy button present), trust it
+  // This catches edge cases where element IDs might be different
+  if (hasOOSText) {
+    return true;
+  }
+
+  return false;
 }
 
 /**
  * Checks if HTML content indicates third-party sellers only
+ * Uses VISUAL ELEMENTS first, then text patterns
+ *
+ * Important: Only true if NO buyable elements from Amazon directly
  */
 function checkAmazonThirdParty(html: string): boolean {
-  const lowerHtml = html.toLowerCase();
-  return AMAZON_THIRD_PARTY_INDICATORS.some(indicator =>
-    lowerHtml.includes(indicator)
-  );
+  // If direct buy buttons exist, it's not third-party-only
+  if (checkAmazonBuyable(html)) {
+    return false;
+  }
+
+  // Check for third-party visual elements
+  const hasTPElement = hasElement(html, AMAZON_THIRD_PARTY_ELEMENTS);
+
+  // Check for third-party text patterns
+  const hasTPText = hasText(html, AMAZON_THIRD_PARTY_TEXT);
+
+  // Either element or text detection is sufficient
+  return hasTPElement || hasTPText;
 }
 
 /**
  * Checks if HTML content indicates Amazon "dog page" (product completely gone)
- * HIGH PRECISION: Only checks for the definitive "looking for something?" text
+ * Uses VISUAL ELEMENTS first, then the definitive text pattern
  */
 function checkAmazonDogPage(html: string): boolean {
-  const lowerHtml = html.toLowerCase();
-  return lowerHtml.includes(AMAZON_DOG_PAGE_INDICATOR);
+  // Check for dog page visual elements
+  const hasDogElement = hasElement(html, AMAZON_DOG_PAGE_ELEMENTS);
+
+  // Check for the definitive dog page text
+  const hasDogText = html.toLowerCase().includes(AMAZON_DOG_PAGE_TEXT);
+
+  // Element + text is strongest signal, but text alone is also reliable
+  return (hasDogElement && hasDogText) || hasDogText;
 }
 
 /**
  * Checks if HTML content indicates CAPTCHA/bot detection
+ * Uses VISUAL ELEMENTS first (CAPTCHA input field), then text
  */
 function checkAmazonCaptcha(html: string): boolean {
-  const lowerHtml = html.toLowerCase();
-  return AMAZON_CAPTCHA_INDICATORS.some(indicator =>
-    lowerHtml.includes(indicator.toLowerCase())
-  );
+  // Check for CAPTCHA visual elements (most reliable)
+  const hasCaptchaElement = hasElement(html, AMAZON_CAPTCHA_ELEMENTS);
+
+  // Check for CAPTCHA text patterns
+  const hasCaptchaText = hasText(html, AMAZON_CAPTCHA_TEXT);
+
+  return hasCaptchaElement || hasCaptchaText;
 }
 
 /**
@@ -488,28 +607,27 @@ export async function checkLink(
       // ============================================
       // PHASE 2: OUT OF STOCK (Check BEFORE broken!)
       // ============================================
-      // Look for id="outOfStock", id="availability", or "Currently unavailable"
+      // Uses VISUAL ELEMENT detection:
+      // - First checks for Add to Cart / Buy Now buttons (positive signal)
+      // - Then checks for OOS elements + text patterns
       if (isAmazon || isAmazonDomain(finalUrl)) {
         if (checkAmazonOOS(html)) {
           return createAndCacheResult(
             originalUrl,
             "OOS",
-            "Out of Stock - Product currently unavailable",
+            "Out of Stock - No Add to Cart button, OOS indicators present",
             httpStatus,
             finalUrl
           );
         }
 
         // Check for third-party only availability (lower conversion)
-        const hasAddToCart = html.includes('id="add-to-cart-button"') ||
-                             html.includes('id="buy-now-button"') ||
-                             html.includes('name="submit.add-to-cart"');
-
-        if (checkAmazonThirdParty(html) && !hasAddToCart) {
+        // checkAmazonThirdParty internally checks for buyable elements
+        if (checkAmazonThirdParty(html)) {
           return createAndCacheResult(
             originalUrl,
             "OOS_THIRD_PARTY",
-            "Third Party Only - Available from other sellers",
+            "Third Party Only - No direct buy option, other sellers available",
             httpStatus,
             finalUrl
           );
