@@ -10,13 +10,28 @@ export interface LinkCheckResult {
 
 // Amazon out-of-stock indicators
 const AMAZON_OOS_INDICATORS = [
-  "Currently unavailable",
-  "Out of stock",
-  "We don't know when or if this item will be back",
-  "This item is not available",
-  "We don't know when or if this item will be back in stock",
-  "Available from these sellers",
-  "Sign up to be notified when this item becomes available",
+  "currently unavailable",
+  "out of stock",
+  "we don't know when or if this item will be back",
+  "this item is not available",
+  "we don't know when or if this item will be back in stock",
+  "available from these sellers",
+  "sign up to be notified when this item becomes available",
+  "temporarily out of stock",
+  "this item cannot be shipped",
+  "not available for purchase",
+  "no offers available",
+  "see all buying options", // Often shown when main listing unavailable
+];
+
+// Amazon "dog page" / product not found indicators (product completely gone)
+const AMAZON_NOT_FOUND_INDICATORS = [
+  "looking for something?", // Dog page specific text
+  "sorry, we couldn't find that page",
+  "the web address you entered is not a functioning page",
+  "sorry! we couldn't find that page",
+  "to discuss automated access", // Bot detection page
+  "enter the characters you see below", // CAPTCHA page
 ];
 
 // Error page indicators
@@ -46,7 +61,17 @@ function sleep(ms: number): Promise<void> {
 function checkAmazonOOS(html: string): boolean {
   const lowerHtml = html.toLowerCase();
   return AMAZON_OOS_INDICATORS.some(indicator =>
-    lowerHtml.includes(indicator.toLowerCase())
+    lowerHtml.includes(indicator)
+  );
+}
+
+/**
+ * Checks if HTML content indicates Amazon product not found ("dog page")
+ */
+function checkAmazonNotFound(html: string): boolean {
+  const lowerHtml = html.toLowerCase();
+  return AMAZON_NOT_FOUND_INDICATORS.some(indicator =>
+    lowerHtml.includes(indicator)
   );
 }
 
@@ -141,13 +166,24 @@ export async function checkLink(
         };
       }
 
-      // For Amazon links, check for out of stock in response body
+      // For Amazon links, check for out of stock or "dog page" in response body
       if (isAmazon && httpStatus === 200) {
         // Need to do a GET request to check the body
         const getResponse = await fetchWithTimeout(url, { method: "GET" });
         const html = await getResponse.text();
 
-        // Check for error page (redirected to error)
+        // Check for Amazon "dog page" (product not found)
+        if (checkAmazonNotFound(html)) {
+          return {
+            status: "NOT_FOUND",
+            httpStatus,
+            finalUrl: getResponse.url,
+            availabilityStatus: "not_found",
+            notes: "Product no longer exists on Amazon",
+          };
+        }
+
+        // Check for generic error page
         if (isErrorPage(html)) {
           return {
             status: "NOT_FOUND",
@@ -158,14 +194,14 @@ export async function checkLink(
           };
         }
 
-        // Check for out of stock
+        // Check for out of stock / currently unavailable
         if (checkAmazonOOS(html)) {
           return {
             status: "OOS",
             httpStatus,
             finalUrl: getResponse.url,
             availabilityStatus: "out_of_stock",
-            notes: "Product appears to be out of stock",
+            notes: "Product is currently unavailable",
           };
         }
       }

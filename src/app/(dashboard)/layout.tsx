@@ -68,12 +68,6 @@ export default async function DashboardLayout({
                 >
                   Videos
                 </Link>
-                <Link
-                  href="/settings"
-                  className="text-slate-400 hover:text-white text-sm font-medium transition-colors"
-                >
-                  Settings
-                </Link>
               </nav>
             </div>
             <UserMenu user={session.user} />
