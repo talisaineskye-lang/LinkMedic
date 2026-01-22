@@ -19,6 +19,40 @@ import { extractAsin, appendAffiliateTag } from "./link-audit-engine";
 const DEFAULT_AFFILIATE_TAG = "projectfarmyo-20";
 const MAX_SEARCH_RESULTS = 5;
 
+// ============================================
+// REGION DETECTION
+// ============================================
+
+interface AmazonRegion {
+  domain: string;
+  searchDomain: string;
+  region: string;
+  countryCode: string;
+}
+
+/**
+ * Detect Amazon region from URL
+ * Returns the appropriate domain and country code for search
+ */
+function getAmazonRegion(url: string): AmazonRegion {
+  if (url.includes("amazon.co.uk")) return { domain: "amazon.co.uk", searchDomain: "amazon.co.uk", region: "UK", countryCode: "gb" };
+  if (url.includes("amazon.ca")) return { domain: "amazon.ca", searchDomain: "amazon.ca", region: "CA", countryCode: "ca" };
+  if (url.includes("amazon.de")) return { domain: "amazon.de", searchDomain: "amazon.de", region: "DE", countryCode: "de" };
+  if (url.includes("amazon.fr")) return { domain: "amazon.fr", searchDomain: "amazon.fr", region: "FR", countryCode: "fr" };
+  if (url.includes("amazon.es")) return { domain: "amazon.es", searchDomain: "amazon.es", region: "ES", countryCode: "es" };
+  if (url.includes("amazon.it")) return { domain: "amazon.it", searchDomain: "amazon.it", region: "IT", countryCode: "it" };
+  if (url.includes("amazon.com.au")) return { domain: "amazon.com.au", searchDomain: "amazon.com.au", region: "AU", countryCode: "au" };
+  if (url.includes("amazon.co.jp")) return { domain: "amazon.co.jp", searchDomain: "amazon.co.jp", region: "JP", countryCode: "jp" };
+  if (url.includes("amazon.in")) return { domain: "amazon.in", searchDomain: "amazon.in", region: "IN", countryCode: "in" };
+  if (url.includes("amazon.com.mx")) return { domain: "amazon.com.mx", searchDomain: "amazon.com.mx", region: "MX", countryCode: "mx" };
+  if (url.includes("amazon.com.br")) return { domain: "amazon.com.br", searchDomain: "amazon.com.br", region: "BR", countryCode: "br" };
+  if (url.includes("amazon.nl")) return { domain: "amazon.nl", searchDomain: "amazon.nl", region: "NL", countryCode: "nl" };
+  if (url.includes("amazon.se")) return { domain: "amazon.se", searchDomain: "amazon.se", region: "SE", countryCode: "se" };
+  if (url.includes("amazon.pl")) return { domain: "amazon.pl", searchDomain: "amazon.pl", region: "PL", countryCode: "pl" };
+  // Default to US
+  return { domain: "amazon.com", searchDomain: "amazon.com", region: "US", countryCode: "us" };
+}
+
 // Initialize Anthropic client lazily
 let anthropicClient: Anthropic | null = null;
 
@@ -161,21 +195,22 @@ Only output the JSON, no explanation.`,
 /**
  * Fetch Amazon search results via ScrapingBee
  */
-async function fetchAmazonSearch(query: string): Promise<string | null> {
+async function fetchAmazonSearch(query: string, region: AmazonRegion): Promise<string | null> {
   const apiKey = process.env.SCRAPINGBEE_API_KEY;
   if (!apiKey) {
     console.error("[Suggestion] No SCRAPINGBEE_API_KEY configured");
     return null;
   }
 
-  const searchUrl = `https://www.amazon.com/s?k=${encodeURIComponent(query)}`;
+  const searchUrl = `https://www.${region.searchDomain}/s?k=${encodeURIComponent(query)}`;
+  console.log(`[Suggestion] Searching ${region.region} Amazon: ${searchUrl}`);
 
   try {
     const params = new URLSearchParams({
       api_key: apiKey,
       url: searchUrl,
       premium_proxy: "true",
-      country_code: "us",
+      country_code: region.countryCode,
       render_js: "false",
     });
 
@@ -203,13 +238,16 @@ async function fetchAmazonSearch(query: string): Promise<string | null> {
  * Parse organic search results using Cheerio
  * Skips sponsored/ad products using strict selectors
  */
-function parseSearchResults(html: string, affiliateTag: string): ProductMatch[] {
+function parseSearchResults(html: string, affiliateTag: string, region: AmazonRegion): ProductMatch[] {
   const $ = cheerio.load(html);
   const results: ProductMatch[] = [];
 
   // Select search result items, excluding ads
   // The key selector: data-component-type="s-search-result" WITHOUT ad classes
   const searchResults = $('[data-component-type="s-search-result"]');
+
+  // Determine currency symbol based on region
+  const currencySymbol = getCurrencySymbol(region.region);
 
   searchResults.each((index, element) => {
     if (results.length >= MAX_SEARCH_RESULTS) return false;
@@ -236,20 +274,20 @@ function parseSearchResults(html: string, affiliateTag: string): ProductMatch[] 
     const imageUrl = $item.find(".s-image").attr("src") || null;
 
     // Extract price
-    const priceWhole = $item.find(".a-price-whole").first().text().replace(",", "");
+    const priceWhole = $item.find(".a-price-whole").first().text().replace(",", "").replace(".", "");
     const priceFraction = $item.find(".a-price-fraction").first().text();
-    const price = priceWhole ? `$${priceWhole}${priceFraction ? `.${priceFraction}` : ""}` : null;
+    const price = priceWhole ? `${currencySymbol}${priceWhole}${priceFraction ? `.${priceFraction}` : ""}` : null;
 
     // Extract rating
-    const ratingText = $item.find('[aria-label*="out of 5 stars"]').attr("aria-label") || null;
-    const rating = ratingText ? ratingText.match(/(\d+\.?\d*) out of/)?.[1] || null : null;
+    const ratingText = $item.find('[aria-label*="out of 5 stars"], [aria-label*="sur 5"], [aria-label*="von 5"]').attr("aria-label") || null;
+    const rating = ratingText ? ratingText.match(/(\d+[.,]?\d*)/)?.[1]?.replace(",", ".") || null : null;
 
     // Extract review count
-    const reviewCountText = $item.find('[aria-label*="ratings"], .a-size-small .a-link-normal').last().text();
-    const reviewCount = reviewCountText.match(/[\d,]+/)?.[0] || null;
+    const reviewCountText = $item.find('[aria-label*="ratings"], [aria-label*="évaluations"], [aria-label*="Bewertungen"], .a-size-small .a-link-normal').last().text();
+    const reviewCount = reviewCountText.match(/[\d.,]+/)?.[0]?.replace(".", "") || null;
 
-    // Build product URL with affiliate tag
-    const productUrl = appendAffiliateTag(`https://www.amazon.com/dp/${asin}`, affiliateTag);
+    // Build product URL with affiliate tag for the correct region
+    const productUrl = appendAffiliateTag(`https://www.${region.domain}/dp/${asin}`, affiliateTag);
 
     results.push({
       title: cleanTitle(title),
@@ -269,6 +307,30 @@ function parseSearchResults(html: string, affiliateTag: string): ProductMatch[] 
 
   // Prioritize organic results
   return [...organic, ...sponsored].slice(0, MAX_SEARCH_RESULTS);
+}
+
+/**
+ * Get currency symbol for a region
+ */
+function getCurrencySymbol(region: string): string {
+  const symbols: Record<string, string> = {
+    US: "$",
+    UK: "£",
+    CA: "CA$",
+    DE: "€",
+    FR: "€",
+    ES: "€",
+    IT: "€",
+    NL: "€",
+    AU: "A$",
+    JP: "¥",
+    IN: "₹",
+    MX: "MX$",
+    BR: "R$",
+    SE: "kr",
+    PL: "zł",
+  };
+  return symbols[region] || "$";
 }
 
 /**
@@ -409,7 +471,9 @@ export async function findReplacementProduct(
 ): Promise<SuggestionResult> {
   const tag = affiliateTag || DEFAULT_AFFILIATE_TAG;
 
-  console.log(`[Suggestion] Finding replacement for: ${originalUrl.slice(0, 60)}...`);
+  // Detect region from original URL
+  const region = getAmazonRegion(originalUrl);
+  console.log(`[Suggestion] Finding replacement for: ${originalUrl.slice(0, 60)}... (Region: ${region.region})`);
 
   // Step 1: Extract keywords
   const keywords = await extractProductKeywords(
@@ -432,8 +496,8 @@ export async function findReplacementProduct(
 
   console.log(`[Suggestion] Search query: "${keywords.searchQuery}"`);
 
-  // Step 2: Search Amazon
-  const searchHtml = await fetchAmazonSearch(keywords.searchQuery);
+  // Step 2: Search Amazon (in the same region as the original link)
+  const searchHtml = await fetchAmazonSearch(keywords.searchQuery, region);
   if (!searchHtml) {
     return {
       success: false,
@@ -445,8 +509,8 @@ export async function findReplacementProduct(
     };
   }
 
-  // Step 3: Parse results (skip ads)
-  const products = parseSearchResults(searchHtml, tag);
+  // Step 3: Parse results (skip ads, use correct region domain)
+  const products = parseSearchResults(searchHtml, tag, region);
   if (products.length === 0) {
     return {
       success: false,
