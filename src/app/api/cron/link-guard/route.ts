@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { auditLinks } from "@/lib/link-audit-engine";
-import { LinkStatus } from "@prisma/client";
 
 /**
  * Link Guard Cron Job

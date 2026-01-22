@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { DollarSign, Video, Link as LinkIcon, TrendingUp } from "lucide-react";
+import { DollarSign, Video, Link as LinkIcon } from "lucide-react";
 
 export function RevenueCalculator() {
   const [monthlyViews, setMonthlyViews] = useState(100000);

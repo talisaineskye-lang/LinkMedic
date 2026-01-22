@@ -147,7 +147,7 @@ export function extractLinksFromDescription(description: string): ParsedLink[] {
 
   for (const rawUrl of matches) {
     // Clean up URL (remove trailing punctuation)
-    let url = rawUrl.replace(/[.,;:!?)]+$/, "");
+    const url = rawUrl.replace(/[.,;:!?)]+$/, "");
 
     // Skip timestamps and emails
     if (isTimestamp(url) || shouldIgnore(url)) continue;

@@ -130,7 +130,7 @@ function parseFirstSearchResult(
       const contextWindow = html.slice(asinIndex, asinIndex + 3000);
 
       // Extract title from various patterns Amazon uses
-      let title = extractTitle(contextWindow);
+      const title = extractTitle(contextWindow);
 
       if (!title || title.length < 5) {
         continue; // Skip if we can't find a valid title
