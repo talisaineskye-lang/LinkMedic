@@ -224,86 +224,82 @@ interface ExtractedKeywords {
 }
 
 /**
- * Extract product information from video context when URL-based extraction fails
- * Analyzes the video description to find what product the broken link was for
+ * Extract product information from video context when we can't get it from Amazon
+ * Looks for product mentions near the broken link in the description
  */
-export async function extractProductFromContext(
-  brokenUrl: string,
+async function extractProductFromContext(
   videoTitle: string,
-  videoDescription: string
-): Promise<ExtractedKeywords | null> {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.error("[Suggestion] No ANTHROPIC_API_KEY configured");
-    return null;
+  videoDescription?: string,
+  originalUrl?: string
+): Promise<string | undefined> {
+  if (!process.env.ANTHROPIC_API_KEY || !videoDescription) {
+    return undefined;
   }
 
   try {
-    console.log(`[Suggestion] Attempting context-based extraction for: ${brokenUrl.slice(0, 50)}...`);
+    // Find context around the broken link in the description
+    let linkContext = "";
+    if (originalUrl) {
+      const urlVariants = [
+        originalUrl,
+        originalUrl.replace('https://', ''),
+        originalUrl.replace('http://', ''),
+        // Handle shortened URL patterns
+        originalUrl.split('/').pop() || '', // Just the ID part
+      ].filter(v => v.length > 5);
+
+      for (const pattern of urlVariants) {
+        const index = videoDescription.toLowerCase().indexOf(pattern.toLowerCase());
+        if (index !== -1) {
+          // Grab 150 chars before and 50 after the link
+          const start = Math.max(0, index - 150);
+          const end = Math.min(videoDescription.length, index + pattern.length + 50);
+          linkContext = videoDescription.slice(start, end);
+          console.log(`[Suggestion] Found link context: "${linkContext.slice(0, 80)}..."`);
+          break;
+        }
+      }
+    }
+
+    // Use context around link, or fall back to description start
+    const contextToAnalyze = linkContext || videoDescription.slice(0, 600);
 
     const anthropic = getAnthropicClient();
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 400,
+      max_tokens: 150,
       messages: [
         {
           role: "user",
-          content: `A YouTube video has a broken Amazon affiliate link. Analyze the context to determine what product the link was for.
+          content: `Extract the specific product name from this YouTube video context. The context is from near an affiliate link.
 
-VIDEO TITLE: ${videoTitle}
+Video Title: ${videoTitle}
 
-VIDEO DESCRIPTION:
-${videoDescription.slice(0, 2000)}
+Context near link:
+"${contextToAnalyze}"
 
-BROKEN LINK: ${brokenUrl}
+Look for:
+- Product names with brand + model (e.g., "Logitech C920", "Blue Yeti", "Acer XG270HU")
+- Labels before links like "Camera:", "Mic:", "Monitor -", "Headset I use:"
+- Specific product descriptions
 
-Your task: Find ANY product mention near this link in the description. Look for:
-1. Text immediately before or after the link
-2. Product names, model numbers, or brands mentioned
-3. The video topic/theme to infer product type
-
-IMPORTANT:
-- Focus on what's ACTUALLY in the description
-- If the link appears in a list of gear/equipment, identify which item it corresponds to
-- Extract brand, model, or product category even if incomplete
-
-Respond ONLY with this JSON:
-{
-  "productName": "best guess at product name based on context",
-  "brand": "brand if mentioned, or null",
-  "category": "product category (Electronics, Tools, Camera, Audio, etc.)",
-  "searchQuery": "2-5 word Amazon search that would find this product",
-  "confidence": "high/medium/low based on how clear the context is"
-}`,
+Respond with ONLY the product name (brand + model if available).
+If you cannot determine a specific product, respond with: UNKNOWN`,
         },
       ],
     });
 
-    const responseText =
-      message.content[0].type === "text" ? message.content[0].text : "";
+    const responseText = message.content[0].type === "text" ? message.content[0].text.trim() : "";
 
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.error("[Suggestion] Could not parse context extraction response");
-      return null;
+    if (responseText && responseText !== "UNKNOWN" && responseText.length > 3 && responseText.length < 100) {
+      console.log(`[Suggestion] Extracted from context: "${responseText}"`);
+      return responseText;
     }
 
-    const parsed = JSON.parse(jsonMatch[0]);
-    console.log(`[Suggestion] Context extraction result (${parsed.confidence}):`, parsed);
-
-    // Only return if we found something useful
-    if (parsed.productName && parsed.productName !== "Unknown" && parsed.confidence !== "low") {
-      return {
-        productName: parsed.productName,
-        brand: parsed.brand || null,
-        category: parsed.category || "Unknown",
-        searchQuery: parsed.searchQuery || parsed.productName,
-      };
-    }
-
-    return null;
+    return undefined;
   } catch (error) {
     console.error("[Suggestion] Context extraction error:", error);
-    return null;
+    return undefined;
   }
 }
 
@@ -323,51 +319,56 @@ export async function extractProductKeywords(
   }
 
   try {
-    // Build context from available data
     const hasProductTitle = originalProductTitle && originalProductTitle.length > 5;
-    const hasDescription = videoDescription && videoDescription.length > 20;
 
     const context = `
+${hasProductTitle ? `PRODUCT TITLE FROM AMAZON: ${originalProductTitle}` : "PRODUCT: Unknown - must infer from video context"}
 URL: ${originalUrl}
-${hasProductTitle ? `Original Product Title: ${originalProductTitle}` : ""}
 Video Title: ${videoTitle}
-${hasDescription ? `Video Description (first 1000 chars): ${videoDescription.slice(0, 1000)}` : ""}
+${videoDescription ? `Video Description (first 800 chars): ${videoDescription.slice(0, 800)}` : "No description available"}
     `.trim();
 
     const anthropic = getAnthropicClient();
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 400,
+      max_tokens: 300,
       messages: [
         {
           role: "user",
-          content: `Analyze this broken Amazon affiliate link and extract product information to search for a replacement.
+          content: `Extract product information for an Amazon search query.
 
 ${context}
 
-EXTRACTION STRATEGY:
-1. If "Original Product Title" is provided, use it as the primary source
-2. If no title, look for the product in the video description near the URL
-3. Use the video title to understand the category/context
-4. Extract brand from product title or URL if visible
+INSTRUCTIONS:
+1. If PRODUCT TITLE FROM AMAZON is provided, use it as the primary source
+2. Otherwise, infer the product from video title and description
+3. Look for gear lists, equipment sections, "links below" mentions
 
-IMPORTANT:
-- Use ALL available context to build a useful search query
-- Even partial information (just brand, just category) is useful
-- The search query should be specific enough to find similar products
-- Common Amazon URL patterns: /dp/ASIN, /gp/product/, product names in URL slugs
+OUTPUT RULES:
+- productName: Specific product name or "Unknown Product"
+- brand: Only if explicitly clear (Logitech, Razer, Blue, Acer, etc.)
+- category: Specific Amazon category (Webcam, Headphones, Monitor, Microphone, Keyboard, Mouse, etc.)
+- searchQuery: 3-6 word Amazon search that would find this SPECIFIC product
 
-Respond in this exact JSON format:
+GOOD search queries:
+- "logitech c920 webcam"
+- "blue yeti usb microphone"
+- "acer gaming monitor 27 inch"
+- "razer kraken gaming headset"
+
+BAD search queries (too generic):
+- "gaming equipment"
+- "webcam"
+- "microphone"
+- "fortnite gear"
+
+Respond with ONLY this JSON:
 {
-  "productName": "product name if found, or descriptive phrase like 'wireless gaming headset'",
-  "brand": "brand name if found, or null",
-  "category": "broad Amazon category (Electronics, Tools, Camera, Home, etc.)",
-  "searchQuery": "2-5 word Amazon search query that would find this type of product"
-}
-
-If you have a product title, create a focused search query from it.
-If you only have context clues, create a category-based search query.
-Only output the JSON, no explanation.`,
+  "productName": "specific product or Unknown Product",
+  "brand": "brand or null",
+  "category": "specific category",
+  "searchQuery": "specific amazon search query"
+}`,
         },
       ],
     });
@@ -557,109 +558,106 @@ function cleanTitle(title: string): string {
 }
 
 // ============================================
-// STEP 3: LLM VERIFICATION
+// STEP 3: LLM VERIFICATION (COMPARE ALL AT ONCE)
 // ============================================
 
-interface LLMVerificationResult {
-  isMatch: boolean;
+/**
+ * Use LLM to pick the best matching product from all candidates
+ * Compares all options at once for better accuracy
+ */
+async function verifyBestMatch(
+  original: ExtractedKeywords,
+  candidates: ProductMatch[]
+): Promise<{
+  bestIndex: number | null;
   confidenceScore: number;
   matchReason: string;
   categoryMatch: boolean;
-  brandMatch: boolean;
-}
-
-/**
- * Use LLM to verify if a candidate product matches the original product
- * This prevents category mismatches (e.g., Xbox controller suggested for webcam)
- */
-async function verifyMatchWithLLM(
-  original: ExtractedKeywords,
-  candidate: ProductMatch
-): Promise<LLMVerificationResult> {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.error("[Suggestion] No ANTHROPIC_API_KEY for verification");
-    return {
-      isMatch: false,
-      confidenceScore: 0,
-      matchReason: "API key not configured",
-      categoryMatch: false,
-      brandMatch: false,
-    };
+}> {
+  if (!process.env.ANTHROPIC_API_KEY || candidates.length === 0) {
+    return { bestIndex: null, confidenceScore: 0, matchReason: "No candidates", categoryMatch: false };
   }
 
   try {
+    const candidateList = candidates
+      .map((c, i) => `${i + 1}. "${c.title}" - ${c.price || 'Price unknown'}${c.isSponsored ? ' [SPONSORED]' : ''}`)
+      .join('\n');
+
     const anthropic = getAnthropicClient();
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 200,
+      max_tokens: 300,
       messages: [
         {
           role: "user",
-          content: `Compare these two products and determine if the CANDIDATE is a suitable replacement for the ORIGINAL.
+          content: `You are validating Amazon product replacements. Be STRICT about category matching.
 
 ORIGINAL PRODUCT:
 - Name: ${original.productName}
 - Category: ${original.category}
 - Brand: ${original.brand || "Unknown"}
-- Search Query: ${original.searchQuery}
+- Search terms: ${original.searchQuery}
 
-CANDIDATE PRODUCT:
-- Title: ${candidate.title}
-- Price: ${candidate.price || "Unknown"}
+CANDIDATE REPLACEMENTS:
+${candidateList}
 
-RULES:
-1. Products MUST be in the same category (e.g., don't match a webcam with a game controller)
-2. Products should serve the same purpose
-3. Brand match is a bonus but not required
-4. Price range should be similar (within 2x)
+TASK: Which candidate (if any) is a valid replacement?
 
-Respond ONLY with this JSON:
+STRICT RULES:
+1. SAME CATEGORY REQUIRED:
+   - Webcam → only Webcam ✓
+   - Webcam → Headphones ✗
+   - Webcam → Mouse pad ✗
+   - Headphones → only Headphones ✓
+   - Monitor → only Monitor ✓
+
+2. SAME PRODUCT TYPE:
+   - Gaming headset → Gaming headset ✓
+   - Gaming headset → Earbuds ✗ (different form factor)
+   - Wired mouse → Wired mouse ✓
+   - Wired mouse → Wireless mouse ✓ (same type)
+
+3. REJECT ALL IF:
+   - No candidates match the category
+   - All candidates are accessories instead of main product
+   - Category is ambiguous and risky
+
+4. When in doubt, REJECT. It's better to return nothing than a wrong product.
+
+Respond with ONLY this JSON:
 {
-  "isMatch": true/false,
-  "confidence": 0-100,
-  "reason": "brief explanation",
-  "categoryMatch": true/false,
-  "brandMatch": true/false
+  "bestMatch": <number 1-${candidates.length} or null if none valid>,
+  "confidence": <0-100>,
+  "reason": "<brief explanation>",
+  "categoryMatch": <true/false>
 }`,
         },
       ],
     });
 
-    const responseText =
-      message.content[0].type === "text" ? message.content[0].text : "";
+    const responseText = message.content[0].type === "text" ? message.content[0].text : "";
 
-    // Parse JSON response
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    const jsonMatch = responseText.match(/\{[\s\S]*?\}/);
     if (!jsonMatch) {
-      console.error("[Suggestion] Could not parse LLM verification response:", responseText);
-      return {
-        isMatch: false,
-        confidenceScore: 0,
-        matchReason: "Failed to parse verification response",
-        categoryMatch: false,
-        brandMatch: false,
-      };
+      console.error("[Suggestion] Could not parse verification response");
+      return { bestIndex: null, confidenceScore: 0, matchReason: "Parse error", categoryMatch: false };
     }
 
     const parsed = JSON.parse(jsonMatch[0]);
-    console.log(`[Suggestion] LLM verification: ${parsed.isMatch ? "MATCH" : "NO MATCH"} (${parsed.confidence}%) - ${parsed.reason}`);
 
-    return {
-      isMatch: parsed.isMatch === true,
-      confidenceScore: parsed.confidence || 0,
-      matchReason: parsed.reason || "No reason provided",
+    const result = {
+      bestIndex: parsed.bestMatch !== null ? parsed.bestMatch - 1 : null,
+      confidenceScore: typeof parsed.confidence === 'number' ? parsed.confidence : 0,
+      matchReason: parsed.reason || "No reason",
       categoryMatch: parsed.categoryMatch === true,
-      brandMatch: parsed.brandMatch === true,
     };
+
+    console.log(`[Suggestion] LLM verification: ${result.bestIndex !== null ? `#${result.bestIndex + 1}` : 'REJECTED'} (${result.confidenceScore}%) - ${result.matchReason}`);
+
+    return result;
   } catch (error) {
-    console.error("[Suggestion] LLM verification error:", error);
-    return {
-      isMatch: false,
-      confidenceScore: 0,
-      matchReason: "Verification error",
-      categoryMatch: false,
-      brandMatch: false,
-    };
+    console.error("[Suggestion] Verification error:", error);
+    return { bestIndex: null, confidenceScore: 0, matchReason: "Error", categoryMatch: false };
   }
 }
 
@@ -706,70 +704,68 @@ export async function findReplacementProduct(
   // ============================================
 
   let productTitle = originalProductTitle;
-  let keywords: ExtractedKeywords | null = null;
 
-  // Layer 1: If we have an ASIN, try fetching the product title from the page
+  // Strategy A: Fetch from Amazon product page if we have ASIN
   if (!productTitle && originalAsin) {
     const productPageUrl = `https://www.${region.domain}/dp/${originalAsin}`;
-    console.log(`[Suggestion] Layer 1: Fetching product title from: ${productPageUrl}`);
+    console.log(`[Suggestion] Strategy A: Fetching title from ${productPageUrl}`);
     productTitle = await fetchProductTitle(productPageUrl, region);
 
     if (productTitle) {
-      console.log(`[Suggestion] Layer 1 SUCCESS: Got title from product page`);
+      console.log(`[Suggestion] Found product title: "${productTitle.slice(0, 60)}..."`);
     }
   }
 
-  // Layer 2: If we have a product title (original or fetched), extract keywords
-  if (productTitle) {
-    console.log(`[Suggestion] Layer 2: Extracting keywords with product title`);
-    keywords = await extractProductKeywords(
-      effectiveUrl,
-      videoTitle,
-      videoDescription,
-      productTitle
-    );
+  // Strategy B: Extract product context from video description near the link
+  if (!productTitle && videoDescription) {
+    console.log(`[Suggestion] Strategy B: Extracting product from video context`);
+    productTitle = await extractProductFromContext(videoTitle, videoDescription, originalUrl);
   }
 
-  // Layer 3: If no keywords yet, try context extraction from video description
-  if ((!keywords || keywords.productName === "Unknown Product") && videoDescription) {
-    console.log(`[Suggestion] Layer 3: Attempting context extraction from video description`);
-    const contextKeywords = await extractProductFromContext(
-      originalUrl,
-      videoTitle,
-      videoDescription
-    );
+  // Step 2: Extract keywords with whatever info we have
+  const keywords = await extractProductKeywords(
+    effectiveUrl,
+    videoTitle,
+    videoDescription,
+    productTitle
+  );
 
-    if (contextKeywords && contextKeywords.productName !== "Unknown Product") {
-      console.log(`[Suggestion] Layer 3 SUCCESS: Found product from context: "${contextKeywords.productName}"`);
-      keywords = contextKeywords;
-    }
-  }
-
-  // Layer 4: Final fallback - extract keywords with whatever context we have
-  if (!keywords || keywords.productName === "Unknown Product") {
-    console.log(`[Suggestion] Layer 4: Final fallback keyword extraction`);
-    keywords = await extractProductKeywords(
-      effectiveUrl,
-      videoTitle,
-      videoDescription,
-      productTitle  // May be undefined, that's okay
-    );
-  }
-
-  // If still no keywords, give up
-  if (!keywords || keywords.productName === "Unknown Product") {
-    console.log(`[Suggestion] All layers failed - could not extract product info`);
+  // Validate we have enough to search
+  if (!keywords) {
     return {
       success: false,
       originalProductName: null,
       searchQuery: null,
       bestMatch: null,
       alternativeMatches: [],
-      error: "Could not extract product keywords from any available context",
+      error: "Failed to extract any product keywords",
     };
   }
 
-  console.log(`[Suggestion] Search query: "${keywords.searchQuery}"`);
+  // Check if search query is too generic to be useful
+  const genericQueries = [
+    'gaming', 'gaming equipment', 'gaming gear', 'gaming stuff',
+    'product', 'item', 'stuff', 'thing', 'things',
+    'video', 'youtube', 'equipment', 'gear',
+    'fortnite', 'fortnite gaming', 'fortnite guide'
+  ];
+
+  const queryLower = keywords.searchQuery.toLowerCase().trim();
+  const isGeneric = genericQueries.some(g => queryLower === g || queryLower === `${g}s`);
+
+  if (keywords.productName === "Unknown Product" && isGeneric) {
+    console.log(`[Suggestion] Search query too generic: "${keywords.searchQuery}"`);
+    return {
+      success: false,
+      originalProductName: null,
+      searchQuery: keywords.searchQuery,
+      bestMatch: null,
+      alternativeMatches: [],
+      error: `Search query too generic: "${keywords.searchQuery}"`,
+    };
+  }
+
+  console.log(`[Suggestion] Search query: "${keywords.searchQuery}" (Product: ${keywords.productName}, Category: ${keywords.category})`);
 
   // Step 2: Search Amazon (in the same region as the original link)
   const searchHtml = await fetchAmazonSearch(keywords.searchQuery, region);
@@ -797,74 +793,49 @@ export async function findReplacementProduct(
     };
   }
 
-  console.log(`[Suggestion] Found ${products.length} products`);
+  console.log(`[Suggestion] Found ${products.length} products, verifying...`);
 
-  // Step 4: LLM verification (check each product until we find a match)
-  const matches: SemanticMatch[] = [];
-  let bestMatch: SemanticMatch | null = null;
+  // Log candidates for debugging
+  products.forEach((p, i) => {
+    console.log(`[Suggestion]   ${i + 1}. "${p.title.slice(0, 50)}..."${p.isSponsored ? " [AD]" : ""}`);
+  });
 
-  for (const product of products) {
-    // Skip sponsored products for primary matching
-    if (product.isSponsored && matches.length > 0) {
-      continue;
-    }
+  // Step 4: LLM picks the best match from ALL candidates
+  const verification = await verifyBestMatch(keywords, products);
 
-    const verification = await verifyMatchWithLLM(keywords, product);
-
-    const semanticMatch: SemanticMatch = {
-      product,
-      confidenceScore: verification.confidenceScore,
-      matchReason: verification.matchReason,
-      categoryMatch: verification.categoryMatch,
-      brandMatch: verification.brandMatch,
-    };
-
-    if (verification.isMatch && verification.confidenceScore >= 60) {
-      // Found a good match!
-      if (!bestMatch || verification.confidenceScore > bestMatch.confidenceScore) {
-        bestMatch = semanticMatch;
-      } else {
-        matches.push(semanticMatch);
-      }
-
-      // If we found a high-confidence match, stop searching
-      if (verification.confidenceScore >= 80) {
-        console.log(`[Suggestion] High confidence match found, stopping search`);
-        break;
-      }
-    } else if (verification.confidenceScore >= 50) {
-      // Partial match - keep as alternative
-      matches.push(semanticMatch);
-    } else {
-      console.log(`[Suggestion] Rejected: "${product.title.slice(0, 40)}..." - ${verification.matchReason}`);
-    }
-  }
-
-  // Sort alternatives by confidence
-  const alternativeMatches = matches
-    .filter((m) => m !== bestMatch)
-    .sort((a, b) => b.confidenceScore - a.confidenceScore);
-
-  if (!bestMatch) {
-    console.log(`[Suggestion] No reliable match found after LLM verification`);
+  // Must have category match AND reasonable confidence
+  if (verification.bestIndex === null || !verification.categoryMatch || verification.confidenceScore < 65) {
+    console.log(`[Suggestion] REJECTED: ${verification.matchReason}`);
     return {
       success: false,
       originalProductName: keywords.productName,
       searchQuery: keywords.searchQuery,
       bestMatch: null,
-      alternativeMatches,
-      error: "No reliable match found - LLM verification failed for all candidates",
+      alternativeMatches: [],
+      error: `No valid match: ${verification.matchReason}`,
     };
   }
 
-  console.log(`[Suggestion] Best match: "${bestMatch.product.title.slice(0, 40)}..." (${bestMatch.confidenceScore}%)`);
+  const bestProduct = products[verification.bestIndex];
+
+  const bestMatch: SemanticMatch = {
+    product: bestProduct,
+    confidenceScore: verification.confidenceScore,
+    matchReason: verification.matchReason,
+    categoryMatch: verification.categoryMatch,
+    brandMatch: keywords.brand
+      ? bestProduct.title.toLowerCase().includes(keywords.brand.toLowerCase())
+      : false,
+  };
+
+  console.log(`[Suggestion] ACCEPTED: "${bestProduct.title.slice(0, 40)}..." (${verification.confidenceScore}%)`);
 
   return {
     success: true,
     originalProductName: keywords.productName,
     searchQuery: keywords.searchQuery,
     bestMatch,
-    alternativeMatches,
+    alternativeMatches: [],
   };
 }
 
