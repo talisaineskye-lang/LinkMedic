@@ -15,6 +15,13 @@ const PROBLEM_STATUSES: LinkStatus[] = [
   LinkStatus.MISSING_TAG,
 ];
 
+// Inactive channel detection thresholds
+const INACTIVE_CHANNEL_THRESHOLDS = {
+  minTotalViews: 1000,        // Minimum total views across all videos
+  minRecentViews: 100,        // Minimum views on videos published in last 30 days
+  recentDays: 30,             // Days to consider for "recent" activity
+};
+
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
 
@@ -131,6 +138,22 @@ export default async function DashboardPage() {
     where: { userId: session.user.id },
   });
 
+  // Detect inactive channel
+  // A channel is considered inactive if it has very low total views
+  const totalViews = rawLinks.reduce((sum, link) => sum + (link.video.viewCount || 0), 0);
+  const thirtyDaysAgo = new Date(Date.now() - INACTIVE_CHANNEL_THRESHOLDS.recentDays * 24 * 60 * 60 * 1000);
+
+  // Get views from recent videos (published in last 30 days)
+  const recentVideoViews = rawLinks
+    .filter(link => link.video.publishedAt && new Date(link.video.publishedAt) > thirtyDaysAgo)
+    .reduce((sum, link) => sum + (link.video.viewCount || 0), 0);
+
+  // Channel is inactive if total views are below threshold OR recent activity is very low
+  const isInactiveChannel = totalLinks > 0 && (
+    totalViews < INACTIVE_CHANNEL_THRESHOLDS.minTotalViews ||
+    (recentVideoViews < INACTIVE_CHANNEL_THRESHOLDS.minRecentViews && monthlyLoss === 0)
+  );
+
   // Tier info
   const tier = user?.tier ?? UserTier.FREE;
   const tierFeatures = TIER_FEATURES[tier];
@@ -166,6 +189,7 @@ export default async function DashboardPage() {
       lastScanDate={lastScanDate}
       tierInfo={tierInfo}
       recoveryStats={recoveryStats}
+      isInactiveChannel={isInactiveChannel}
     />
   );
 }

@@ -31,7 +31,9 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/cookie": "^0.6.0",
+    "@types/estree": "^1.0.8",
+    "@types/node": "^20.19.30",
     "@types/pg": "^8.16.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
