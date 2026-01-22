@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { Copy, Check, CheckCircle2, ExternalLink, RefreshCw, FileWarning, Lock, Eye, Pencil } from "lucide-react";
+import { Copy, Check, CheckCircle2, ExternalLink, RefreshCw, FileWarning, Lock, Eye, Pencil, ChevronDown, ChevronRight, Layers, List } from "lucide-react";
 import { formatCurrency, formatNumber } from "@/lib/revenue-estimator";
 import { FindReplacementsButton } from "./find-replacements-button";
 import Link from "next/link";
@@ -44,9 +44,30 @@ interface DisclosureIssue {
   description: string | null;
 }
 
+interface GroupedIssue {
+  originalUrl: string;
+  linkIds: string[];
+  videos: {
+    id: string;
+    youtubeVideoId: string;
+    title: string;
+    viewCount: number;
+    thumbnailUrl: string | null;
+  }[];
+  totalRevenueAtRisk: number;
+  suggestedLink: string | null;
+  suggestedTitle: string | null;
+  suggestedAsin: string | null;
+  suggestedPrice: string | null;
+  confidenceScore: number | null;
+  status: string;
+  merchant: string;
+}
+
 interface FixCenterClientProps {
   needsFixIssues: Issue[];
   fixedIssues: Issue[];
+  groupedIssues: GroupedIssue[];
   disclosureIssues?: DisclosureIssue[];
   canUseAI?: boolean;
   canViewDisclosureDetails?: boolean;
@@ -69,9 +90,37 @@ function ConfidenceBadge({ score }: { score: number | null }) {
   );
 }
 
+function IssueTypeBadge({ status }: { status: string }) {
+  const getConfig = () => {
+    switch (status) {
+      case "NOT_FOUND":
+        return { label: "404", color: "bg-red-950/50 border-red-600/50 text-red-400" };
+      case "OOS":
+        return { label: "Out of Stock", color: "bg-amber-950/50 border-amber-600/50 text-amber-400" };
+      case "OOS_THIRD_PARTY":
+        return { label: "3rd Party Only", color: "bg-orange-950/50 border-orange-600/50 text-orange-400" };
+      case "SEARCH_REDIRECT":
+        return { label: "Redirect", color: "bg-purple-950/50 border-purple-600/50 text-purple-400" };
+      case "MISSING_TAG":
+        return { label: "Missing Tag", color: "bg-blue-950/50 border-blue-600/50 text-blue-400" };
+      default:
+        return { label: status, color: "bg-slate-700/50 border-slate-600/50 text-slate-400" };
+    }
+  };
+
+  const { label, color } = getConfig();
+
+  return (
+    <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full border ${color}`}>
+      {label}
+    </span>
+  );
+}
+
 export function FixCenterClient({
   needsFixIssues,
   fixedIssues,
+  groupedIssues,
   disclosureIssues = [],
   canUseAI = true,
   canViewDisclosureDetails = false,
@@ -80,8 +129,11 @@ export function FixCenterClient({
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab") === "disclosure" ? "disclosure" : "needs-fix";
   const [activeTab, setActiveTab] = useState<"needs-fix" | "fixed" | "disclosure">(initialTab);
+  const [viewMode, setViewMode] = useState<"grouped" | "by-video">("grouped");
+  const [expandedUrls, setExpandedUrls] = useState<Set<string>>(new Set());
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [markingFixedId, setMarkingFixedId] = useState<string | null>(null);
+  const [markingAllFixedUrl, setMarkingAllFixedUrl] = useState<string | null>(null);
   const [findingId, setFindingId] = useState<string | null>(null);
   const [viewingDescriptionId, setViewingDescriptionId] = useState<string | null>(null);
   const router = useRouter();
@@ -150,6 +202,40 @@ export function FixCenterClient({
     } finally {
       setFindingId(null);
     }
+  };
+
+  const handleMarkAllFixed = async (originalUrl: string, linkIds: string[]) => {
+    setMarkingAllFixedUrl(originalUrl);
+    try {
+      const response = await fetch("/api/links/mark-fixed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ linkIds }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to mark links as fixed");
+      }
+
+      router.refresh();
+    } catch (error) {
+      console.error("Error marking links as fixed:", error);
+      alert("Failed to mark links as fixed");
+    } finally {
+      setMarkingAllFixedUrl(null);
+    }
+  };
+
+  const toggleUrlExpanded = (url: string) => {
+    setExpandedUrls(prev => {
+      const next = new Set(prev);
+      if (next.has(url)) {
+        next.delete(url);
+      } else {
+        next.add(url);
+      }
+      return next;
+    });
   };
 
   return (
@@ -409,19 +495,250 @@ export function FixCenterClient({
       {/* Broken Links / Fixed Table */}
       {activeTab !== "disclosure" && (
         <div className="bg-slate-800/40 border border-slate-700/50 rounded-lg backdrop-blur overflow-hidden">
-          {issues.length === 0 ? (
+          {/* View Toggle - only show for needs-fix tab */}
+          {activeTab === "needs-fix" && needsFixIssues.length > 0 && (
+            <div className="px-4 py-3 border-b border-slate-700/50 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-400">View:</span>
+                <div className="flex gap-1 bg-slate-900/50 p-0.5 rounded-md">
+                  <button
+                    onClick={() => setViewMode("grouped")}
+                    className={`px-3 py-1.5 text-xs font-medium rounded transition flex items-center gap-1.5 ${
+                      viewMode === "grouped"
+                        ? "bg-slate-700 text-white"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    <Layers className="w-3 h-3" />
+                    By Unique Link
+                  </button>
+                  <button
+                    onClick={() => setViewMode("by-video")}
+                    className={`px-3 py-1.5 text-xs font-medium rounded transition flex items-center gap-1.5 ${
+                      viewMode === "by-video"
+                        ? "bg-slate-700 text-white"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    <List className="w-3 h-3" />
+                    By Video
+                  </button>
+                </div>
+              </div>
+              {viewMode === "grouped" && (
+                <span className="text-xs text-slate-500">
+                  {groupedIssues.length} unique link{groupedIssues.length !== 1 ? "s" : ""} across {needsFixIssues.length} video{needsFixIssues.length !== 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
+          )}
+
+          {issues.length === 0 && activeTab === "fixed" ? (
             <div className="p-12 text-center">
               <CheckCircle2 className="w-16 h-16 mx-auto text-emerald-400 mb-4" />
-              <p className="text-xl font-semibold text-white mb-2">
-                {activeTab === "needs-fix" ? "All Links Fixed!" : "No Fixed Links Yet"}
-              </p>
-              <p className="text-slate-400">
-                {activeTab === "needs-fix"
-                  ? "Great job! All your affiliate links are working properly."
-                  : "Links you mark as fixed will appear here."}
-              </p>
+              <p className="text-xl font-semibold text-white mb-2">No Fixed Links Yet</p>
+              <p className="text-slate-400">Links you mark as fixed will appear here.</p>
+            </div>
+          ) : needsFixIssues.length === 0 && activeTab === "needs-fix" ? (
+            <div className="p-12 text-center">
+              <CheckCircle2 className="w-16 h-16 mx-auto text-emerald-400 mb-4" />
+              <p className="text-xl font-semibold text-white mb-2">All Links Fixed!</p>
+              <p className="text-slate-400">Great job! All your affiliate links are working properly.</p>
+            </div>
+          ) : activeTab === "needs-fix" && viewMode === "grouped" ? (
+            /* Grouped View */
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-900/50 border-b border-slate-700/50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                      Broken Link
+                    </th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
+                      Issue Type
+                    </th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
+                      Videos Affected
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                      AI Suggestion
+                    </th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
+                      Confidence
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-400 uppercase tracking-wider">
+                      Total Revenue at Risk
+                    </th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
+                      Action
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-700/30">
+                  {groupedIssues.map((group) => (
+                    <tr key={group.originalUrl} className="hover:bg-slate-700/20 transition">
+                      {/* Broken Link */}
+                      <td className="px-4 py-4">
+                        <a
+                          href={group.originalUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-red-400 hover:underline truncate block max-w-[180px]"
+                          title={group.originalUrl}
+                        >
+                          {group.originalUrl.length > 40 ? group.originalUrl.slice(0, 40) + "..." : group.originalUrl}
+                        </a>
+                      </td>
+
+                      {/* Issue Type */}
+                      <td className="px-4 py-4 text-center">
+                        <IssueTypeBadge status={group.status} />
+                      </td>
+
+                      {/* Videos Affected - Expandable */}
+                      <td className="px-4 py-4">
+                        <button
+                          onClick={() => toggleUrlExpanded(group.originalUrl)}
+                          className="flex items-center gap-1.5 text-sm text-slate-300 hover:text-white transition mx-auto"
+                        >
+                          {expandedUrls.has(group.originalUrl) ? (
+                            <ChevronDown className="w-4 h-4" />
+                          ) : (
+                            <ChevronRight className="w-4 h-4" />
+                          )}
+                          <span className="font-medium">{group.videos.length}</span>
+                          <span className="text-slate-500">video{group.videos.length !== 1 ? "s" : ""}</span>
+                        </button>
+                        {expandedUrls.has(group.originalUrl) && (
+                          <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+                            {group.videos.map((video) => (
+                              <div key={video.id} className="flex items-center gap-2 text-xs">
+                                <a
+                                  href={`https://studio.youtube.com/video/${video.youtubeVideoId}/edit`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-slate-400 hover:text-emerald-400 truncate max-w-[150px] flex items-center gap-1"
+                                  title={video.title}
+                                >
+                                  <Pencil className="w-3 h-3 flex-shrink-0" />
+                                  {video.title.length > 25 ? video.title.slice(0, 25) + "..." : video.title}
+                                </a>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </td>
+
+                      {/* AI Suggestion */}
+                      <td className="px-4 py-4">
+                        {group.suggestedLink && group.suggestedTitle ? (
+                          <div className="space-y-1">
+                            <p
+                              className="text-sm text-emerald-400 font-medium max-w-[200px] truncate"
+                              title={group.suggestedTitle}
+                            >
+                              {group.suggestedTitle.length > 40
+                                ? group.suggestedTitle.slice(0, 40) + "..."
+                                : group.suggestedTitle}
+                            </p>
+                            <div className="flex items-center gap-2">
+                              {group.suggestedPrice && (
+                                <span className="text-xs text-slate-400">{group.suggestedPrice}</span>
+                              )}
+                              <button
+                                onClick={() => copyToClipboard(group.suggestedLink!, group.originalUrl)}
+                                className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-slate-700/50 hover:bg-emerald-950/50 text-slate-300 hover:text-emerald-400 transition"
+                              >
+                                {copiedId === group.originalUrl ? (
+                                  <>
+                                    <Check className="w-3 h-3" />
+                                    Copied!
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="w-3 h-3" />
+                                    Copy Link
+                                  </>
+                                )}
+                              </button>
+                              <a
+                                href={group.suggestedLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-1 rounded bg-slate-700/50 hover:bg-slate-600/50 transition"
+                                title="Preview product"
+                              >
+                                <ExternalLink className="w-3 h-3 text-slate-400" />
+                              </a>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleFindReplacement(group.linkIds[0])}
+                            disabled={findingId === group.linkIds[0]}
+                            className="text-sm text-slate-400 hover:text-emerald-400 flex items-center gap-1 transition disabled:opacity-50"
+                          >
+                            {findingId === group.linkIds[0] ? (
+                              <>
+                                <RefreshCw className="w-3 h-3 animate-spin" />
+                                Finding...
+                              </>
+                            ) : (
+                              <>
+                                <RefreshCw className="w-3 h-3" />
+                                Find Replacement
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </td>
+
+                      {/* Confidence Score */}
+                      <td className="px-4 py-4 text-center">
+                        {group.suggestedLink ? (
+                          <ConfidenceBadge score={group.confidenceScore} />
+                        ) : (
+                          <span className="text-xs text-slate-500">-</span>
+                        )}
+                      </td>
+
+                      {/* Total Revenue at Risk */}
+                      <td className="px-4 py-4 text-right">
+                        <span className="text-sm font-semibold text-red-400">
+                          {formatCurrency(group.totalRevenueAtRisk)}
+                        </span>
+                      </td>
+
+                      {/* Action */}
+                      <td className="px-4 py-4 text-center">
+                        {group.suggestedLink ? (
+                          <button
+                            onClick={() => handleMarkAllFixed(group.originalUrl, group.linkIds)}
+                            disabled={markingAllFixedUrl === group.originalUrl}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-600 text-white transition"
+                          >
+                            {markingAllFixedUrl === group.originalUrl ? (
+                              "Marking..."
+                            ) : (
+                              <>
+                                <Check className="w-3 h-3" />
+                                Mark All Fixed ({group.linkIds.length})
+                              </>
+                            )}
+                          </button>
+                        ) : (
+                          <span className="text-xs text-slate-500 italic">
+                            Find replacement first
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           ) : (
+          /* By-Video View (original table) */
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-slate-900/50 border-b border-slate-700/50">
@@ -431,6 +748,9 @@ export function FixCenterClient({
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                     Broken Link
+                  </th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    Issue Type
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                     AI Suggestion
@@ -487,6 +807,11 @@ export function FixCenterClient({
                       >
                         {issue.url.length > 35 ? issue.url.slice(0, 35) + "..." : issue.url}
                       </a>
+                    </td>
+
+                    {/* Issue Type */}
+                    <td className="px-4 py-4 text-center">
+                      <IssueTypeBadge status={issue.status} />
                     </td>
 
                     {/* AI Suggestion */}

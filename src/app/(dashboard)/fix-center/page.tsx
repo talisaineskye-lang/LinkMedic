@@ -129,6 +129,67 @@ export default async function FixCenterPage() {
       return 0;
     });
 
+  // Group unfixed links by unique URL for the grouped view
+  const groupedLinksMap = new Map<string, {
+    originalUrl: string;
+    linkIds: string[];
+    videos: { id: string; youtubeVideoId: string; title: string; viewCount: number; thumbnailUrl: string | null }[];
+    totalRevenueAtRisk: number;
+    suggestedLink: string | null;
+    suggestedTitle: string | null;
+    suggestedAsin: string | null;
+    suggestedPrice: string | null;
+    confidenceScore: number | null;
+    status: string;
+    merchant: string;
+  }>();
+
+  for (const link of needsFixLinks) {
+    const existing = groupedLinksMap.get(link.url);
+    if (existing) {
+      existing.linkIds.push(link.id);
+      existing.videos.push({
+        id: link.videoId,
+        youtubeVideoId: link.youtubeVideoId,
+        title: link.videoTitle,
+        viewCount: link.videoViewCount,
+        thumbnailUrl: link.videoThumbnailUrl,
+      });
+      existing.totalRevenueAtRisk += link.estimatedLoss;
+      // Use the suggestion from any instance that has one
+      if (!existing.suggestedLink && link.suggestedLink) {
+        existing.suggestedLink = link.suggestedLink;
+        existing.suggestedTitle = link.suggestedTitle;
+        existing.suggestedAsin = link.suggestedAsin;
+        existing.suggestedPrice = link.suggestedPrice;
+        existing.confidenceScore = link.confidenceScore;
+      }
+    } else {
+      groupedLinksMap.set(link.url, {
+        originalUrl: link.url,
+        linkIds: [link.id],
+        videos: [{
+          id: link.videoId,
+          youtubeVideoId: link.youtubeVideoId,
+          title: link.videoTitle,
+          viewCount: link.videoViewCount,
+          thumbnailUrl: link.videoThumbnailUrl,
+        }],
+        totalRevenueAtRisk: link.estimatedLoss,
+        suggestedLink: link.suggestedLink,
+        suggestedTitle: link.suggestedTitle,
+        suggestedAsin: link.suggestedAsin,
+        suggestedPrice: link.suggestedPrice,
+        confidenceScore: link.confidenceScore,
+        status: link.status,
+        merchant: link.merchant,
+      });
+    }
+  }
+
+  const groupedLinks = Array.from(groupedLinksMap.values())
+    .sort((a, b) => b.totalRevenueAtRisk - a.totalRevenueAtRisk);
+
   // Get videos with disclosure issues (missing or weak disclosure with affiliate links)
   const videosWithDisclosureIssues = await prisma.video.findMany({
     where: {
@@ -176,6 +237,7 @@ export default async function FixCenterPage() {
     <FixCenterClient
       needsFixIssues={needsFixLinks}
       fixedIssues={fixedLinks}
+      groupedIssues={groupedLinks}
       disclosureIssues={disclosureIssues}
       canUseAI={canUseAI}
       canViewDisclosureDetails={canViewDisclosureDetails}

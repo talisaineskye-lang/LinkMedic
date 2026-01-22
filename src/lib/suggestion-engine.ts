@@ -224,6 +224,90 @@ interface ExtractedKeywords {
 }
 
 /**
+ * Extract product information from video context when URL-based extraction fails
+ * Analyzes the video description to find what product the broken link was for
+ */
+export async function extractProductFromContext(
+  brokenUrl: string,
+  videoTitle: string,
+  videoDescription: string
+): Promise<ExtractedKeywords | null> {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.error("[Suggestion] No ANTHROPIC_API_KEY configured");
+    return null;
+  }
+
+  try {
+    console.log(`[Suggestion] Attempting context-based extraction for: ${brokenUrl.slice(0, 50)}...`);
+
+    const anthropic = getAnthropicClient();
+    const message = await anthropic.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 400,
+      messages: [
+        {
+          role: "user",
+          content: `A YouTube video has a broken Amazon affiliate link. Analyze the context to determine what product the link was for.
+
+VIDEO TITLE: ${videoTitle}
+
+VIDEO DESCRIPTION:
+${videoDescription.slice(0, 2000)}
+
+BROKEN LINK: ${brokenUrl}
+
+Your task: Find ANY product mention near this link in the description. Look for:
+1. Text immediately before or after the link
+2. Product names, model numbers, or brands mentioned
+3. The video topic/theme to infer product type
+
+IMPORTANT:
+- Focus on what's ACTUALLY in the description
+- If the link appears in a list of gear/equipment, identify which item it corresponds to
+- Extract brand, model, or product category even if incomplete
+
+Respond ONLY with this JSON:
+{
+  "productName": "best guess at product name based on context",
+  "brand": "brand if mentioned, or null",
+  "category": "product category (Electronics, Tools, Camera, Audio, etc.)",
+  "searchQuery": "2-5 word Amazon search that would find this product",
+  "confidence": "high/medium/low based on how clear the context is"
+}`,
+        },
+      ],
+    });
+
+    const responseText =
+      message.content[0].type === "text" ? message.content[0].text : "";
+
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error("[Suggestion] Could not parse context extraction response");
+      return null;
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    console.log(`[Suggestion] Context extraction result (${parsed.confidence}):`, parsed);
+
+    // Only return if we found something useful
+    if (parsed.productName && parsed.productName !== "Unknown" && parsed.confidence !== "low") {
+      return {
+        productName: parsed.productName,
+        brand: parsed.brand || null,
+        category: parsed.category || "Unknown",
+        searchQuery: parsed.searchQuery || parsed.productName,
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error("[Suggestion] Context extraction error:", error);
+    return null;
+  }
+}
+
+/**
  * Extract clean product keywords from context
  * NO hallucination - only extracts what's in the data
  */
@@ -240,39 +324,49 @@ export async function extractProductKeywords(
 
   try {
     // Build context from available data
+    const hasProductTitle = originalProductTitle && originalProductTitle.length > 5;
+    const hasDescription = videoDescription && videoDescription.length > 20;
+
     const context = `
 URL: ${originalUrl}
-${originalProductTitle ? `Original Product Title: ${originalProductTitle}` : ""}
+${hasProductTitle ? `Original Product Title: ${originalProductTitle}` : ""}
 Video Title: ${videoTitle}
-${videoDescription ? `Video Description (first 500 chars): ${videoDescription.slice(0, 500)}` : ""}
+${hasDescription ? `Video Description (first 1000 chars): ${videoDescription.slice(0, 1000)}` : ""}
     `.trim();
 
     const anthropic = getAnthropicClient();
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 300,
+      max_tokens: 400,
       messages: [
         {
           role: "user",
-          content: `Analyze this broken Amazon affiliate link context and extract the ACTUAL product information.
+          content: `Analyze this broken Amazon affiliate link and extract product information to search for a replacement.
 
 ${context}
 
-IMPORTANT RULES:
-- ONLY extract information that is EXPLICITLY present in the context
-- Do NOT guess or hallucinate product names
-- If brand is not clear, set to null
-- Category should be a broad Amazon category (Electronics, Camera, Audio, Gaming, etc.)
-- Search query should be 2-5 words that would find this exact product type
+EXTRACTION STRATEGY:
+1. If "Original Product Title" is provided, use it as the primary source
+2. If no title, look for the product in the video description near the URL
+3. Use the video title to understand the category/context
+4. Extract brand from product title or URL if visible
 
-Respond in this exact JSON format only:
+IMPORTANT:
+- Use ALL available context to build a useful search query
+- Even partial information (just brand, just category) is useful
+- The search query should be specific enough to find similar products
+- Common Amazon URL patterns: /dp/ASIN, /gp/product/, product names in URL slugs
+
+Respond in this exact JSON format:
 {
-  "productName": "the actual product name if known, or 'Unknown Product' if not clear",
-  "brand": "brand name if explicitly mentioned, or null",
-  "category": "broad product category",
-  "searchQuery": "2-5 word Amazon search query"
+  "productName": "product name if found, or descriptive phrase like 'wireless gaming headset'",
+  "brand": "brand name if found, or null",
+  "category": "broad Amazon category (Electronics, Tools, Camera, Home, etc.)",
+  "searchQuery": "2-5 word Amazon search query that would find this type of product"
 }
 
+If you have a product title, create a focused search query from it.
+If you only have context clues, create a category-based search query.
 Only output the JSON, no explanation.`,
         },
       ],
@@ -575,7 +669,10 @@ Respond ONLY with this JSON:
 
 /**
  * Find replacement product for a broken link
- * Returns null if no reliable match is found
+ * Uses multi-layered fallback strategy:
+ * 1. Try to resolve URL and fetch product title from page
+ * 2. If no title, try context extraction from video description
+ * 3. Fall back to keyword extraction from available context
  */
 export async function findReplacementProduct(
   originalUrl: string,
@@ -590,32 +687,85 @@ export async function findReplacementProduct(
   const { resolved: resolvedUrl, asin: originalAsin } = await resolveAmazonUrl(originalUrl);
   console.log(`[Suggestion] Original: ${originalUrl.slice(0, 50)}, Resolved: ${resolvedUrl.slice(0, 50)}, ASIN: ${originalAsin}`);
 
-  // Detect region from resolved URL (more reliable than shortened URL)
-  const region = getAmazonRegion(resolvedUrl);
-  console.log(`[Suggestion] Finding replacement for: ${resolvedUrl.slice(0, 60)}... (Region: ${region.region})`);
+  // If we got an ASIN but URL didn't resolve properly, construct the proper URL
+  let effectiveUrl = resolvedUrl;
+  let region = getAmazonRegion(resolvedUrl);
 
-  // If we resolved a shortened URL, try to fetch the original product title
-  let productTitleFromPage = originalProductTitle;
-  if (!productTitleFromPage && resolvedUrl !== originalUrl && originalAsin) {
-    productTitleFromPage = await fetchProductTitle(resolvedUrl, region);
+  if (originalAsin && resolvedUrl === originalUrl) {
+    // URL didn't resolve, but we have an ASIN - construct the full product URL
+    effectiveUrl = `https://www.${region.domain}/dp/${originalAsin}`;
+    console.log(`[Suggestion] Constructed URL from ASIN: ${effectiveUrl}`);
   }
 
-  // Step 1: Extract keywords
-  const keywords = await extractProductKeywords(
-    resolvedUrl,  // Use resolved URL for better context
-    videoTitle,
-    videoDescription,
-    productTitleFromPage  // May have fetched from the resolved page
-  );
+  // Re-detect region from effective URL (in case it changed)
+  region = getAmazonRegion(effectiveUrl);
+  console.log(`[Suggestion] Finding replacement for: ${effectiveUrl.slice(0, 60)}... (Region: ${region.region})`);
 
+  // ============================================
+  // MULTI-LAYERED FALLBACK FOR PRODUCT INFO
+  // ============================================
+
+  let productTitle = originalProductTitle;
+  let keywords: ExtractedKeywords | null = null;
+
+  // Layer 1: If we have an ASIN, try fetching the product title from the page
+  if (!productTitle && originalAsin) {
+    const productPageUrl = `https://www.${region.domain}/dp/${originalAsin}`;
+    console.log(`[Suggestion] Layer 1: Fetching product title from: ${productPageUrl}`);
+    productTitle = await fetchProductTitle(productPageUrl, region);
+
+    if (productTitle) {
+      console.log(`[Suggestion] Layer 1 SUCCESS: Got title from product page`);
+    }
+  }
+
+  // Layer 2: If we have a product title (original or fetched), extract keywords
+  if (productTitle) {
+    console.log(`[Suggestion] Layer 2: Extracting keywords with product title`);
+    keywords = await extractProductKeywords(
+      effectiveUrl,
+      videoTitle,
+      videoDescription,
+      productTitle
+    );
+  }
+
+  // Layer 3: If no keywords yet, try context extraction from video description
+  if ((!keywords || keywords.productName === "Unknown Product") && videoDescription) {
+    console.log(`[Suggestion] Layer 3: Attempting context extraction from video description`);
+    const contextKeywords = await extractProductFromContext(
+      originalUrl,
+      videoTitle,
+      videoDescription
+    );
+
+    if (contextKeywords && contextKeywords.productName !== "Unknown Product") {
+      console.log(`[Suggestion] Layer 3 SUCCESS: Found product from context: "${contextKeywords.productName}"`);
+      keywords = contextKeywords;
+    }
+  }
+
+  // Layer 4: Final fallback - extract keywords with whatever context we have
   if (!keywords || keywords.productName === "Unknown Product") {
+    console.log(`[Suggestion] Layer 4: Final fallback keyword extraction`);
+    keywords = await extractProductKeywords(
+      effectiveUrl,
+      videoTitle,
+      videoDescription,
+      productTitle  // May be undefined, that's okay
+    );
+  }
+
+  // If still no keywords, give up
+  if (!keywords || keywords.productName === "Unknown Product") {
+    console.log(`[Suggestion] All layers failed - could not extract product info`);
     return {
       success: false,
       originalProductName: null,
       searchQuery: null,
       bestMatch: null,
       alternativeMatches: [],
-      error: "Could not extract product keywords from context",
+      error: "Could not extract product keywords from any available context",
     };
   }
 
