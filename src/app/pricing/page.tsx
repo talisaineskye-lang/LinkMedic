@@ -1,19 +1,46 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, Zap, TrendingUp, Bell, Users, Shield, FileText, Sparkles, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Check, Zap, TrendingUp, Bell, Users, Shield, FileText, Sparkles, CheckCircle2, ArrowRight, Loader2 } from 'lucide-react';
 import { Link as LinkIcon } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Pricing() {
   const [waitlistEmail, setWaitlistEmail] = useState("");
+  const [waitlistFeedback, setWaitlistFeedback] = useState("");
   const [waitlistSubmitted, setWaitlistSubmitted] = useState(false);
+  const [waitlistLoading, setWaitlistLoading] = useState(false);
+  const [waitlistError, setWaitlistError] = useState<string | null>(null);
 
-  const handleWaitlistSubmit = (e: React.FormEvent) => {
+  const handleWaitlistSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Send to email capture API
-    setWaitlistSubmitted(true);
-    setTimeout(() => setWaitlistSubmitted(false), 3000);
+    setWaitlistError(null);
+    setWaitlistLoading(true);
+
+    try {
+      const response = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: waitlistEmail,
+          tier: "portfolio",
+          source: "pricing",
+          feedback: waitlistFeedback || null,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to join waitlist");
+      }
+
+      setWaitlistSubmitted(true);
+    } catch (err) {
+      setWaitlistError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setWaitlistLoading(false);
+    }
   };
 
   return (
@@ -170,60 +197,93 @@ export default function Pricing() {
             </div>
           </div>
 
-          {/* Tier 3: The Portfolio Manager ($49/mo) - Greyed Out */}
-          <div className="bg-gradient-to-br from-slate-800/30 to-slate-900/30 backdrop-blur border border-slate-700/30 rounded-2xl p-8 opacity-60">
+          {/* Tier 3: The Portfolio Manager ($49/mo) - Coming Soon */}
+          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur border border-amber-700/30 rounded-2xl p-8">
             <div className="mb-6">
-              <h3 className="text-2xl font-bold mb-2 text-slate-400">The Portfolio Manager</h3>
-              <div className="flex items-baseline gap-2 mb-2">
-                <span className="text-5xl font-bold text-slate-400">$49</span>
-                <span className="text-slate-500">/month</span>
+              <div className="flex items-center gap-2 mb-2">
+                <h3 className="text-2xl font-bold text-slate-300">The Portfolio Manager</h3>
+                <span className="px-2 py-0.5 text-xs font-medium bg-amber-600/20 text-amber-400 rounded-full">
+                  Coming Soon
+                </span>
               </div>
-              <p className="text-slate-500 font-medium">Scale</p>
+              <div className="flex items-baseline gap-2 mb-2">
+                <span className="text-5xl font-bold text-white">$49</span>
+                <span className="text-slate-400">/month</span>
+              </div>
+              <p className="text-amber-400 font-medium">Scale</p>
             </div>
 
-            <p className="text-slate-500 mb-6">
+            <p className="text-slate-400 mb-6">
               Managing multiple channels means multiple leaks. Get a bird&apos;s-eye view of your entire empire&apos;s link health for less than $10 per channel.
             </p>
 
             <ul className="space-y-3 mb-8">
               <li className="flex items-start gap-3">
-                <Users className="w-5 h-5 text-slate-600 flex-shrink-0 mt-0.5" />
-                <span className="text-slate-500">Manage up to 10 Channels</span>
+                <Users className="w-5 h-5 text-amber-500/70 flex-shrink-0 mt-0.5" />
+                <span className="text-slate-300">Manage up to 10 Channels</span>
               </li>
               <li className="flex items-start gap-3">
-                <TrendingUp className="w-5 h-5 text-slate-600 flex-shrink-0 mt-0.5" />
-                <span className="text-slate-500">Aggregate Dashboard</span>
+                <TrendingUp className="w-5 h-5 text-amber-500/70 flex-shrink-0 mt-0.5" />
+                <span className="text-slate-300">Aggregate Dashboard</span>
               </li>
               <li className="flex items-start gap-3">
-                <FileText className="w-5 h-5 text-slate-600 flex-shrink-0 mt-0.5" />
-                <span className="text-slate-500">Agency PDF Reporting</span>
+                <FileText className="w-5 h-5 text-amber-500/70 flex-shrink-0 mt-0.5" />
+                <span className="text-slate-300">Agency PDF Reporting</span>
               </li>
               <li className="flex items-start gap-3">
-                <Users className="w-5 h-5 text-slate-600 flex-shrink-0 mt-0.5" />
-                <span className="text-slate-500">Team Access</span>
+                <Users className="w-5 h-5 text-amber-500/70 flex-shrink-0 mt-0.5" />
+                <span className="text-slate-300">Team Access</span>
               </li>
             </ul>
 
             {/* Waitlist Form */}
-            <form onSubmit={handleWaitlistSubmit} className="space-y-3">
-              <input
-                type="email"
-                placeholder="Enter email for waitlist"
-                value={waitlistEmail}
-                onChange={(e) => setWaitlistEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-slate-600"
-              />
-              <button
-                type="submit"
-                className="block w-full bg-slate-700/50 hover:bg-slate-700 text-slate-400 font-semibold py-4 px-6 rounded-lg transition-all text-center"
-              >
-                {waitlistSubmitted ? "Added to Waitlist!" : "Join the Waitlist"}
-              </button>
-            </form>
-
-            <p className="text-xs text-slate-600 text-center mt-4">
-              Coming Soon
-            </p>
+            {waitlistSubmitted ? (
+              <div className="bg-emerald-950/30 border border-emerald-700/50 rounded-lg p-4 text-center">
+                <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
+                <p className="text-white font-medium">You&apos;re on the list!</p>
+                <p className="text-sm text-slate-400">We&apos;ll email you when Portfolio Manager launches.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleWaitlistSubmit} className="space-y-3">
+                <input
+                  type="email"
+                  placeholder="Enter your email"
+                  value={waitlistEmail}
+                  onChange={(e) => setWaitlistEmail(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/50 transition"
+                />
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1.5">
+                    Optional: What&apos;s the #1 thing you&apos;d need from multi-channel management?
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g., unified dashboard, team access..."
+                    value={waitlistFeedback}
+                    onChange={(e) => setWaitlistFeedback(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/50 transition text-sm"
+                  />
+                </div>
+                {waitlistError && (
+                  <p className="text-red-400 text-sm">{waitlistError}</p>
+                )}
+                <button
+                  type="submit"
+                  disabled={waitlistLoading || !waitlistEmail}
+                  className="block w-full bg-amber-600 hover:bg-amber-500 disabled:bg-slate-600 disabled:cursor-not-allowed text-white font-semibold py-4 px-6 rounded-lg transition-all text-center flex items-center justify-center gap-2"
+                >
+                  {waitlistLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Joining...
+                    </>
+                  ) : (
+                    "Join the Waitlist"
+                  )}
+                </button>
+              </form>
+            )}
           </div>
 
         </div>
