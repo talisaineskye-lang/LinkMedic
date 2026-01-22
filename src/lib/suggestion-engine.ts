@@ -131,16 +131,21 @@ async function resolveAmazonUrl(url: string): Promise<{ resolved: string; asin: 
   }
 }
 
+interface ProductInfo {
+  title: string | undefined;
+  price: string | undefined;
+}
+
 /**
- * Fetch product title from a product page
- * Used to get original product info for better keyword extraction
+ * Fetch product title and price from a product page
+ * Used to get original product info for better keyword extraction and price comparison
  */
-async function fetchProductTitle(productUrl: string, region: AmazonRegion): Promise<string | undefined> {
+async function fetchProductInfo(productUrl: string, region: AmazonRegion): Promise<ProductInfo> {
   try {
     const apiKey = process.env.SCRAPINGBEE_API_KEY;
-    if (!apiKey) return undefined;
+    if (!apiKey) return { title: undefined, price: undefined };
 
-    console.log(`[Suggestion] Fetching product title from: ${productUrl}`);
+    console.log(`[Suggestion] Fetching product info from: ${productUrl}`);
 
     const params = new URLSearchParams({
       api_key: apiKey,
@@ -154,31 +159,43 @@ async function fetchProductTitle(productUrl: string, region: AmazonRegion): Prom
 
     if (!response.ok) {
       console.error(`[Suggestion] Product fetch failed: ${response.status}`);
-      return undefined;
+      return { title: undefined, price: undefined };
     }
 
     const html = await response.text();
 
-    // Extract title from product page
+    // Extract title and price from product page
     const $ = cheerio.load(html);
 
     // Try multiple selectors for product title
     const title =
       $('#productTitle').text().trim() ||
       $('h1.product-title-word-break').text().trim() ||
-      $('span.product-title-word-break').text().trim();
+      $('span.product-title-word-break').text().trim() ||
+      undefined;
+
+    // Try multiple selectors for price
+    const price =
+      $(".a-price .a-offscreen").first().text().trim() ||
+      $("#priceblock_ourprice").text().trim() ||
+      $("#priceblock_dealprice").text().trim() ||
+      $(".a-price-whole").first().text().trim() ||
+      undefined;
 
     if (title) {
       console.log(`[Suggestion] Found product title: "${title.slice(0, 60)}..."`);
-      return title;
+    }
+    if (price) {
+      console.log(`[Suggestion] Found original price: ${price}`);
     }
 
-    return undefined;
+    return { title, price };
   } catch (error) {
-    console.error('[Suggestion] Product title fetch error:', error);
-    return undefined;
+    console.error('[Suggestion] Product info fetch error:', error);
+    return { title: undefined, price: undefined };
   }
 }
+
 
 // ============================================
 // TYPES
@@ -330,7 +347,7 @@ async function fetchAmazonSearch(query: string, region: AmazonRegion): Promise<s
 
 /**
  * Parse organic search results using Cheerio
- * Skips sponsored/ad products using strict selectors
+ * Skips sponsored/ad products, unavailable products, and products without prices
  */
 function parseSearchResults(html: string, affiliateTag: string, region: AmazonRegion): ProductMatch[] {
   const $ = cheerio.load(html);
@@ -364,13 +381,31 @@ function parseSearchResults(html: string, affiliateTag: string, region: AmazonRe
     const title = titleElement.first().text().trim();
     if (!title || title.length < 5) return;
 
-    // Extract image URL
-    const imageUrl = $item.find(".s-image").attr("src") || null;
+    // === Check for unavailable products ===
+    const itemText = $item.text().toLowerCase();
+    const isUnavailable =
+      itemText.includes("currently unavailable") ||
+      itemText.includes("out of stock") ||
+      $item.find('.a-color-price').text().toLowerCase().includes("unavailable");
+
+    if (isUnavailable) {
+      console.log(`[Suggestion] Skipping unavailable: "${title.slice(0, 40)}..."`);
+      return; // Skip this product
+    }
 
     // Extract price
     const priceWhole = $item.find(".a-price-whole").first().text().replace(",", "").replace(".", "");
     const priceFraction = $item.find(".a-price-fraction").first().text();
     const price = priceWhole ? `${currencySymbol}${priceWhole}${priceFraction ? `.${priceFraction}` : ""}` : null;
+
+    // === Skip products without price (likely unavailable) ===
+    if (!price) {
+      console.log(`[Suggestion] Skipping no-price product: "${title.slice(0, 40)}..."`);
+      return;
+    }
+
+    // Extract image URL
+    const imageUrl = $item.find(".s-image").attr("src") || null;
 
     // Extract rating
     const ratingText = $item.find('[aria-label*="out of 5 stars"], [aria-label*="sur 5"], [aria-label*="von 5"]').attr("aria-label") || null;
@@ -448,10 +483,12 @@ function cleanTitle(title: string): string {
 /**
  * Use LLM to pick the best matching product from all candidates
  * Compares all options at once for better accuracy
+ * Includes price comparison when original price is available
  */
 async function verifyBestMatch(
   original: ExtractedKeywords,
-  candidates: ProductMatch[]
+  candidates: ProductMatch[],
+  originalPrice?: string | null
 ): Promise<{
   bestIndex: number | null;
   confidenceScore: number;
@@ -467,6 +504,14 @@ async function verifyBestMatch(
       .map((c, i) => `${i + 1}. "${c.title}" - ${c.price || 'Price unknown'}${c.isSponsored ? ' [SPONSORED]' : ''}`)
       .join('\n');
 
+    // Add price guidance if original price is available
+    let priceGuidance = "";
+    if (originalPrice) {
+      priceGuidance = `\nORIGINAL PRICE: ${originalPrice}
+- Prefer replacements within 50% of original price
+- If replacement is 2x+ more expensive, reduce confidence by 20 points`;
+    }
+
     const anthropic = getAnthropicClient();
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
@@ -480,7 +525,7 @@ ORIGINAL PRODUCT:
 - Name: ${original.productName}
 - Category: ${original.category}
 - Brand: ${original.brand || "Unknown"}
-- Search terms: ${original.searchQuery}
+- Search terms: ${original.searchQuery}${priceGuidance}
 
 CANDIDATE REPLACEMENTS:
 ${candidateList}
@@ -501,18 +546,22 @@ STRICT RULES:
    - Wired mouse → Wired mouse ✓
    - Wired mouse → Wireless mouse ✓ (same type)
 
-3. REJECT ALL IF:
+3. PRICE CONSIDERATION:
+   - Prefer similar price range (within 50% of original)
+   - If candidate is 2x+ more expensive, lower confidence
+
+4. REJECT ALL IF:
    - No candidates match the category
    - All candidates are accessories instead of main product
    - Category is ambiguous and risky
 
-4. When in doubt, REJECT. It's better to return nothing than a wrong product.
+5. When in doubt, REJECT. It's better to return nothing than a wrong product.
 
 Respond with ONLY this JSON:
 {
   "bestMatch": <number 1-${candidates.length} or null if none valid>,
   "confidence": <0-100>,
-  "reason": "<brief explanation>",
+  "reason": "<brief explanation including price note if relevant>",
   "categoryMatch": <true/false>
 }`,
         },
@@ -579,18 +628,26 @@ export async function findReplacementProduct(
 
   console.log(`[Suggestion] Region: ${region.region}, ASIN: ${originalAsin || 'not found'}`);
 
-  // Step 1: Get product title from AMAZON (not video context)
+  // Step 1: Get product title and price from AMAZON (not video context)
   let productTitle = originalProductTitle;
+  let originalPrice: string | undefined;
 
-  if (!productTitle && originalAsin) {
+  if (originalAsin) {
     const productPageUrl = `https://www.${region.domain}/dp/${originalAsin}`;
-    console.log(`[Suggestion] Fetching product title from Amazon: ${productPageUrl}`);
-    productTitle = await fetchProductTitle(productPageUrl, region);
+    console.log(`[Suggestion] Fetching product info from Amazon: ${productPageUrl}`);
 
-    if (productTitle) {
+    const productInfo = await fetchProductInfo(productPageUrl, region);
+
+    // Use fetched title if we don't have one
+    if (!productTitle && productInfo.title) {
+      productTitle = productInfo.title;
       console.log(`[Suggestion] Amazon product title: "${productTitle.slice(0, 60)}..."`);
-    } else {
-      console.log(`[Suggestion] Could not fetch product title from Amazon`);
+    }
+
+    // Store original price for comparison
+    originalPrice = productInfo.price;
+    if (originalPrice) {
+      console.log(`[Suggestion] Original price: ${originalPrice}`);
     }
   }
 
@@ -655,8 +712,8 @@ export async function findReplacementProduct(
     console.log(`[Suggestion]   ${i + 1}. "${p.title.slice(0, 50)}..."${p.isSponsored ? " [AD]" : ""}`);
   });
 
-  // Step 4: LLM picks the best match from ALL candidates
-  const verification = await verifyBestMatch(keywords, products);
+  // Step 4: LLM picks the best match from ALL candidates (with price comparison)
+  const verification = await verifyBestMatch(keywords, products, originalPrice);
 
   // Must have category match AND reasonable confidence
   if (verification.bestIndex === null || !verification.categoryMatch || verification.confidenceScore < 65) {

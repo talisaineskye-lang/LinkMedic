@@ -279,14 +279,41 @@ function analyzeAmazonPage(html: string, finalUrl: string): PageAnalysis {
     $("#productTitle").text().trim() ||
     $('span[data-hook="product-title"]').text().trim() ||
     $("h1.a-size-large").text().trim() ||
+    $("h1#title").text().trim() ||
     "";
 
-  // 5. Check for Add to Cart button (POSITIVE signal = product is buyable)
+  // 5. Check for DEFINITE Out of Stock indicators FIRST
+  const availabilityText = $("#availability").text().toLowerCase();
+  const availabilityDiv = $("#availability").html()?.toLowerCase() || "";
+
+  const isDefinitelyOOS =
+    availabilityText.includes("currently unavailable") ||
+    availabilityText.includes("out of stock") ||
+    html.toLowerCase().includes("we don't know when or if this item will be back in stock") ||
+    availabilityDiv.includes("unavailable");
+
+  if (isDefinitelyOOS) {
+    return {
+      status: "OOS",
+      reason: "Currently unavailable",
+      productTitle,
+    };
+  }
+
+  // 6. Check for Add to Cart / Buy button (expanded selectors for all regions)
   const hasBuyButton =
     $("#add-to-cart-button").length > 0 ||
     $("#buy-now-button").length > 0 ||
     $('input[name="submit.add-to-cart"]').length > 0 ||
-    $('[data-action="add-to-cart"]').length > 0;
+    $('[data-action="add-to-cart"]').length > 0 ||
+    $("#addToCart").length > 0 ||
+    $('input[id*="add-to-cart"]').length > 0 ||
+    $('button[id*="add-to-cart"]').length > 0 ||
+    $('span[id*="submit.add-to-cart"]').length > 0 ||
+    // Regional variations
+    $('input[name="submit.addToCart"]').length > 0 ||
+    $("#add-to-cart-button-ubb").length > 0 ||
+    $(".a-button-input[name*='add-to-cart']").length > 0;
 
   if (hasBuyButton) {
     return {
@@ -296,23 +323,43 @@ function analyzeAmazonPage(html: string, finalUrl: string): PageAnalysis {
     };
   }
 
-  // 6. Check for Out of Stock indicators
-  const availabilityText = $("#availability").text().toLowerCase();
-  const buyboxText = $("#buybox-see-all-buying-choices-announce").text().toLowerCase();
+  // 7. Check for price as availability signal (if price shown, likely available)
+  const hasPrice =
+    $(".a-price .a-offscreen").length > 0 ||
+    $("#priceblock_ourprice").length > 0 ||
+    $("#priceblock_dealprice").length > 0 ||
+    $(".a-price-whole").length > 0 ||
+    $("#corePrice_feature_div").length > 0 ||
+    $('span[data-a-color="price"]').length > 0;
 
-  if (
-    availabilityText.includes("currently unavailable") ||
-    availabilityText.includes("out of stock") ||
-    html.toLowerCase().includes("we don't know when or if this item will be back")
-  ) {
+  // 8. Check for "In Stock" or availability indicators
+  const hasStockIndicator =
+    availabilityText.includes("in stock") ||
+    availabilityText.includes("available") ||
+    availabilityText.includes("left in stock") ||
+    availabilityText.includes("ships from");
+
+  // 9. If we have price AND stock indicator, it's likely OK
+  if (hasPrice && hasStockIndicator) {
     return {
-      status: "OOS",
-      reason: "Currently unavailable",
+      status: "OK",
+      reason: "Product available - price and stock indicator present",
       productTitle,
     };
   }
 
-  // 7. Check for Third Party Only
+  // 10. If we have price but no definite OOS signal, assume OK
+  // (Better to show as OK than false positive OOS)
+  if (hasPrice && productTitle) {
+    return {
+      status: "OK",
+      reason: "Product available - price displayed",
+      productTitle,
+    };
+  }
+
+  // 11. Check for Third Party Only
+  const buyboxText = $("#buybox-see-all-buying-choices-announce").text().toLowerCase();
   if (
     buyboxText.includes("see all buying options") ||
     $("#olp-upd-new").length > 0 ||
@@ -326,16 +373,17 @@ function analyzeAmazonPage(html: string, finalUrl: string): PageAnalysis {
     };
   }
 
-  // 8. If we got a product page but no buy button, mark as OOS
+  // 12. If we have a product title but couldn't determine status, mark UNKNOWN not OOS
+  // This prevents false positives
   if (productTitle) {
     return {
-      status: "OOS",
-      reason: "Product page found but no buy option",
+      status: "UNKNOWN",
+      reason: "Could not verify availability - manual check recommended",
       productTitle,
     };
   }
 
-  // 9. Unknown state
+  // 13. Unknown state
   return { status: "UNKNOWN", reason: "Could not determine product status" };
 }
 
