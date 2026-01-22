@@ -286,118 +286,110 @@ function cleanTitle(title: string): string {
 }
 
 // ============================================
-// STEP 3: SEMANTIC VERIFICATION
+// STEP 3: LLM VERIFICATION
 // ============================================
 
+interface LLMVerificationResult {
+  isMatch: boolean;
+  confidenceScore: number;
+  matchReason: string;
+  categoryMatch: boolean;
+  brandMatch: boolean;
+}
+
 /**
- * Calculate semantic match between original product and found product
- * Prevents category mismatches (e.g., Xbox controller for Camera)
+ * Use LLM to verify if a candidate product matches the original product
+ * This prevents category mismatches (e.g., Xbox controller suggested for webcam)
  */
-async function calculateSemanticMatch(
+async function verifyMatchWithLLM(
   original: ExtractedKeywords,
   candidate: ProductMatch
-): Promise<SemanticMatch> {
-  const originalLower = original.productName.toLowerCase();
-  const originalCategory = original.category.toLowerCase();
-  const originalBrand = original.brand?.toLowerCase() || "";
-  const candidateLower = candidate.title.toLowerCase();
-
-  let score = 50; // Base score for being in search results
-  let matchReason = "Found in search results";
-  let categoryMatch = false;
-  let brandMatch = false;
-
-  // Split into words for comparison
-  const originalWords = original.searchQuery.toLowerCase().split(/\s+/).filter((w) => w.length > 2);
-  const candidateWords = candidateLower.split(/\s+/);
-
-  // Check word overlap
-  const matchingWords = originalWords.filter((word) =>
-    candidateWords.some((cw) => cw.includes(word) || word.includes(cw))
-  );
-  const wordMatchRatio = originalWords.length > 0 ? matchingWords.length / originalWords.length : 0;
-
-  if (wordMatchRatio >= 0.8) {
-    score += 30;
-    matchReason = "High keyword match";
-  } else if (wordMatchRatio >= 0.5) {
-    score += 20;
-    matchReason = "Moderate keyword match";
-  } else if (wordMatchRatio >= 0.3) {
-    score += 10;
-    matchReason = "Some keyword match";
+): Promise<LLMVerificationResult> {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.error("[Suggestion] No ANTHROPIC_API_KEY for verification");
+    return {
+      isMatch: false,
+      confidenceScore: 0,
+      matchReason: "API key not configured",
+      categoryMatch: false,
+      brandMatch: false,
+    };
   }
 
-  // Category verification - check for MISMATCHES
-  const categoryKeywords: Record<string, string[]> = {
-    camera: ["camera", "lens", "dslr", "mirrorless", "webcam", "camcorder", "tripod"],
-    audio: ["headphone", "speaker", "microphone", "earbuds", "audio", "sound"],
-    gaming: ["controller", "gamepad", "console", "gaming", "playstation", "xbox", "nintendo"],
-    computer: ["laptop", "keyboard", "mouse", "monitor", "computer", "pc", "desktop"],
-    phone: ["phone", "iphone", "android", "case", "charger", "cable"],
-    lighting: ["light", "led", "ring light", "lamp", "studio"],
-  };
+  try {
+    const anthropic = getAnthropicClient();
+    const message = await anthropic.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 200,
+      messages: [
+        {
+          role: "user",
+          content: `Compare these two products and determine if the CANDIDATE is a suitable replacement for the ORIGINAL.
 
-  // Find original category
-  let originalCategoryType = "";
-  for (const [cat, keywords] of Object.entries(categoryKeywords)) {
-    if (keywords.some((kw) => originalCategory.includes(kw) || originalLower.includes(kw))) {
-      originalCategoryType = cat;
-      break;
+ORIGINAL PRODUCT:
+- Name: ${original.productName}
+- Category: ${original.category}
+- Brand: ${original.brand || "Unknown"}
+- Search Query: ${original.searchQuery}
+
+CANDIDATE PRODUCT:
+- Title: ${candidate.title}
+- Price: ${candidate.price || "Unknown"}
+
+RULES:
+1. Products MUST be in the same category (e.g., don't match a webcam with a game controller)
+2. Products should serve the same purpose
+3. Brand match is a bonus but not required
+4. Price range should be similar (within 2x)
+
+Respond ONLY with this JSON:
+{
+  "isMatch": true/false,
+  "confidence": 0-100,
+  "reason": "brief explanation",
+  "categoryMatch": true/false,
+  "brandMatch": true/false
+}`,
+        },
+      ],
+    });
+
+    const responseText =
+      message.content[0].type === "text" ? message.content[0].text : "";
+
+    // Parse JSON response
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error("[Suggestion] Could not parse LLM verification response:", responseText);
+      return {
+        isMatch: false,
+        confidenceScore: 0,
+        matchReason: "Failed to parse verification response",
+        categoryMatch: false,
+        brandMatch: false,
+      };
     }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    console.log(`[Suggestion] LLM verification: ${parsed.isMatch ? "MATCH" : "NO MATCH"} (${parsed.confidence}%) - ${parsed.reason}`);
+
+    return {
+      isMatch: parsed.isMatch === true,
+      confidenceScore: parsed.confidence || 0,
+      matchReason: parsed.reason || "No reason provided",
+      categoryMatch: parsed.categoryMatch === true,
+      brandMatch: parsed.brandMatch === true,
+    };
+  } catch (error) {
+    console.error("[Suggestion] LLM verification error:", error);
+    return {
+      isMatch: false,
+      confidenceScore: 0,
+      matchReason: "Verification error",
+      categoryMatch: false,
+      brandMatch: false,
+    };
   }
-
-  // Find candidate category
-  let candidateCategoryType = "";
-  for (const [cat, keywords] of Object.entries(categoryKeywords)) {
-    if (keywords.some((kw) => candidateLower.includes(kw))) {
-      candidateCategoryType = cat;
-      break;
-    }
-  }
-
-  // Check for category match/mismatch
-  if (originalCategoryType && candidateCategoryType) {
-    if (originalCategoryType === candidateCategoryType) {
-      categoryMatch = true;
-      score += 15;
-      matchReason += " | Category match";
-    } else {
-      // CATEGORY MISMATCH - big penalty
-      score -= 40;
-      matchReason = `CATEGORY MISMATCH: Expected ${originalCategoryType}, got ${candidateCategoryType}`;
-    }
-  }
-
-  // Brand matching
-  if (originalBrand) {
-    if (candidateLower.includes(originalBrand)) {
-      brandMatch = true;
-      score += 10;
-      matchReason += " | Brand match";
-    }
-  }
-
-  // Bonus for not being sponsored
-  if (!candidate.isSponsored) {
-    score += 5;
-  }
-
-  // Bonus for having good reviews
-  if (candidate.rating && parseFloat(candidate.rating) >= 4.0) {
-    score += 5;
-  }
-
-  // Cap score
-  score = Math.max(0, Math.min(100, score));
-
-  return {
-    product: candidate,
-    confidenceScore: score,
-    matchReason,
-    categoryMatch,
-    brandMatch,
-  };
 }
 
 // ============================================
@@ -468,29 +460,61 @@ export async function findReplacementProduct(
 
   console.log(`[Suggestion] Found ${products.length} products`);
 
-  // Step 4: Semantic verification
+  // Step 4: LLM verification (check each product until we find a match)
   const matches: SemanticMatch[] = [];
+  let bestMatch: SemanticMatch | null = null;
+
   for (const product of products) {
-    const match = await calculateSemanticMatch(keywords, product);
-    matches.push(match);
+    // Skip sponsored products for primary matching
+    if (product.isSponsored && matches.length > 0) {
+      continue;
+    }
+
+    const verification = await verifyMatchWithLLM(keywords, product);
+
+    const semanticMatch: SemanticMatch = {
+      product,
+      confidenceScore: verification.confidenceScore,
+      matchReason: verification.matchReason,
+      categoryMatch: verification.categoryMatch,
+      brandMatch: verification.brandMatch,
+    };
+
+    if (verification.isMatch && verification.confidenceScore >= 60) {
+      // Found a good match!
+      if (!bestMatch || verification.confidenceScore > bestMatch.confidenceScore) {
+        bestMatch = semanticMatch;
+      } else {
+        matches.push(semanticMatch);
+      }
+
+      // If we found a high-confidence match, stop searching
+      if (verification.confidenceScore >= 80) {
+        console.log(`[Suggestion] High confidence match found, stopping search`);
+        break;
+      }
+    } else if (verification.confidenceScore >= 50) {
+      // Partial match - keep as alternative
+      matches.push(semanticMatch);
+    } else {
+      console.log(`[Suggestion] Rejected: "${product.title.slice(0, 40)}..." - ${verification.matchReason}`);
+    }
   }
 
-  // Sort by confidence score
-  matches.sort((a, b) => b.confidenceScore - a.confidenceScore);
-
-  // Get best match (must have score >= 60)
-  const bestMatch = matches[0]?.confidenceScore >= 60 ? matches[0] : null;
-  const alternativeMatches = matches.slice(1).filter((m) => m.confidenceScore >= 50);
+  // Sort alternatives by confidence
+  const alternativeMatches = matches
+    .filter((m) => m !== bestMatch)
+    .sort((a, b) => b.confidenceScore - a.confidenceScore);
 
   if (!bestMatch) {
-    console.log(`[Suggestion] No reliable match found (best score: ${matches[0]?.confidenceScore})`);
+    console.log(`[Suggestion] No reliable match found after LLM verification`);
     return {
       success: false,
       originalProductName: keywords.productName,
       searchQuery: keywords.searchQuery,
       bestMatch: null,
       alternativeMatches,
-      error: "No reliable match found - category or brand mismatch",
+      error: "No reliable match found - LLM verification failed for all candidates",
     };
   }
 
