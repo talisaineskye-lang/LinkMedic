@@ -429,52 +429,25 @@ export function DashboardClient({
 
       {/* CTA Block - Go to Fix Center */}
       {stats.brokenLinks > 0 ? (
-        <>
-          <div className="bg-gradient-to-r from-red-950/40 to-amber-950/30 border border-red-700/40 rounded-xl p-8 text-center">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <Wrench className="w-8 h-8 text-red-400" />
-              <h2 className="text-2xl font-bold text-white">
-                {stats.brokenLinks} Broken Link{stats.brokenLinks !== 1 ? "s" : ""} Need Attention
-              </h2>
-            </div>
-            <p className="text-slate-300 mb-6 max-w-lg mx-auto">
-              You&apos;re losing approximately <span className="text-red-400 font-semibold">${stats.monthlyLoss.toLocaleString()}/month</span> in affiliate revenue.
-              Fix these links to recover your earnings.
-            </p>
-            <Link
-              href="/fix-center"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-bold text-lg transition"
-            >
-              Go to Fix Center
-              <ArrowRight className="w-5 h-5" />
-            </Link>
+        <div className="bg-gradient-to-r from-red-950/40 to-amber-950/30 border border-red-700/40 rounded-xl p-8 text-center">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <Wrench className="w-8 h-8 text-red-400" />
+            <h2 className="text-2xl font-bold text-white">
+              {stats.brokenLinks} Broken Link{stats.brokenLinks !== 1 ? "s" : ""} Need Attention
+            </h2>
           </div>
-
-          {/* Revenue Narrative Block */}
-          <div className="mt-6 bg-slate-800/40 border border-slate-700/50 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">What&apos;s happening</h3>
-            <ul className="space-y-3 text-slate-300">
-              <li className="flex items-start gap-3">
-                <span className="text-red-400 mt-1">•</span>
-                <span>
-                  <span className="font-medium text-white">{stats.brokenLinks} broken affiliate link{stats.brokenLinks !== 1 ? "s" : ""}</span> detected across your videos
-                </span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="text-amber-400 mt-1">•</span>
-                <span>
-                  Estimated <span className="font-medium text-white">~${stats.monthlyLoss.toLocaleString()}/month</span> in missed commissions
-                </span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="text-emerald-400 mt-1">•</span>
-                <span>
-                  Fixing these links could recover <span className="font-medium text-emerald-400">~${stats.annualLoss.toLocaleString()}/year</span>
-                </span>
-              </li>
-            </ul>
-          </div>
-        </>
+          <p className="text-slate-300 mb-6 max-w-lg mx-auto">
+            You&apos;re losing approximately <span className="text-red-400 font-semibold">${stats.monthlyLoss.toLocaleString()}/month</span> in affiliate revenue.
+            Fix these links to recover your earnings.
+          </p>
+          <Link
+            href="/fix-center"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-bold text-lg transition"
+          >
+            Go to Fix Center
+            <ArrowRight className="w-5 h-5" />
+          </Link>
+        </div>
       ) : (
         <div className="bg-emerald-950/20 border border-emerald-700/50 rounded-xl p-8 text-center">
           <CheckCircle2 className="w-16 h-16 mx-auto text-emerald-400 mb-4" />
