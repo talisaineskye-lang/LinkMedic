@@ -476,6 +476,84 @@ function cleanTitle(title: string): string {
     .trim();
 }
 
+/**
+ * Parse price string to number
+ * Handles various currency formats: $49.99, £39.99, €45,99, CA$59.99, etc.
+ */
+function parsePrice(priceStr: string | null | undefined): number | null {
+  if (!priceStr) return null;
+
+  // Remove currency symbols and letters, keep digits, dots, and commas
+  const cleaned = priceStr.replace(/[^0-9.,]/g, "");
+
+  if (!cleaned) return null;
+
+  // Handle European format (45,99) vs US format (45.99)
+  // If there's a comma and no dot, or comma is after the dot, treat comma as decimal
+  let normalized = cleaned;
+  if (cleaned.includes(",") && !cleaned.includes(".")) {
+    // European format: 45,99 -> 45.99
+    normalized = cleaned.replace(",", ".");
+  } else if (cleaned.includes(",") && cleaned.includes(".")) {
+    // Mixed format: 1,234.56 or 1.234,56
+    const lastComma = cleaned.lastIndexOf(",");
+    const lastDot = cleaned.lastIndexOf(".");
+    if (lastComma > lastDot) {
+      // European: 1.234,56 -> 1234.56
+      normalized = cleaned.replace(/\./g, "").replace(",", ".");
+    } else {
+      // US: 1,234.56 -> 1234.56
+      normalized = cleaned.replace(/,/g, "");
+    }
+  }
+
+  const num = parseFloat(normalized);
+  return isNaN(num) ? null : num;
+}
+
+/**
+ * Filter candidates by price range
+ * Keeps products within $50 of original price (or equivalent in other currencies)
+ */
+function filterByPriceRange(
+  candidates: ProductMatch[],
+  originalPrice: string | null | undefined,
+  maxAbove: number = 50
+): ProductMatch[] {
+  const originalPriceNum = parsePrice(originalPrice);
+
+  if (!originalPriceNum) {
+    console.log(`[Suggestion] No original price - skipping price filter`);
+    return candidates;
+  }
+
+  const maxPrice = originalPriceNum + maxAbove;
+  const minPrice = originalPriceNum * 0.3; // Still filter suspiciously cheap items
+
+  console.log(`[Suggestion] Price filter: $${minPrice.toFixed(0)} - $${maxPrice.toFixed(0)} (original: $${originalPriceNum.toFixed(0)}, max +$${maxAbove})`);
+
+  const filtered = candidates.filter(c => {
+    const candidatePrice = parsePrice(c.price);
+
+    if (!candidatePrice) return true; // Keep items without price (let LLM decide)
+
+    if (candidatePrice > maxPrice) {
+      console.log(`[Suggestion] Filtered out (too expensive): "${c.title.slice(0, 30)}..." - ${c.price}`);
+      return false;
+    }
+
+    if (candidatePrice < minPrice) {
+      console.log(`[Suggestion] Filtered out (too cheap): "${c.title.slice(0, 30)}..." - ${c.price}`);
+      return false;
+    }
+
+    return true;
+  });
+
+  console.log(`[Suggestion] Price filter: ${candidates.length} → ${filtered.length} candidates`);
+  return filtered;
+}
+
 // ============================================
 // STEP 3: LLM VERIFICATION (COMPARE ALL AT ONCE)
 // ============================================
@@ -705,15 +783,30 @@ export async function findReplacementProduct(
     };
   }
 
-  console.log(`[Suggestion] Found ${products.length} products, verifying...`);
+  console.log(`[Suggestion] Found ${products.length} products from search`);
+
+  // Step 4: Filter by price range (max $50 above original)
+  const filteredProducts = filterByPriceRange(products, originalPrice, 50);
+
+  if (filteredProducts.length === 0) {
+    console.log(`[Suggestion] All products filtered out by price`);
+    return {
+      success: false,
+      originalProductName: keywords.productName,
+      searchQuery: keywords.searchQuery,
+      bestMatch: null,
+      alternativeMatches: [],
+      error: "No products within price range",
+    };
+  }
 
   // Log candidates for debugging
-  products.forEach((p, i) => {
-    console.log(`[Suggestion]   ${i + 1}. "${p.title.slice(0, 50)}..."${p.isSponsored ? " [AD]" : ""}`);
+  filteredProducts.forEach((p, i) => {
+    console.log(`[Suggestion]   ${i + 1}. "${p.title.slice(0, 50)}..." - ${p.price}${p.isSponsored ? " [AD]" : ""}`);
   });
 
-  // Step 4: LLM picks the best match from ALL candidates (with price comparison)
-  const verification = await verifyBestMatch(keywords, products, originalPrice);
+  // Step 5: LLM picks the best match from filtered candidates
+  const verification = await verifyBestMatch(keywords, filteredProducts, originalPrice);
 
   // Must have category match AND reasonable confidence
   if (verification.bestIndex === null || !verification.categoryMatch || verification.confidenceScore < 65) {
@@ -728,7 +821,7 @@ export async function findReplacementProduct(
     };
   }
 
-  const bestProduct = products[verification.bestIndex];
+  const bestProduct = filteredProducts[verification.bestIndex];
 
   const bestMatch: SemanticMatch = {
     product: bestProduct,
