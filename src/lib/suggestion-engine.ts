@@ -224,173 +224,57 @@ interface ExtractedKeywords {
 }
 
 /**
- * Extract product information from video context when we can't get it from Amazon
- * Looks for product mentions near the broken link in the description
+ * Extract search keywords from an actual Amazon product title
+ * This is the ONLY reliable source - video context is not useful
  */
-async function extractProductFromContext(
-  videoTitle: string,
-  videoDescription?: string,
-  originalUrl?: string
-): Promise<string | undefined> {
-  if (!process.env.ANTHROPIC_API_KEY || !videoDescription) {
-    return undefined;
-  }
-
-  try {
-    // Find context around the broken link in the description
-    let linkContext = "";
-    if (originalUrl) {
-      const urlVariants = [
-        originalUrl,
-        originalUrl.replace('https://', ''),
-        originalUrl.replace('http://', ''),
-        // Handle shortened URL patterns
-        originalUrl.split('/').pop() || '', // Just the ID part
-      ].filter(v => v.length > 5);
-
-      for (const pattern of urlVariants) {
-        const index = videoDescription.toLowerCase().indexOf(pattern.toLowerCase());
-        if (index !== -1) {
-          // Grab 150 chars before and 50 after the link
-          const start = Math.max(0, index - 150);
-          const end = Math.min(videoDescription.length, index + pattern.length + 50);
-          linkContext = videoDescription.slice(start, end);
-          console.log(`[Suggestion] Found link context: "${linkContext.slice(0, 80)}..."`);
-          break;
-        }
-      }
-    }
-
-    // Use context around link, or fall back to description start
-    const contextToAnalyze = linkContext || videoDescription.slice(0, 600);
-
-    const anthropic = getAnthropicClient();
-    const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 150,
-      messages: [
-        {
-          role: "user",
-          content: `Extract the specific product name from this YouTube video context. The context is from near an affiliate link.
-
-Video Title: ${videoTitle}
-
-Context near link:
-"${contextToAnalyze}"
-
-Look for:
-- Product names with brand + model (e.g., "Logitech C920", "Blue Yeti", "Acer XG270HU")
-- Labels before links like "Camera:", "Mic:", "Monitor -", "Headset I use:"
-- Specific product descriptions
-
-Respond with ONLY the product name (brand + model if available).
-If you cannot determine a specific product, respond with: UNKNOWN`,
-        },
-      ],
-    });
-
-    const responseText = message.content[0].type === "text" ? message.content[0].text.trim() : "";
-
-    if (responseText && responseText !== "UNKNOWN" && responseText.length > 3 && responseText.length < 100) {
-      console.log(`[Suggestion] Extracted from context: "${responseText}"`);
-      return responseText;
-    }
-
-    return undefined;
-  } catch (error) {
-    console.error("[Suggestion] Context extraction error:", error);
-    return undefined;
-  }
-}
-
-/**
- * Extract clean product keywords from context
- * NO hallucination - only extracts what's in the data
- */
-export async function extractProductKeywords(
-  originalUrl: string,
-  videoTitle: string,
-  videoDescription?: string,
-  originalProductTitle?: string
+async function extractKeywordsFromProductTitle(
+  productTitle: string
 ): Promise<ExtractedKeywords | null> {
   if (!process.env.ANTHROPIC_API_KEY) {
-    console.error("[Suggestion] No ANTHROPIC_API_KEY configured");
     return null;
   }
 
   try {
-    const hasProductTitle = originalProductTitle && originalProductTitle.length > 5;
-
-    const context = `
-${hasProductTitle ? `PRODUCT TITLE FROM AMAZON: ${originalProductTitle}` : "PRODUCT: Unknown - must infer from video context"}
-URL: ${originalUrl}
-Video Title: ${videoTitle}
-${videoDescription ? `Video Description (first 800 chars): ${videoDescription.slice(0, 800)}` : "No description available"}
-    `.trim();
-
     const anthropic = getAnthropicClient();
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 300,
+      max_tokens: 200,
       messages: [
         {
           role: "user",
-          content: `Extract product information for an Amazon search query.
+          content: `Extract search info from this Amazon product title:
 
-${context}
+"${productTitle}"
 
-INSTRUCTIONS:
-1. If PRODUCT TITLE FROM AMAZON is provided, use it as the primary source
-2. Otherwise, infer the product from video title and description
-3. Look for gear lists, equipment sections, "links below" mentions
-
-OUTPUT RULES:
-- productName: Specific product name or "Unknown Product"
-- brand: Only if explicitly clear (Logitech, Razer, Blue, Acer, etc.)
-- category: Specific Amazon category (Webcam, Headphones, Monitor, Microphone, Keyboard, Mouse, etc.)
-- searchQuery: 3-6 word Amazon search that would find this SPECIFIC product
-
-GOOD search queries:
-- "logitech c920 webcam"
-- "blue yeti usb microphone"
-- "acer gaming monitor 27 inch"
-- "razer kraken gaming headset"
-
-BAD search queries (too generic):
-- "gaming equipment"
-- "webcam"
-- "microphone"
-- "fortnite gear"
-
-Respond with ONLY this JSON:
+Return JSON only:
 {
-  "productName": "specific product or Unknown Product",
+  "productName": "cleaned product name",
   "brand": "brand or null",
-  "category": "specific category",
-  "searchQuery": "specific amazon search query"
-}`,
+  "category": "Webcam/Headset/Mouse/Keyboard/Monitor/Microphone/Mouse Pad/etc",
+  "searchQuery": "3-5 word Amazon search to find similar products"
+}
+
+Example:
+Input: "Logitech G440 Hard Gaming Mouse Pad, Optimized for Gaming Sensors..."
+Output: {"productName": "Logitech G440 Mouse Pad", "brand": "Logitech", "category": "Mouse Pad", "searchQuery": "logitech gaming mouse pad"}`,
         },
       ],
     });
 
-    const responseText =
-      message.content[0].type === "text" ? message.content[0].text : "";
+    const responseText = message.content[0].type === "text" ? message.content[0].text : "";
 
-    // Parse JSON response
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.error("[Suggestion] Could not parse LLM response:", responseText);
-      return null;
-    }
+    if (!jsonMatch) return null;
 
     const parsed = JSON.parse(jsonMatch[0]);
+
     console.log(`[Suggestion] Extracted keywords:`, parsed);
 
     return {
-      productName: parsed.productName || "Unknown Product",
+      productName: parsed.productName || productTitle,
       brand: parsed.brand || null,
       category: parsed.category || "Unknown",
-      searchQuery: parsed.searchQuery || parsed.productName,
+      searchQuery: parsed.searchQuery || productTitle.slice(0, 50),
     };
   } catch (error) {
     console.error("[Suggestion] Keyword extraction error:", error);
@@ -667,105 +551,76 @@ Respond with ONLY this JSON:
 
 /**
  * Find replacement product for a broken link
- * Uses multi-layered fallback strategy:
- * 1. Try to resolve URL and fetch product title from page
- * 2. If no title, try context extraction from video description
- * 3. Fall back to keyword extraction from available context
+ * AMAZON-ONLY approach: Video context is not used because it's unreliable
+ * (e.g., a Fortnite video contains links to webcams, mice, headsets - unrelated to video topic)
  */
 export async function findReplacementProduct(
   originalUrl: string,
-  videoTitle: string,
-  videoDescription?: string,
+  _videoTitle: string,  // Ignored - not reliable for product identification
+  _videoDescription?: string,  // Ignored - not reliable for product identification
   originalProductTitle?: string,
   affiliateTag?: string
 ): Promise<SuggestionResult> {
   const tag = affiliateTag || DEFAULT_AFFILIATE_TAG;
 
-  // Step 0: Resolve shortened URLs (amzn.to, a.co, etc.)
-  const { resolved: resolvedUrl, asin: originalAsin } = await resolveAmazonUrl(originalUrl);
-  console.log(`[Suggestion] Original: ${originalUrl.slice(0, 50)}, Resolved: ${resolvedUrl.slice(0, 50)}, ASIN: ${originalAsin}`);
+  console.log(`[Suggestion] Starting replacement search for: ${originalUrl.slice(0, 60)}...`);
 
-  // If we got an ASIN but URL didn't resolve properly, construct the proper URL
-  let effectiveUrl = resolvedUrl;
+  // Step 0: Resolve shortened URL and get ASIN
+  const { resolved: resolvedUrl, asin: originalAsin } = await resolveAmazonUrl(originalUrl);
+
   let region = getAmazonRegion(resolvedUrl);
 
-  if (originalAsin && resolvedUrl === originalUrl) {
-    // URL didn't resolve, but we have an ASIN - construct the full product URL
+  // Construct clean product URL if we have ASIN
+  let effectiveUrl = resolvedUrl;
+  if (originalAsin && (resolvedUrl === originalUrl || !resolvedUrl.includes('/dp/'))) {
     effectiveUrl = `https://www.${region.domain}/dp/${originalAsin}`;
     console.log(`[Suggestion] Constructed URL from ASIN: ${effectiveUrl}`);
   }
 
-  // Re-detect region from effective URL (in case it changed)
-  region = getAmazonRegion(effectiveUrl);
-  console.log(`[Suggestion] Finding replacement for: ${effectiveUrl.slice(0, 60)}... (Region: ${region.region})`);
+  console.log(`[Suggestion] Region: ${region.region}, ASIN: ${originalAsin || 'not found'}`);
 
-  // ============================================
-  // MULTI-LAYERED FALLBACK FOR PRODUCT INFO
-  // ============================================
-
+  // Step 1: Get product title from AMAZON (not video context)
   let productTitle = originalProductTitle;
 
-  // Strategy A: Fetch from Amazon product page if we have ASIN
   if (!productTitle && originalAsin) {
     const productPageUrl = `https://www.${region.domain}/dp/${originalAsin}`;
-    console.log(`[Suggestion] Strategy A: Fetching title from ${productPageUrl}`);
+    console.log(`[Suggestion] Fetching product title from Amazon: ${productPageUrl}`);
     productTitle = await fetchProductTitle(productPageUrl, region);
 
     if (productTitle) {
-      console.log(`[Suggestion] Found product title: "${productTitle.slice(0, 60)}..."`);
+      console.log(`[Suggestion] Amazon product title: "${productTitle.slice(0, 60)}..."`);
+    } else {
+      console.log(`[Suggestion] Could not fetch product title from Amazon`);
     }
   }
 
-  // Strategy B: Extract product context from video description near the link
-  if (!productTitle && videoDescription) {
-    console.log(`[Suggestion] Strategy B: Extracting product from video context`);
-    productTitle = await extractProductFromContext(videoTitle, videoDescription, originalUrl);
-  }
-
-  // Step 2: Extract keywords with whatever info we have
-  const keywords = await extractProductKeywords(
-    effectiveUrl,
-    videoTitle,
-    videoDescription,
-    productTitle
-  );
-
-  // Validate we have enough to search
-  if (!keywords) {
+  // Step 2: If we couldn't get title from Amazon, we can't proceed reliably
+  if (!productTitle) {
     return {
       success: false,
       originalProductName: null,
       searchQuery: null,
       bestMatch: null,
       alternativeMatches: [],
-      error: "Failed to extract any product keywords",
+      error: "Could not fetch product info from Amazon",
     };
   }
 
-  // Check if search query is too generic to be useful
-  const genericQueries = [
-    'gaming', 'gaming equipment', 'gaming gear', 'gaming stuff',
-    'product', 'item', 'stuff', 'thing', 'things',
-    'video', 'youtube', 'equipment', 'gear',
-    'fortnite', 'fortnite gaming', 'fortnite guide'
-  ];
+  // Step 3: Extract search keywords from the ACTUAL product title
+  const keywords = await extractKeywordsFromProductTitle(productTitle);
 
-  const queryLower = keywords.searchQuery.toLowerCase().trim();
-  const isGeneric = genericQueries.some(g => queryLower === g || queryLower === `${g}s`);
-
-  if (keywords.productName === "Unknown Product" && isGeneric) {
-    console.log(`[Suggestion] Search query too generic: "${keywords.searchQuery}"`);
+  if (!keywords) {
     return {
       success: false,
-      originalProductName: null,
-      searchQuery: keywords.searchQuery,
+      originalProductName: productTitle,
+      searchQuery: null,
       bestMatch: null,
       alternativeMatches: [],
-      error: `Search query too generic: "${keywords.searchQuery}"`,
+      error: "Could not extract search keywords",
     };
   }
 
-  console.log(`[Suggestion] Search query: "${keywords.searchQuery}" (Product: ${keywords.productName}, Category: ${keywords.category})`);
+  console.log(`[Suggestion] Search query: "${keywords.searchQuery}" (Category: ${keywords.category})`);
 
   // Step 2: Search Amazon (in the same region as the original link)
   const searchHtml = await fetchAmazonSearch(keywords.searchQuery, region);
