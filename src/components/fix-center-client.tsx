@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { Copy, Check, CheckCircle2, ExternalLink, RefreshCw, FileWarning, Lock, Eye } from "lucide-react";
+import { Copy, Check, CheckCircle2, ExternalLink, RefreshCw, FileWarning, Lock, Eye, Pencil } from "lucide-react";
 import { formatCurrency, formatNumber } from "@/lib/revenue-estimator";
 import { FindReplacementsButton } from "./find-replacements-button";
 import Link from "next/link";
@@ -11,6 +11,7 @@ import Link from "next/link";
 interface Issue {
   id: string;
   videoId: string;
+  youtubeVideoId: string;
   videoTitle: string;
   videoViewCount: number;
   videoThumbnailUrl: string | null;
@@ -574,24 +575,46 @@ export function FixCenterClient({
                     <td className="px-4 py-4 text-center">
                       {activeTab === "needs-fix" ? (
                         issue.suggestedLink ? (
-                          <button
-                            onClick={() => handleMarkFixed(issue.id)}
-                            disabled={markingFixedId === issue.id}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-600 text-white transition"
-                          >
-                            {markingFixedId === issue.id ? (
-                              "Marking..."
-                            ) : (
-                              <>
-                                <Check className="w-3 h-3" />
-                                Mark Fixed
-                              </>
-                            )}
-                          </button>
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => handleMarkFixed(issue.id)}
+                              disabled={markingFixedId === issue.id}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-600 text-white transition"
+                            >
+                              {markingFixedId === issue.id ? (
+                                "Marking..."
+                              ) : (
+                                <>
+                                  <Check className="w-3 h-3" />
+                                  Mark Fixed
+                                </>
+                              )}
+                            </button>
+                            <a
+                              href={`https://studio.youtube.com/video/${issue.youtubeVideoId}/edit`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 transition"
+                              title="Edit in YouTube Studio (Tip: Use Ctrl+F to find the broken link)"
+                            >
+                              <Pencil className="w-3.5 h-3.5 text-slate-300" />
+                            </a>
+                          </div>
                         ) : (
-                          <span className="text-xs text-slate-500 italic">
-                            Find replacement first
-                          </span>
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="text-xs text-slate-500 italic">
+                              Find replacement first
+                            </span>
+                            <a
+                              href={`https://studio.youtube.com/video/${issue.youtubeVideoId}/edit`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 transition"
+                              title="Edit in YouTube Studio"
+                            >
+                              <Pencil className="w-3.5 h-3.5 text-slate-300" />
+                            </a>
+                          </div>
                         )
                       ) : (
                         <span className="text-xs text-emerald-400">

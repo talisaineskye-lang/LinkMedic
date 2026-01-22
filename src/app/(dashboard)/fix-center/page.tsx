@@ -66,6 +66,7 @@ export default async function FixCenterPage() {
       video: {
         select: {
           id: true,
+          youtubeVideoId: true,
           title: true,
           viewCount: true,
           thumbnailUrl: true,
@@ -87,6 +88,7 @@ export default async function FixCenterPage() {
     return {
       id: link.id,
       videoId: link.video.id,
+      youtubeVideoId: link.video.youtubeVideoId,
       videoTitle: link.video.title,
       videoViewCount: link.video.viewCount,
       videoThumbnailUrl: link.video.thumbnailUrl,
