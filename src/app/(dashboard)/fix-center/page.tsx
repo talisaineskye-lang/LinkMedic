@@ -2,8 +2,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { FixCenterClient } from "@/components/fix-center-client";
-import { LinkStatus } from "@prisma/client";
+import { LinkStatus, UserTier } from "@prisma/client";
 import { calculateRevenueImpact, DEFAULT_SETTINGS } from "@/lib/revenue-estimator";
+import { TIER_FEATURES } from "@/lib/tier-limits";
 
 // All statuses that indicate a broken/problematic link
 const PROBLEM_STATUSES: LinkStatus[] = [
@@ -28,8 +29,13 @@ export default async function FixCenterPage() {
       ctrPercent: true,
       conversionPercent: true,
       avgOrderValue: true,
+      tier: true,
     },
   });
+
+  // Check tier for AI suggestions
+  const tier = user?.tier ?? UserTier.FREE;
+  const canUseAI = TIER_FEATURES[tier].aiSuggestions;
 
   const revenueSettings = {
     ctrPercent: user?.ctrPercent ?? DEFAULT_SETTINGS.ctrPercent,
@@ -124,6 +130,7 @@ export default async function FixCenterPage() {
     <FixCenterClient
       needsFixIssues={needsFixLinks}
       fixedIssues={fixedLinks}
+      canUseAI={canUseAI}
     />
   );
 }

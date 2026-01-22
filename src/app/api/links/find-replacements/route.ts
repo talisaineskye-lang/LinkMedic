@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { findReplacementProduct, getConfidenceLevel } from "@/lib/suggestion-engine";
 import { extractAffiliateTag, isAmazonDomain } from "@/lib/link-audit-engine";
+import { checkTierLimits, getUpgradeMessage } from "@/lib/tier-limits";
 import { LinkStatus } from "@prisma/client";
 
 // Rate limiting: max 5 at a time
@@ -20,6 +21,17 @@ export async function POST(request: Request) {
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check tier access for AI suggestions
+    const tierCheck = await checkTierLimits(session.user.id, "aiSuggestions");
+    if (!tierCheck.allowed) {
+      return NextResponse.json({
+        error: "Upgrade required",
+        message: getUpgradeMessage("aiSuggestions"),
+        upgradeRequired: true,
+        currentTier: tierCheck.currentTier,
+      }, { status: 403 });
     }
 
     // Check required API keys

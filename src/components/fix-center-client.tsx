@@ -30,6 +30,7 @@ interface Issue {
 interface FixCenterClientProps {
   needsFixIssues: Issue[];
   fixedIssues: Issue[];
+  canUseAI?: boolean;
 }
 
 function ConfidenceBadge({ score }: { score: number | null }) {
@@ -48,7 +49,7 @@ function ConfidenceBadge({ score }: { score: number | null }) {
   );
 }
 
-export function FixCenterClient({ needsFixIssues, fixedIssues }: FixCenterClientProps) {
+export function FixCenterClient({ needsFixIssues, fixedIssues, canUseAI = true }: FixCenterClientProps) {
   const [activeTab, setActiveTab] = useState<"needs-fix" | "fixed">("needs-fix");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [markingFixedId, setMarkingFixedId] = useState<string | null>(null);
@@ -126,7 +127,7 @@ export function FixCenterClient({ needsFixIssues, fixedIssues }: FixCenterClient
             )}
           </p>
         </div>
-        {issuesNeedingReplacements > 0 && <FindReplacementsButton />}
+        {issuesNeedingReplacements > 0 && <FindReplacementsButton canUseAI={canUseAI} />}
       </div>
 
       {/* Tabs */}

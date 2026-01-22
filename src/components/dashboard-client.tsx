@@ -10,6 +10,11 @@ import {
   Search,
   ArrowRight,
   Wrench,
+  Download,
+  Lock,
+  TrendingUp,
+  History,
+  Crown,
 } from "lucide-react";
 import { track, ANALYTICS_EVENTS } from "@/lib/posthog";
 
@@ -22,18 +27,40 @@ interface DashboardStats {
   annualLoss: number;
 }
 
+interface TierInfo {
+  tier: string;
+  videoCount: number;
+  videoLimit: number;
+  canResync: boolean;
+  canExportCSV: boolean;
+  canUseAI: boolean;
+}
+
+interface RecoveryStats {
+  linksFixed: number;
+  monthlyRecovered: number;
+  annualRecovered: number;
+}
+
 interface DashboardClientProps {
   stats: DashboardStats;
   lastScanDate: Date | null;
+  tierInfo: TierInfo;
+  recoveryStats: RecoveryStats;
 }
 
 export function DashboardClient({
   stats,
   lastScanDate,
+  tierInfo,
+  recoveryStats,
 }: DashboardClientProps) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const router = useRouter();
+
+  const isFreeUser = tierInfo.tier === "FREE";
 
   // Track dashboard view on mount
   useEffect(() => {
@@ -46,6 +73,10 @@ export function DashboardClient({
   const hasData = stats.totalLinks > 0;
 
   const handleSync = async () => {
+    if (!tierInfo.canResync) {
+      alert("Upgrade to a paid plan to resync your videos");
+      return;
+    }
     setIsSyncing(true);
     track(ANALYTICS_EVENTS.SYNC_VIDEOS_CLICKED);
     try {
@@ -55,6 +86,10 @@ export function DashboardClient({
 
       if (!response.ok) {
         const error = await response.json();
+        if (error.upgradeRequired) {
+          alert(error.message || "Upgrade required for this feature");
+          return;
+        }
         alert(error.error || "Failed to sync videos");
         return;
       }
@@ -69,6 +104,43 @@ export function DashboardClient({
       alert("Failed to sync videos");
     } finally {
       setIsSyncing(false);
+    }
+  };
+
+  const handleExportCSV = async () => {
+    if (!tierInfo.canExportCSV) {
+      alert("Upgrade to a paid plan to export your correction sheet");
+      return;
+    }
+    setIsExporting(true);
+    try {
+      const response = await fetch("/api/links/export-csv");
+
+      if (!response.ok) {
+        const error = await response.json();
+        if (error.upgradeRequired) {
+          alert(error.message || "Upgrade required for this feature");
+          return;
+        }
+        alert(error.error || "Failed to export CSV");
+        return;
+      }
+
+      // Download the file
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `linkmedic-correction-sheet-${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Export error:", error);
+      alert("Failed to export CSV");
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -148,6 +220,29 @@ export function DashboardClient({
   // DATA STATE
   return (
     <div className="max-w-6xl mx-auto">
+      {/* Tier indicator for free users */}
+      {isFreeUser && (
+        <div className="mb-6 bg-gradient-to-r from-amber-950/40 to-orange-950/30 border border-amber-700/40 rounded-lg p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Crown className="w-5 h-5 text-amber-400" />
+            <div>
+              <p className="text-sm font-medium text-white">
+                Free Plan: {tierInfo.videoCount}/{tierInfo.videoLimit} videos scanned
+              </p>
+              <p className="text-xs text-slate-400">
+                Upgrade to unlock AI suggestions, CSV export, and monitoring
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/settings"
+            className="px-4 py-2 bg-amber-600 hover:bg-amber-500 rounded-lg text-sm font-semibold transition"
+          >
+            Upgrade
+          </Link>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex justify-between items-start mb-8">
         <div>
@@ -176,11 +271,37 @@ export function DashboardClient({
           </button>
           <button
             onClick={handleSync}
-            disabled={isSyncing || isScanning}
-            className="flex items-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 disabled:bg-slate-600 rounded-lg font-semibold transition border border-slate-700"
+            disabled={isSyncing || isScanning || !tierInfo.canResync}
+            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition border ${
+              tierInfo.canResync
+                ? "bg-slate-800 hover:bg-slate-700 border-slate-700"
+                : "bg-slate-800/50 border-slate-700/50 cursor-not-allowed"
+            }`}
+            title={!tierInfo.canResync ? "Upgrade to resync videos" : undefined}
           >
-            <RotateCw className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
+            {!tierInfo.canResync ? (
+              <Lock className="w-4 h-4 text-slate-500" />
+            ) : (
+              <RotateCw className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
+            )}
             {isSyncing ? "Syncing..." : "Resync"}
+          </button>
+          <button
+            onClick={handleExportCSV}
+            disabled={isExporting || !tierInfo.canExportCSV}
+            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition border ${
+              tierInfo.canExportCSV
+                ? "bg-slate-800 hover:bg-slate-700 border-slate-700"
+                : "bg-slate-800/50 border-slate-700/50 cursor-not-allowed"
+            }`}
+            title={!tierInfo.canExportCSV ? "Upgrade to export CSV" : undefined}
+          >
+            {!tierInfo.canExportCSV ? (
+              <Lock className="w-4 h-4 text-slate-500" />
+            ) : (
+              <Download className={`w-4 h-4 ${isExporting ? "animate-pulse" : ""}`} />
+            )}
+            {isExporting ? "Exporting..." : "Export CSV"}
           </button>
         </div>
       </div>
@@ -215,6 +336,43 @@ export function DashboardClient({
           </p>
         </div>
       </div>
+
+      {/* Revenue Recovery Section */}
+      {recoveryStats.linksFixed > 0 && (
+        <div className="mb-8 bg-gradient-to-r from-emerald-950/40 to-teal-950/30 border border-emerald-700/40 rounded-xl p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-emerald-600/20 rounded-lg">
+                <TrendingUp className="w-8 h-8 text-emerald-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  Revenue Recovered
+                </h3>
+                <p className="text-sm text-slate-400">
+                  {recoveryStats.linksFixed} link{recoveryStats.linksFixed !== 1 ? "s" : ""} fixed
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-emerald-400 mb-1">Est. Monthly Recovery</p>
+              <p className="text-3xl font-bold text-emerald-400">
+                ${recoveryStats.monthlyRecovered.toLocaleString()}
+              </p>
+              <p className="text-sm text-slate-400">
+                ${recoveryStats.annualRecovered.toLocaleString()}/year
+              </p>
+            </div>
+            <Link
+              href="/history"
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-600/40 rounded-lg text-emerald-400 text-sm font-medium transition"
+            >
+              <History className="w-4 h-4" />
+              View History
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* CTA Block - Go to Fix Center */}
       {stats.brokenLinks > 0 ? (

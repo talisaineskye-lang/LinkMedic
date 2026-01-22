@@ -2,9 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Loader2 } from "lucide-react";
+import { Search, Loader2, Lock } from "lucide-react";
 
-export function FindReplacementsButton() {
+interface FindReplacementsButtonProps {
+  canUseAI?: boolean;
+}
+
+export function FindReplacementsButton({ canUseAI = true }: FindReplacementsButtonProps) {
   const [loading, setLoading] = useState(false);
   const [linksNeeding, setLinksNeeding] = useState<number | null>(null);
   const router = useRouter();
@@ -26,6 +30,10 @@ export function FindReplacementsButton() {
   }, []);
 
   const handleFindReplacements = async () => {
+    if (!canUseAI) {
+      alert("Upgrade to a paid plan to get AI-powered replacement suggestions");
+      return;
+    }
     setLoading(true);
     try {
       const response = await fetch("/api/links/find-replacements", {
@@ -37,6 +45,10 @@ export function FindReplacementsButton() {
       const data = await response.json();
 
       if (!response.ok) {
+        if (data.upgradeRequired) {
+          alert(data.message || "Upgrade required for this feature");
+          return;
+        }
         throw new Error(data.error || "Failed to find replacements");
       }
 
@@ -60,13 +72,26 @@ export function FindReplacementsButton() {
   return (
     <button
       onClick={handleFindReplacements}
-      disabled={loading || linksNeeding === 0}
-      className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-600 text-white transition"
+      disabled={loading || linksNeeding === 0 || !canUseAI}
+      className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg text-white transition ${
+        canUseAI
+          ? "bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-600"
+          : "bg-slate-700 cursor-not-allowed"
+      }`}
+      title={!canUseAI ? "Upgrade to use AI suggestions" : undefined}
     >
       {loading ? (
         <>
           <Loader2 className="w-4 h-4 animate-spin" />
           Finding...
+        </>
+      ) : !canUseAI ? (
+        <>
+          <Lock className="w-4 h-4" />
+          AI Suggestions
+          <span className="ml-1 px-1.5 py-0.5 text-xs bg-amber-600 rounded-full">
+            PRO
+          </span>
         </>
       ) : (
         <>

@@ -23,9 +23,23 @@ model User {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   emailVerified      DateTime?
+
+  // Tier system
+  tier               UserTier  @default(FREE)
+  videoScanLimit     Int       @default(15)    // Free tier: 15 videos max
+  lastScanDate       DateTime?                 // For one-time scan restriction
+  monitoringEnabled  Boolean   @default(false) // Link Guard feature
+  alertsEnabled      Boolean   @default(false) // Email alerts for status changes
+
   accounts           Account[]
   sessions           Session[]
   videos             Video[]
+}
+
+enum UserTier {
+  FREE        // The Auditor - limited features
+  SPECIALIST  // Paid tier - single channel
+  PORTFOLIO   // Paid tier - multiple channels
 }
 
 model Account {
@@ -83,6 +97,7 @@ model AffiliateLink {
   originalUrl   String
   merchant      String       @default("unknown")
   status        LinkStatus   @default(UNKNOWN)
+  previousStatus LinkStatus?  // For Link Guard: track status changes
   lastCheckedAt DateTime?
   videoId       String
   createdAt     DateTime     @default(now())
@@ -98,6 +113,7 @@ model AffiliateLink {
   dateFixed        DateTime?    // When was it fixed?
   video         Video        @relation(fields: [videoId], references: [id], onDelete: Cascade)
   scanResults   ScanResult[]
+  statusHistory LinkStatusHistory[]
 }
 
 model ScanResult {
@@ -164,4 +180,21 @@ model LinkCache {
 
   @@index([asin])
   @@index([lastChecked])
+}
+
+// ============================================
+// LINK STATUS HISTORY (Link Guard Feature)
+// ============================================
+// Tracks status changes over time for monitoring
+// Used by Link Guard to detect when links break
+model LinkStatusHistory {
+  id              String        @id @default(cuid())
+  affiliateLinkId String
+  status          LinkStatus
+  httpCode        Int?
+  checkedAt       DateTime      @default(now())
+  affiliateLink   AffiliateLink @relation(fields: [affiliateLinkId], references: [id], onDelete: Cascade)
+
+  @@index([affiliateLinkId])
+  @@index([checkedAt])
 }

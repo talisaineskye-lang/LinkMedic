@@ -3,7 +3,8 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { DashboardClient } from "@/components/dashboard-client";
 import { calculateRevenueImpact, DEFAULT_SETTINGS } from "@/lib/revenue-estimator";
-import { LinkStatus } from "@prisma/client";
+import { LinkStatus, UserTier } from "@prisma/client";
+import { TIER_FEATURES } from "@/lib/tier-limits";
 
 // All statuses that indicate a broken/problematic link
 const PROBLEM_STATUSES: LinkStatus[] = [
@@ -21,13 +22,15 @@ export default async function DashboardPage() {
     return null;
   }
 
-  // Get user settings for revenue estimation
+  // Get user settings for revenue estimation + tier info
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
       ctrPercent: true,
       conversionPercent: true,
       avgOrderValue: true,
+      tier: true,
+      videoScanLimit: true,
     },
   });
 
@@ -91,6 +94,48 @@ export default async function DashboardPage() {
     return link.lastCheckedAt > latest ? link.lastCheckedAt : latest;
   }, null);
 
+  // Get fixed links for revenue recovery tracking
+  const fixedLinks = await prisma.affiliateLink.findMany({
+    where: {
+      video: { userId: session.user.id },
+      isFixed: true,
+    },
+    select: {
+      id: true,
+      status: true,
+      dateFixed: true,
+      video: {
+        select: {
+          viewCount: true,
+          publishedAt: true,
+        },
+      },
+    },
+  });
+
+  // Calculate recovered revenue from fixed links
+  const recoveredMonthly = Math.round(fixedLinks.reduce((sum, link) => {
+    const videoAgeMonths = link.video.publishedAt
+      ? Math.max((Date.now() - new Date(link.video.publishedAt).getTime()) / (1000 * 60 * 60 * 24 * 30), 1)
+      : 12;
+    return sum + calculateRevenueImpact(
+      link.video.viewCount,
+      link.status,
+      revenueSettings,
+      videoAgeMonths
+    );
+  }, 0));
+
+  // Get video count for tier limit tracking
+  const videoCount = await prisma.video.count({
+    where: { userId: session.user.id },
+  });
+
+  // Tier info
+  const tier = user?.tier ?? UserTier.FREE;
+  const tierFeatures = TIER_FEATURES[tier];
+  const videoLimit = user?.videoScanLimit ?? tierFeatures.maxVideos;
+
   const stats = {
     totalLinks,
     healthyLinks,
@@ -100,10 +145,27 @@ export default async function DashboardPage() {
     annualLoss: monthlyLoss * 12,
   };
 
+  const tierInfo = {
+    tier,
+    videoCount,
+    videoLimit,
+    canResync: tierFeatures.resync,
+    canExportCSV: tierFeatures.csvExport,
+    canUseAI: tierFeatures.aiSuggestions,
+  };
+
+  const recoveryStats = {
+    linksFixed: fixedLinks.length,
+    monthlyRecovered: recoveredMonthly,
+    annualRecovered: recoveredMonthly * 12,
+  };
+
   return (
     <DashboardClient
       stats={stats}
       lastScanDate={lastScanDate}
+      tierInfo={tierInfo}
+      recoveryStats={recoveryStats}
     />
   );
 }
