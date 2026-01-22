@@ -66,6 +66,121 @@ function getAnthropicClient(): Anthropic {
 }
 
 // ============================================
+// URL RESOLUTION (for shortened links)
+// ============================================
+
+/**
+ * Resolve shortened Amazon URLs to full product URLs
+ * Works for amzn.to, a.co, and other Amazon shorteners
+ */
+async function resolveAmazonUrl(url: string): Promise<{ resolved: string; asin: string | null }> {
+  const shortDomains = ['amzn.to', 'a.co', 'amzn.com'];
+  const isShortened = shortDomains.some(domain => url.includes(domain));
+
+  if (!isShortened) {
+    return { resolved: url, asin: extractAsin(url) };
+  }
+
+  console.log(`[Suggestion] Resolving shortened URL: ${url}`);
+
+  try {
+    const apiKey = process.env.SCRAPINGBEE_API_KEY;
+    if (!apiKey) {
+      console.error("[Suggestion] No SCRAPINGBEE_API_KEY for URL resolution");
+      return { resolved: url, asin: null };
+    }
+
+    // Use ScrapingBee to follow redirect
+    const params = new URLSearchParams({
+      api_key: apiKey,
+      url: url,
+      premium_proxy: 'true',
+      country_code: 'us',
+      render_js: 'false',
+    });
+
+    const response = await fetch(
+      `https://app.scrapingbee.com/api/v1/?${params.toString()}`,
+      { method: 'GET', redirect: 'follow' }
+    );
+
+    if (!response.ok) {
+      console.error(`[Suggestion] URL resolution failed: ${response.status}`);
+      return { resolved: url, asin: null };
+    }
+
+    // Get the final URL after redirects from Spb-Resolved-Url header
+    const finalUrl = response.headers.get('Spb-Resolved-Url') || url;
+    const html = await response.text();
+
+    // Try to extract ASIN from final URL or page content
+    let asin = extractAsin(finalUrl);
+
+    // Fallback: look for ASIN in page HTML
+    if (!asin) {
+      const asinMatch = html.match(/\/dp\/([A-Z0-9]{10})/i);
+      asin = asinMatch ? asinMatch[1] : null;
+    }
+
+    console.log(`[Suggestion] Resolved ${url} → ${finalUrl} (ASIN: ${asin})`);
+
+    return { resolved: finalUrl, asin };
+  } catch (error) {
+    console.error('[Suggestion] URL resolution failed:', error);
+    return { resolved: url, asin: null };
+  }
+}
+
+/**
+ * Fetch product title from a product page
+ * Used to get original product info for better keyword extraction
+ */
+async function fetchProductTitle(productUrl: string, region: AmazonRegion): Promise<string | undefined> {
+  try {
+    const apiKey = process.env.SCRAPINGBEE_API_KEY;
+    if (!apiKey) return undefined;
+
+    console.log(`[Suggestion] Fetching product title from: ${productUrl}`);
+
+    const params = new URLSearchParams({
+      api_key: apiKey,
+      url: productUrl,
+      premium_proxy: 'true',
+      country_code: region.countryCode,
+      render_js: 'false',
+    });
+
+    const response = await fetch(`https://app.scrapingbee.com/api/v1/?${params.toString()}`);
+
+    if (!response.ok) {
+      console.error(`[Suggestion] Product fetch failed: ${response.status}`);
+      return undefined;
+    }
+
+    const html = await response.text();
+
+    // Extract title from product page
+    const $ = cheerio.load(html);
+
+    // Try multiple selectors for product title
+    const title =
+      $('#productTitle').text().trim() ||
+      $('h1.product-title-word-break').text().trim() ||
+      $('span.product-title-word-break').text().trim();
+
+    if (title) {
+      console.log(`[Suggestion] Found product title: "${title.slice(0, 60)}..."`);
+      return title;
+    }
+
+    return undefined;
+  } catch (error) {
+    console.error('[Suggestion] Product title fetch error:', error);
+    return undefined;
+  }
+}
+
+// ============================================
 // TYPES
 // ============================================
 
@@ -471,16 +586,26 @@ export async function findReplacementProduct(
 ): Promise<SuggestionResult> {
   const tag = affiliateTag || DEFAULT_AFFILIATE_TAG;
 
-  // Detect region from original URL
-  const region = getAmazonRegion(originalUrl);
-  console.log(`[Suggestion] Finding replacement for: ${originalUrl.slice(0, 60)}... (Region: ${region.region})`);
+  // Step 0: Resolve shortened URLs (amzn.to, a.co, etc.)
+  const { resolved: resolvedUrl, asin: originalAsin } = await resolveAmazonUrl(originalUrl);
+  console.log(`[Suggestion] Original: ${originalUrl.slice(0, 50)}, Resolved: ${resolvedUrl.slice(0, 50)}, ASIN: ${originalAsin}`);
+
+  // Detect region from resolved URL (more reliable than shortened URL)
+  const region = getAmazonRegion(resolvedUrl);
+  console.log(`[Suggestion] Finding replacement for: ${resolvedUrl.slice(0, 60)}... (Region: ${region.region})`);
+
+  // If we resolved a shortened URL, try to fetch the original product title
+  let productTitleFromPage = originalProductTitle;
+  if (!productTitleFromPage && resolvedUrl !== originalUrl && originalAsin) {
+    productTitleFromPage = await fetchProductTitle(resolvedUrl, region);
+  }
 
   // Step 1: Extract keywords
   const keywords = await extractProductKeywords(
-    originalUrl,
+    resolvedUrl,  // Use resolved URL for better context
     videoTitle,
     videoDescription,
-    originalProductTitle
+    productTitleFromPage  // May have fetched from the resolved page
   );
 
   if (!keywords || keywords.productName === "Unknown Product") {
