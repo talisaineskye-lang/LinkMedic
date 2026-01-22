@@ -3,7 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { DashboardClient } from "@/components/dashboard-client";
 import { calculateRevenueImpact, DEFAULT_SETTINGS } from "@/lib/revenue-estimator";
-import { LinkStatus, UserTier } from "@prisma/client";
+import { LinkStatus, UserTier, DisclosureStatus } from "@prisma/client";
 import { TIER_FEATURES } from "@/lib/tier-limits";
 
 // All statuses that indicate a broken/problematic link
@@ -138,6 +138,17 @@ export default async function DashboardPage() {
     where: { userId: session.user.id },
   });
 
+  // Get disclosure issues count (videos with affiliate links but missing/weak disclosure)
+  const disclosureIssues = await prisma.video.count({
+    where: {
+      userId: session.user.id,
+      hasAffiliateLinks: true,
+      disclosureStatus: {
+        in: [DisclosureStatus.MISSING, DisclosureStatus.WEAK],
+      },
+    },
+  });
+
   // Detect inactive channel
   // A channel is considered inactive if it has very low total views
   const totalViews = rawLinks.reduce((sum, link) => sum + (link.video.viewCount || 0), 0);
@@ -166,6 +177,7 @@ export default async function DashboardPage() {
     healthScore,
     monthlyLoss,
     annualLoss: monthlyLoss * 12,
+    disclosureIssues,
   };
 
   const tierInfo = {

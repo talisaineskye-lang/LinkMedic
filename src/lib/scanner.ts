@@ -1,7 +1,8 @@
 import { prisma } from "./db";
 import { extractLinksFromDescription, filterAffiliateLinks } from "./link-parser";
-import { auditLinks, AuditResult, isAmazonDomain } from "./link-audit-engine";
-import { LinkStatus } from "@prisma/client";
+import { auditLinks, AuditResult } from "./link-audit-engine";
+import { LinkStatus, DisclosureStatus } from "@prisma/client";
+import { analyzeDisclosure } from "./disclosure-detector";
 
 /**
  * Extracts and stores affiliate links from a video's description
@@ -41,21 +42,45 @@ export async function extractAndStoreLinks(videoId: string): Promise<number> {
 }
 
 /**
- * Extracts links from all videos for a user
+ * Extracts links from all videos for a user and analyzes disclosures
  */
-export async function extractLinksForUser(userId: string): Promise<{ videos: number; links: number }> {
+export async function extractLinksForUser(userId: string): Promise<{ videos: number; links: number; disclosureIssues: number }> {
   const videos = await prisma.video.findMany({
     where: { userId },
     select: { id: true, description: true },
   });
 
   let totalLinks = 0;
+  let disclosureIssues = 0;
 
   for (const video of videos) {
     if (!video.description) continue;
 
     const allLinks = extractLinksFromDescription(video.description);
     const affiliateLinks = filterAffiliateLinks(allLinks);
+
+    // Analyze disclosure for this video
+    const disclosureResult = analyzeDisclosure(video.description);
+
+    // Update video with disclosure analysis
+    await prisma.video.update({
+      where: { id: video.id },
+      data: {
+        hasAffiliateLinks: disclosureResult.hasAffiliateLinks,
+        affiliateLinkCount: disclosureResult.affiliateLinkCount,
+        disclosureStatus: disclosureResult.disclosureStatus as DisclosureStatus,
+        disclosureText: disclosureResult.disclosureText,
+        disclosurePosition: disclosureResult.disclosurePosition,
+      },
+    });
+
+    // Count disclosure issues (MISSING or WEAK with affiliate links)
+    if (
+      disclosureResult.hasAffiliateLinks &&
+      (disclosureResult.disclosureStatus === "MISSING" || disclosureResult.disclosureStatus === "WEAK")
+    ) {
+      disclosureIssues++;
+    }
 
     for (const link of affiliateLinks) {
       // Check if link already exists for this video
@@ -79,7 +104,7 @@ export async function extractLinksForUser(userId: string): Promise<{ videos: num
     }
   }
 
-  return { videos: videos.length, links: totalLinks };
+  return { videos: videos.length, links: totalLinks, disclosureIssues };
 }
 
 /**

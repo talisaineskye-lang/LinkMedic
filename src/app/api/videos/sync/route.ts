@@ -27,14 +27,15 @@ export async function POST() {
     // Sync videos from YouTube
     const { synced, total } = await syncUserVideos(session.user.id);
 
-    // Extract affiliate links from video descriptions
-    const { links } = await extractLinksForUser(session.user.id);
+    // Extract affiliate links from video descriptions and analyze disclosures
+    const { links, disclosureIssues } = await extractLinksForUser(session.user.id);
 
     return NextResponse.json({
       success: true,
       synced,
       total,
       linksExtracted: links,
+      disclosureIssues,
     });
   } catch (error) {
     console.error("Error syncing videos:", error);

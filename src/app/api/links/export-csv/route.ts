@@ -3,8 +3,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { checkTierLimits, getUpgradeMessage } from "@/lib/tier-limits";
-import { LinkStatus } from "@prisma/client";
+import { LinkStatus, DisclosureStatus } from "@prisma/client";
 import { calculateRevenueImpact, DEFAULT_SETTINGS } from "@/lib/revenue-estimator";
+import { getDisclosureIssueText } from "@/lib/disclosure-detector";
 
 // All statuses that indicate a broken/problematic link
 const PROBLEM_STATUSES: LinkStatus[] = [
@@ -138,7 +139,7 @@ export async function GET() {
         return parseFloat(b.estimatedMonthlyLoss.slice(1)) - parseFloat(a.estimatedMonthlyLoss.slice(1));
       });
 
-    // Build CSV content
+    // Build CSV content - Broken Links section
     const headers = [
       "Video Title",
       "YouTube URL",
@@ -163,7 +164,61 @@ export async function GET() {
       ].join(",")
     );
 
-    const csv = [headers.join(","), ...csvRows].join("\n");
+    // Get disclosure issues for separate section
+    const disclosureIssues = await prisma.video.findMany({
+      where: {
+        userId: session.user.id,
+        hasAffiliateLinks: true,
+        disclosureStatus: {
+          in: [DisclosureStatus.MISSING, DisclosureStatus.WEAK],
+        },
+      },
+      select: {
+        title: true,
+        youtubeVideoId: true,
+        affiliateLinkCount: true,
+        disclosureStatus: true,
+        disclosurePosition: true,
+      },
+      orderBy: { viewCount: "desc" },
+    });
+
+    // Build disclosure section
+    const disclosureHeaders = [
+      "Video Title",
+      "YouTube URL",
+      "Affiliate Links",
+      "Disclosure Status",
+      "Issue",
+    ];
+
+    const disclosureRows = disclosureIssues.map((video) =>
+      [
+        escapeCSV(video.title),
+        escapeCSV(`https://youtube.com/watch?v=${video.youtubeVideoId}`),
+        String(video.affiliateLinkCount),
+        video.disclosureStatus === "MISSING" ? "Missing" : "Weak",
+        escapeCSV(getDisclosureIssueText(video.disclosureStatus, video.disclosurePosition)),
+      ].join(",")
+    );
+
+    // Combine both sections
+    const csvParts = [
+      "=== BROKEN LINKS ===",
+      headers.join(","),
+      ...csvRows,
+    ];
+
+    if (disclosureIssues.length > 0) {
+      csvParts.push(
+        "",
+        "=== DISCLOSURE ISSUES ===",
+        disclosureHeaders.join(","),
+        ...disclosureRows
+      );
+    }
+
+    const csv = csvParts.join("\n");
 
     // Return as downloadable CSV file
     const timestamp = new Date().toISOString().split("T")[0];

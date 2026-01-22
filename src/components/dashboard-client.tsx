@@ -16,6 +16,7 @@ import {
   History,
   Crown,
   Info,
+  FileWarning,
 } from "lucide-react";
 import { track, ANALYTICS_EVENTS } from "@/lib/posthog";
 
@@ -26,6 +27,7 @@ interface DashboardStats {
   healthScore: number;
   monthlyLoss: number;
   annualLoss: number;
+  disclosureIssues: number;
 }
 
 interface TierInfo {
@@ -322,8 +324,8 @@ export function DashboardClient({
         </div>
       )}
 
-      {/* Key Metrics - 4 stat cards */}
-      <div className="grid md:grid-cols-4 gap-4 mb-12">
+      {/* Key Metrics - 5 stat cards */}
+      <div className="grid md:grid-cols-5 gap-4 mb-12">
         {/* Total Links */}
         <div className="bg-slate-800/40 border border-slate-700/50 rounded-lg p-6 backdrop-blur">
           <p className="text-sm text-slate-400 mb-2">Total Links Scanned</p>
@@ -363,6 +365,29 @@ export function DashboardClient({
             ${stats.annualLoss.toLocaleString()}
           </p>
         </div>
+
+        {/* Disclosure Issues */}
+        <Link
+          href="/fix-center?tab=disclosure"
+          className={`rounded-lg p-6 backdrop-blur transition-all ${
+            stats.disclosureIssues > 0
+              ? "bg-orange-950/30 border border-orange-700/50 hover:border-orange-600/70"
+              : "bg-slate-800/40 border border-slate-700/50"
+          }`}
+          title="Videos with affiliate links missing proper FTC disclosure"
+        >
+          <p className={`text-sm mb-2 flex items-center gap-1.5 ${
+            stats.disclosureIssues > 0 ? "text-orange-400" : "text-slate-400"
+          }`}>
+            <FileWarning className="w-3.5 h-3.5" />
+            Disclosure Issues
+          </p>
+          <p className={`text-3xl font-bold ${
+            stats.disclosureIssues > 0 ? "text-orange-400" : "text-slate-300"
+          }`}>
+            {stats.disclosureIssues}
+          </p>
+        </Link>
       </div>
 
       {/* Revenue Recovery Section */}

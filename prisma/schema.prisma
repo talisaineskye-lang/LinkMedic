@@ -88,8 +88,23 @@ model Video {
   userId         String
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
+
+  // Affiliate disclosure audit fields
+  hasAffiliateLinks    Boolean          @default(false)
+  affiliateLinkCount   Int              @default(0)
+  disclosureStatus     DisclosureStatus @default(UNKNOWN)
+  disclosureText       String?          // The actual disclosure text found
+  disclosurePosition   Int?             // Character position in description
+
   affiliateLinks AffiliateLink[]
   user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum DisclosureStatus {
+  COMPLIANT  // Disclosure in first 200 characters
+  WEAK       // Disclosure exists but buried
+  MISSING    // No disclosure found
+  UNKNOWN    // Not yet scanned
 }
 
 model AffiliateLink {
