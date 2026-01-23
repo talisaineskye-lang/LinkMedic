@@ -100,8 +100,11 @@ export function UserMenu({ user }: UserMenuProps) {
           {/* Sign out */}
           <div className="py-2 border-t border-slate-700/50">
             <button
-              onClick={() => {
-                signOut({ callbackUrl: "/", redirect: true });
+              type="button"
+              onClick={async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                await signOut({ callbackUrl: "/" });
               }}
               className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-400 hover:bg-slate-800/50 hover:text-red-300 transition-colors"
             >

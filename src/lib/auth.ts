@@ -3,6 +3,7 @@ import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./db";
 import { trackServerEvent, SERVER_ANALYTICS_EVENTS } from "./posthog-server";
+import { sendWelcomeEmail } from "./email";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as NextAuthOptions["adapter"],
@@ -64,6 +65,10 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
         });
+      }
+      // Send welcome email to new users
+      if (user?.email) {
+        await sendWelcomeEmail(user.email, user.name || undefined);
       }
     },
     async linkAccount({ user, account }) {
