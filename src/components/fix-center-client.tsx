@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { Copy, Check, CheckCircle2, ExternalLink, RefreshCw, FileWarning, Lock, Eye, Pencil, ChevronDown, ChevronRight, Layers, List } from "lucide-react";
+import { Copy, Check, CheckCircle2, ExternalLink, RefreshCw, FileWarning, Lock, Eye, Pencil, ChevronDown, ChevronRight, Layers, List, X } from "lucide-react";
 import { formatCurrency, formatNumber } from "@/lib/revenue-estimator";
 
 // Default FTC-compliant disclosure text
@@ -140,6 +140,7 @@ export function FixCenterClient({
   const [findingId, setFindingId] = useState<string | null>(null);
   const [viewingDescriptionId, setViewingDescriptionId] = useState<string | null>(null);
   const [copiedDisclosureId, setCopiedDisclosureId] = useState<string | null>(null);
+  const [dismissingDisclosureId, setDismissingDisclosureId] = useState<string | null>(null);
   const router = useRouter();
 
   const copyDisclosure = async (id: string) => {
@@ -149,6 +150,28 @@ export function FixCenterClient({
       setTimeout(() => setCopiedDisclosureId(null), 2000);
     } catch (err) {
       console.error("Failed to copy disclosure:", err);
+    }
+  };
+
+  const handleDismissDisclosure = async (videoId: string) => {
+    setDismissingDisclosureId(videoId);
+    try {
+      const response = await fetch("/api/videos/dismiss-disclosure", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ videoId }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to dismiss disclosure issue");
+      }
+
+      router.refresh();
+    } catch (error) {
+      console.error("Error dismissing disclosure issue:", error);
+      alert("Failed to dismiss disclosure issue");
+    } finally {
+      setDismissingDisclosureId(null);
     }
   };
 
@@ -468,6 +491,14 @@ export function FixCenterClient({
                             title="View current description"
                           >
                             <Eye className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDismissDisclosure(item.id)}
+                            disabled={dismissingDisclosureId === item.id}
+                            className="p-1.5 rounded-lg bg-slate-700/50 hover:bg-red-950/50 text-slate-400 hover:text-red-400 transition disabled:opacity-50"
+                            title="Dismiss this issue"
+                          >
+                            <X className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </td>

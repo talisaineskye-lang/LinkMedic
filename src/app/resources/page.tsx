@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import Link from "next/link";
-import { Link as LinkIcon, ArrowRight, AlertTriangle, ShoppingCart, FileSearch, ExternalLink } from "lucide-react";
+import { Link as LinkIcon, ArrowRight, AlertTriangle, ShoppingCart, FileSearch, ExternalLink, FileText } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Resources | LinkMedic - YouTube Affiliate Link Guides",
@@ -33,6 +33,12 @@ const RESOURCES = [
     title: "How to Audit YouTube Descriptions (The Right Way)",
     description: "The right approach to auditing affiliate links. Prioritize by revenue impact, not random checks.",
     icon: FileSearch,
+  },
+  {
+    href: "/resources/youtube-affiliate-link-disclosure-guidelines",
+    title: "YouTube Affiliate Link Disclosure Guidelines (FTC 2026)",
+    description: "Learn how to properly disclose affiliate links on YouTube to stay FTC compliant. Clear templates, placement rules, and best practices.",
+    icon: FileText,
   },
 ];
 

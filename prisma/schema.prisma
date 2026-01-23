@@ -95,6 +95,7 @@ model Video {
   disclosureStatus     DisclosureStatus @default(UNKNOWN)
   disclosureText       String?          // The actual disclosure text found
   disclosurePosition   Int?             // Character position in description
+  disclosureDismissed  Boolean          @default(false) // User dismissed this disclosure issue
 
   affiliateLinks AffiliateLink[]
   user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)

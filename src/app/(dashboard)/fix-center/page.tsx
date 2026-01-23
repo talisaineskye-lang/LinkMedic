@@ -191,6 +191,7 @@ export default async function FixCenterPage() {
     .sort((a, b) => b.totalRevenueAtRisk - a.totalRevenueAtRisk);
 
   // Get videos with disclosure issues (missing or weak disclosure with affiliate links)
+  // Exclude dismissed disclosure issues
   const videosWithDisclosureIssues = await prisma.video.findMany({
     where: {
       userId: session.user.id,
@@ -198,6 +199,7 @@ export default async function FixCenterPage() {
       disclosureStatus: {
         in: [DisclosureStatus.MISSING, DisclosureStatus.WEAK],
       },
+      disclosureDismissed: false,
     },
     select: {
       id: true,
