@@ -6,7 +6,9 @@ const resend = process.env.RESEND_API_KEY && !process.env.RESEND_API_KEY.startsW
   ? new Resend(process.env.RESEND_API_KEY)
   : null;
 
-const FROM_EMAIL = "LinkMedic <alerts@linkmedic.app>";
+// Update this once domain is verified
+const FROM_EMAIL = "LinkMedic <hello@linkmedic.io>";
+const APP_URL = "https://link-medic.vercel.app";
 
 export interface BrokenLinkAlert {
   userEmail: string;
@@ -110,7 +112,7 @@ export async function sendScanSummaryAlert(alert: ScanSummaryAlert): Promise<boo
           </div>
 
           <p style="color: #4b5563;">
-            <a href="https://linkmedic.app/issues" style="color: #2563eb;">View all issues →</a>
+            <a href="${APP_URL}/fix-center" style="color: #2563eb;">View all issues →</a>
           </p>
 
           <p style="color: #6b7280; font-size: 14px; margin-top: 24px;">
@@ -123,5 +125,141 @@ export async function sendScanSummaryAlert(alert: ScanSummaryAlert): Promise<boo
   } catch (error) {
     console.error("Failed to send scan summary email:", error);
     return false;
+  }
+}
+
+/**
+ * Sends a welcome email to new users
+ */
+export async function sendWelcomeEmail(to: string, name?: string): Promise<{ success: boolean; error?: unknown }> {
+  if (!resend) {
+    console.warn("[Email] Not configured - skipping welcome email");
+    return { success: false, error: "Email not configured" };
+  }
+
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: "Welcome to LinkMedic!",
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #1f2937;">Welcome${name ? `, ${name}` : ""}!</h1>
+          <p style="color: #4b5563;">Thanks for signing up for LinkMedic.</p>
+          <p style="color: #4b5563;">Here's how to get started:</p>
+          <ol style="color: #4b5563;">
+            <li>Connect your YouTube channel</li>
+            <li>We'll scan your videos for broken affiliate links</li>
+            <li>Fix them with one click</li>
+          </ol>
+          <p style="margin-top: 24px;">
+            <a href="${APP_URL}/dashboard" style="background: #10b981; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Go to your dashboard →</a>
+          </p>
+          <p style="color: #4b5563; margin-top: 24px;">Questions? Just reply to this email.</p>
+          <p style="color: #6b7280; font-size: 14px; margin-top: 24px;">
+            — The LinkMedic Team
+          </p>
+        </div>
+      `,
+    });
+    console.log(`[Email] Welcome email sent to ${to}`);
+    return { success: true };
+  } catch (error) {
+    console.error("[Email] Failed to send welcome email:", error);
+    return { success: false, error };
+  }
+}
+
+export interface WeeklyAlertData {
+  brokenLinks: number;
+  estimatedLoss: number;
+  topIssues: { videoTitle: string; link: string }[];
+}
+
+/**
+ * Sends a weekly alert email with broken links summary
+ */
+export async function sendWeeklyAlert(
+  to: string,
+  data: WeeklyAlertData
+): Promise<{ success: boolean; error?: unknown }> {
+  if (!resend) {
+    console.warn("[Email] Not configured - skipping weekly alert");
+    return { success: false, error: "Email not configured" };
+  }
+
+  try {
+    const issuesList = data.topIssues
+      .map((i) => `<li style="margin-bottom: 8px;">${i.videoTitle}</li>`)
+      .join("");
+
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: `LinkMedic Alert: ${data.brokenLinks} broken links found`,
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #1f2937;">Weekly Link Health Report</h1>
+          <p style="color: #4b5563;">
+            We found <strong style="color: #dc2626;">${data.brokenLinks} broken links</strong> that may be costing you
+            <strong style="color: #dc2626;">$${data.estimatedLoss.toFixed(2)}/month</strong>.
+          </p>
+
+          ${data.topIssues.length > 0 ? `
+          <h3 style="color: #1f2937; margin-top: 24px;">Top issues to fix:</h3>
+          <ul style="color: #4b5563;">${issuesList}</ul>
+          ` : ""}
+
+          <p style="margin-top: 24px;">
+            <a href="${APP_URL}/fix-center" style="background: #10b981; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Fix them now →</a>
+          </p>
+          <p style="color: #6b7280; font-size: 14px; margin-top: 24px;">
+            — LinkMedic
+          </p>
+        </div>
+      `,
+    });
+    console.log(`[Email] Weekly alert sent to ${to}`);
+    return { success: true };
+  } catch (error) {
+    console.error("[Email] Failed to send weekly alert:", error);
+    return { success: false, error };
+  }
+}
+
+/**
+ * Sends a payment failed notification email
+ */
+export async function sendPaymentFailedEmail(to: string): Promise<{ success: boolean; error?: unknown }> {
+  if (!resend) {
+    console.warn("[Email] Not configured - skipping payment failed email");
+    return { success: false, error: "Email not configured" };
+  }
+
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: "LinkMedic: Payment failed",
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #1f2937;">Payment Issue</h1>
+          <p style="color: #4b5563;">We couldn't process your payment for LinkMedic.</p>
+          <p style="color: #4b5563;">Please update your payment method to keep your account active:</p>
+          <p style="margin-top: 24px;">
+            <a href="${APP_URL}/settings" style="background: #f59e0b; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Update payment method →</a>
+          </p>
+          <p style="color: #4b5563; margin-top: 24px;">Questions? Just reply to this email.</p>
+          <p style="color: #6b7280; font-size: 14px; margin-top: 24px;">
+            — LinkMedic
+          </p>
+        </div>
+      `,
+    });
+    console.log(`[Email] Payment failed email sent to ${to}`);
+    return { success: true };
+  } catch (error) {
+    console.error("[Email] Failed to send payment failed email:", error);
+    return { success: false, error };
   }
 }
