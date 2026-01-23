@@ -188,16 +188,6 @@ export function FixCenterClient({
   const totalLoss = needsFixIssues.reduce((sum, i) => sum + i.estimatedLoss, 0);
   const issuesNeedingReplacements = needsFixIssues.filter(i => !i.suggestedLink).length;
 
-  const copyToClipboard = async (text: string, id: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedId(id);
-      setTimeout(() => setCopiedId(null), 2000);
-    } catch (err) {
-      console.error("Failed to copy:", err);
-    }
-  };
-
   // Copy link AND open YouTube Studio in one action - REQUIRED, DO NOT REMOVE
   const copyAndOpenStudio = async (text: string, id: string, youtubeVideoId: string) => {
     try {
@@ -791,8 +781,9 @@ export function FixCenterClient({
                                 <span className="text-xs text-slate-400">{group.suggestedPrice}</span>
                               )}
                               <button
-                                onClick={() => copyToClipboard(group.suggestedLink!, group.originalUrl)}
+                                onClick={() => copyAndOpenStudio(group.suggestedLink!, group.originalUrl, group.videos[0].youtubeVideoId)}
                                 className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-slate-700/50 hover:bg-emerald-950/50 text-slate-300 hover:text-emerald-400 transition"
+                                title="Copy link and open YouTube Studio"
                               >
                                 {copiedId === group.originalUrl ? (
                                   <>
@@ -802,7 +793,7 @@ export function FixCenterClient({
                                 ) : (
                                   <>
                                     <Copy className="w-3 h-3" />
-                                    Copy Link
+                                    Copy & Edit
                                   </>
                                 )}
                               </button>
@@ -892,13 +883,13 @@ export function FixCenterClient({
                                 </button>
                               ) : (
                                 <button
-                                  onClick={() => copyToClipboard(group.suggestedLink!, `action-${group.originalUrl}`)}
+                                  onClick={() => copyAndOpenStudio(group.suggestedLink!, `action-${group.originalUrl}`, group.videos[0].youtubeVideoId)}
                                   className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition ${
                                     copiedId === `action-${group.originalUrl}`
                                       ? "bg-emerald-600 text-white"
                                       : "bg-slate-700 hover:bg-slate-600 text-white"
                                   }`}
-                                  title="Copy replacement link to clipboard"
+                                  title="Copy replacement link and open YouTube Studio (use Ctrl+F to find broken link)"
                                 >
                                   {copiedId === `action-${group.originalUrl}` ? (
                                     <>
@@ -908,7 +899,7 @@ export function FixCenterClient({
                                   ) : (
                                     <>
                                       <Copy className="w-3 h-3" />
-                                      Copy Link
+                                      Copy & Edit
                                     </>
                                   )}
                                 </button>
@@ -1049,8 +1040,9 @@ export function FixCenterClient({
                               <span className="text-xs text-slate-400">{issue.suggestedPrice}</span>
                             )}
                             <button
-                              onClick={() => copyToClipboard(issue.suggestedLink!, issue.id)}
+                              onClick={() => copyAndOpenStudio(issue.suggestedLink!, issue.id, issue.youtubeVideoId)}
                               className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-slate-700/50 hover:bg-emerald-950/50 text-slate-300 hover:text-emerald-400 transition"
+                              title="Copy link and open YouTube Studio"
                             >
                               {copiedId === issue.id ? (
                                 <>
@@ -1060,7 +1052,7 @@ export function FixCenterClient({
                               ) : (
                                 <>
                                   <Copy className="w-3 h-3" />
-                                  Copy Link
+                                  Copy & Edit
                                 </>
                               )}
                             </button>
