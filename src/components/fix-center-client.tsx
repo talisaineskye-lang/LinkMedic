@@ -792,7 +792,44 @@ export function FixCenterClient({
                       {/* Action */}
                       <td className="px-4 py-4 text-center">
                         {group.suggestedLink ? (
-                          <div className="flex items-center justify-center gap-2">
+                          <div className="flex flex-col items-center gap-2">
+                            {/* Copy Link and Edit in Studio buttons - REQUIRED, DO NOT REMOVE */}
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => copyToClipboard(group.suggestedLink!, `action-${group.originalUrl}`)}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition ${
+                                  copiedId === `action-${group.originalUrl}`
+                                    ? "bg-emerald-600 text-white"
+                                    : "bg-slate-700 hover:bg-slate-600 text-white"
+                                }`}
+                                title="Copy replacement link to clipboard"
+                              >
+                                {copiedId === `action-${group.originalUrl}` ? (
+                                  <>
+                                    <Check className="w-3 h-3" />
+                                    Copied!
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="w-3 h-3" />
+                                    Copy Link
+                                  </>
+                                )}
+                              </button>
+                              {group.videos.length === 1 && (
+                                <a
+                                  href={`https://studio.youtube.com/video/${group.videos[0].youtubeVideoId}/edit`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition"
+                                  title="Tip: Use Ctrl+F to find the broken link in your description"
+                                >
+                                  <Pencil className="w-3 h-3" />
+                                  Edit in Studio
+                                </a>
+                              )}
+                            </div>
+                            {/* Mark Fixed button */}
                             <button
                               onClick={() => handleMarkAllFixed(group.originalUrl, group.linkIds)}
                               disabled={markingAllFixedUrl === group.originalUrl}
@@ -802,22 +839,11 @@ export function FixCenterClient({
                                 "Marking..."
                               ) : (
                                 <>
-                                  <Check className="w-3 h-3" />
+                                  <CheckCircle2 className="w-3 h-3" />
                                   Mark All Fixed ({group.linkIds.length})
                                 </>
                               )}
                             </button>
-                            {group.videos.length === 1 && (
-                              <a
-                                href={`https://studio.youtube.com/video/${group.videos[0].youtubeVideoId}/edit`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 transition"
-                                title="Edit in YouTube Studio"
-                              >
-                                <Pencil className="w-3.5 h-3.5 text-slate-300" />
-                              </a>
-                            )}
                           </div>
                         ) : (
                           <div className="flex items-center justify-center gap-2">
@@ -829,10 +855,11 @@ export function FixCenterClient({
                                 href={`https://studio.youtube.com/video/${group.videos[0].youtubeVideoId}/edit`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="p-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 transition"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition"
                                 title="Edit in YouTube Studio"
                               >
-                                <Pencil className="w-3.5 h-3.5 text-slate-300" />
+                                <Pencil className="w-3 h-3" />
+                                Edit in Studio
                               </a>
                             )}
                           </div>
@@ -1016,7 +1043,42 @@ export function FixCenterClient({
                     <td className="px-4 py-4 text-center">
                       {activeTab === "needs-fix" ? (
                         issue.suggestedLink ? (
-                          <div className="flex items-center justify-center gap-2">
+                          <div className="flex flex-col items-center gap-2">
+                            {/* Copy Link and Edit in Studio buttons - REQUIRED, DO NOT REMOVE */}
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => copyToClipboard(issue.suggestedLink!, `action-${issue.id}`)}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition ${
+                                  copiedId === `action-${issue.id}`
+                                    ? "bg-emerald-600 text-white"
+                                    : "bg-slate-700 hover:bg-slate-600 text-white"
+                                }`}
+                                title="Copy replacement link to clipboard"
+                              >
+                                {copiedId === `action-${issue.id}` ? (
+                                  <>
+                                    <Check className="w-3 h-3" />
+                                    Copied!
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="w-3 h-3" />
+                                    Copy Link
+                                  </>
+                                )}
+                              </button>
+                              <a
+                                href={`https://studio.youtube.com/video/${issue.youtubeVideoId}/edit`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition"
+                                title="Tip: Use Ctrl+F to find the broken link in your description"
+                              >
+                                <Pencil className="w-3 h-3" />
+                                Edit in Studio
+                              </a>
+                            </div>
+                            {/* Mark Fixed button */}
                             <button
                               onClick={() => handleMarkFixed(issue.id)}
                               disabled={markingFixedId === issue.id}
@@ -1026,20 +1088,11 @@ export function FixCenterClient({
                                 "Marking..."
                               ) : (
                                 <>
-                                  <Check className="w-3 h-3" />
+                                  <CheckCircle2 className="w-3 h-3" />
                                   Mark Fixed
                                 </>
                               )}
                             </button>
-                            <a
-                              href={`https://studio.youtube.com/video/${issue.youtubeVideoId}/edit`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="p-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 transition"
-                              title="Edit in YouTube Studio (Tip: Use Ctrl+F to find the broken link)"
-                            >
-                              <Pencil className="w-3.5 h-3.5 text-slate-300" />
-                            </a>
                           </div>
                         ) : (
                           <div className="flex items-center justify-center gap-2">
@@ -1050,10 +1103,11 @@ export function FixCenterClient({
                               href={`https://studio.youtube.com/video/${issue.youtubeVideoId}/edit`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="p-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 transition"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition"
                               title="Edit in YouTube Studio"
                             >
-                              <Pencil className="w-3.5 h-3.5 text-slate-300" />
+                              <Pencil className="w-3 h-3" />
+                              Edit in Studio
                             </a>
                           </div>
                         )
