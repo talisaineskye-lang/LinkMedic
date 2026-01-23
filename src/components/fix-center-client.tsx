@@ -5,6 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { Copy, Check, CheckCircle2, ExternalLink, RefreshCw, FileWarning, Lock, Eye, Pencil, ChevronDown, ChevronRight, Layers, List } from "lucide-react";
 import { formatCurrency, formatNumber } from "@/lib/revenue-estimator";
+
+// Default FTC-compliant disclosure text
+const DEFAULT_DISCLOSURE_TEXT = "DISCLOSURE: Some of the links above are affiliate links, meaning I may earn a commission if you make a purchase at no additional cost to you.";
 import { FindReplacementsButton } from "./find-replacements-button";
 import Link from "next/link";
 
@@ -136,7 +139,18 @@ export function FixCenterClient({
   const [markingAllFixedUrl, setMarkingAllFixedUrl] = useState<string | null>(null);
   const [findingId, setFindingId] = useState<string | null>(null);
   const [viewingDescriptionId, setViewingDescriptionId] = useState<string | null>(null);
+  const [copiedDisclosureId, setCopiedDisclosureId] = useState<string | null>(null);
   const router = useRouter();
+
+  const copyDisclosure = async (id: string) => {
+    try {
+      await navigator.clipboard.writeText(DEFAULT_DISCLOSURE_TEXT);
+      setCopiedDisclosureId(id);
+      setTimeout(() => setCopiedDisclosureId(null), 2000);
+    } catch (err) {
+      console.error("Failed to copy disclosure:", err);
+    }
+  };
 
   // Handle tab changes from URL params
   useEffect(() => {
@@ -352,14 +366,11 @@ export function FixCenterClient({
                     <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                       Video
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
-                      Affiliate Links
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
-                      Disclosure Status
-                    </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                       Issue
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                      Suggested Disclosure
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
                       Action
@@ -390,45 +401,75 @@ export function FixCenterClient({
                                 : item.videoTitle}
                             </p>
                             <p className="text-xs text-slate-500">
-                              {formatNumber(item.videoViewCount)} views
+                              {formatNumber(item.videoViewCount)} views • {item.affiliateLinkCount} affiliate link{item.affiliateLinkCount !== 1 ? "s" : ""}
                             </p>
                           </div>
                         </div>
                       </td>
 
-                      {/* Affiliate Links Count */}
-                      <td className="px-4 py-4 text-center">
-                        <span className="text-sm text-white font-medium">{item.affiliateLinkCount}</span>
-                      </td>
-
-                      {/* Disclosure Status Badge */}
-                      <td className="px-4 py-4 text-center">
-                        <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${
-                          item.disclosureStatus === "MISSING"
-                            ? "bg-red-950/50 border border-red-600/50 text-red-400"
-                            : item.disclosureStatus === "WEAK"
-                            ? "bg-amber-950/50 border border-amber-600/50 text-amber-400"
-                            : "bg-emerald-950/50 border border-emerald-600/50 text-emerald-400"
-                        }`}>
-                          {item.disclosureStatus === "MISSING" ? "Missing" :
-                           item.disclosureStatus === "WEAK" ? "Weak" : "Compliant"}
-                        </span>
-                      </td>
-
                       {/* Issue Description */}
                       <td className="px-4 py-4">
-                        <p className="text-sm text-slate-300">{item.issue}</p>
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${
+                            item.disclosureStatus === "MISSING"
+                              ? "bg-red-950/50 border border-red-600/50 text-red-400"
+                              : "bg-amber-950/50 border border-amber-600/50 text-amber-400"
+                          }`}>
+                            {item.disclosureStatus === "MISSING" ? "Missing" : "Weak"}
+                          </span>
+                        </div>
+                        <p className="text-sm text-slate-400 mt-1">{item.issue}</p>
+                      </td>
+
+                      {/* Suggested Disclosure */}
+                      <td className="px-4 py-4">
+                        <p className="text-sm text-slate-300 max-w-[280px] line-clamp-2" title={DEFAULT_DISCLOSURE_TEXT}>
+                          {DEFAULT_DISCLOSURE_TEXT}
+                        </p>
                       </td>
 
                       {/* Action */}
-                      <td className="px-4 py-4 text-center">
-                        <button
-                          onClick={() => setViewingDescriptionId(viewingDescriptionId === item.id ? null : item.id)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition"
-                        >
-                          <Eye className="w-3 h-3" />
-                          {viewingDescriptionId === item.id ? "Hide" : "View"} Description
-                        </button>
+                      <td className="px-4 py-4">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => copyDisclosure(item.id)}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition ${
+                              copiedDisclosureId === item.id
+                                ? "bg-emerald-600 text-white"
+                                : "bg-slate-700 hover:bg-slate-600 text-white"
+                            }`}
+                            title="Copy disclosure text to paste at the TOP of your video description"
+                          >
+                            {copiedDisclosureId === item.id ? (
+                              <>
+                                <Check className="w-3 h-3" />
+                                Copied!
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3 h-3" />
+                                Copy
+                              </>
+                            )}
+                          </button>
+                          <a
+                            href={`https://studio.youtube.com/video/${item.youtubeVideoId}/edit`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition"
+                            title="Edit in YouTube Studio"
+                          >
+                            <Pencil className="w-3 h-3" />
+                            Edit
+                          </a>
+                          <button
+                            onClick={() => setViewingDescriptionId(viewingDescriptionId === item.id ? null : item.id)}
+                            className="p-1.5 rounded-lg bg-slate-700/50 hover:bg-slate-600/50 text-slate-400 transition"
+                            title="View current description"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
