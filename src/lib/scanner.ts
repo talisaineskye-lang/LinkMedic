@@ -1,6 +1,6 @@
 import { prisma } from "./db";
 import { extractLinksFromDescription, filterAffiliateLinks } from "./link-parser";
-import { auditLinks, AuditResult } from "./link-audit-engine";
+import { auditLinks, AuditResult, extractAffiliateTag } from "./link-audit-engine";
 import { LinkStatus, DisclosureStatus } from "@prisma/client";
 import { analyzeDisclosure } from "./disclosure-detector";
 
@@ -43,8 +43,15 @@ export async function extractAndStoreLinks(videoId: string): Promise<number> {
 
 /**
  * Extracts links from all videos for a user and analyzes disclosures
+ * Also auto-detects affiliate tag from existing Amazon links if user doesn't have one saved
  */
-export async function extractLinksForUser(userId: string): Promise<{ videos: number; links: number; disclosureIssues: number }> {
+export async function extractLinksForUser(userId: string): Promise<{ videos: number; links: number; disclosureIssues: number; detectedAffiliateTag: string | null }> {
+  // Check if user already has an affiliate tag saved
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { affiliateTag: true },
+  });
+
   const videos = await prisma.video.findMany({
     where: { userId },
     select: { id: true, description: true },
@@ -52,6 +59,7 @@ export async function extractLinksForUser(userId: string): Promise<{ videos: num
 
   let totalLinks = 0;
   let disclosureIssues = 0;
+  let detectedAffiliateTag: string | null = null;
 
   for (const video of videos) {
     if (!video.description) continue;
@@ -83,6 +91,15 @@ export async function extractLinksForUser(userId: string): Promise<{ videos: num
     }
 
     for (const link of affiliateLinks) {
+      // Auto-detect affiliate tag from Amazon links if user doesn't have one saved
+      if (!user?.affiliateTag && !detectedAffiliateTag && link.merchant === "amazon") {
+        const tag = extractAffiliateTag(link.url);
+        if (tag) {
+          detectedAffiliateTag = tag;
+          console.log(`[Scanner] Auto-detected affiliate tag: ${tag}`);
+        }
+      }
+
       // Check if link already exists for this video
       const existing = await prisma.affiliateLink.findFirst({
         where: {
@@ -104,7 +121,16 @@ export async function extractLinksForUser(userId: string): Promise<{ videos: num
     }
   }
 
-  return { videos: videos.length, links: totalLinks, disclosureIssues };
+  // Auto-save detected affiliate tag if user doesn't have one
+  if (!user?.affiliateTag && detectedAffiliateTag) {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { affiliateTag: detectedAffiliateTag },
+    });
+    console.log(`[Scanner] Auto-saved affiliate tag for user ${userId}: ${detectedAffiliateTag}`);
+  }
+
+  return { videos: videos.length, links: totalLinks, disclosureIssues, detectedAffiliateTag };
 }
 
 /**

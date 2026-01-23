@@ -28,7 +28,8 @@ export async function POST() {
     const { synced, total } = await syncUserVideos(session.user.id);
 
     // Extract affiliate links from video descriptions and analyze disclosures
-    const { links, disclosureIssues } = await extractLinksForUser(session.user.id);
+    // Also auto-detects and saves affiliate tag if user doesn't have one
+    const { links, disclosureIssues, detectedAffiliateTag } = await extractLinksForUser(session.user.id);
 
     return NextResponse.json({
       success: true,
@@ -36,6 +37,8 @@ export async function POST() {
       total,
       linksExtracted: links,
       disclosureIssues,
+      // Let frontend know if we auto-detected their affiliate tag
+      detectedAffiliateTag,
     });
   } catch (error) {
     console.error("Error syncing videos:", error);
