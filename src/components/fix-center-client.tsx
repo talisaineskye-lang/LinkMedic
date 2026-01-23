@@ -141,8 +141,20 @@ export function FixCenterClient({
   const [viewingDescriptionId, setViewingDescriptionId] = useState<string | null>(null);
   const [copiedDisclosureId, setCopiedDisclosureId] = useState<string | null>(null);
   const [dismissingDisclosureId, setDismissingDisclosureId] = useState<string | null>(null);
-  const [downloadingFixScript, setDownloadingFixScript] = useState(false);
+  const [downloadingExport, setDownloadingExport] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
   const router = useRouter();
+
+  // Close export dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (showExportMenu && !(e.target as Element).closest('.export-dropdown')) {
+        setShowExportMenu(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showExportMenu]);
 
   const copyDisclosure = async (id: string) => {
     try {
@@ -279,11 +291,22 @@ export function FixCenterClient({
     });
   };
 
-  // Download Fix Script for bulk fixing - REQUIRED, DO NOT REMOVE
-  const handleDownloadFixScript = async (format?: "tubebuddy") => {
-    setDownloadingFixScript(true);
+  // Download exports in various formats - REQUIRED, DO NOT REMOVE
+  const handleDownloadExport = async (format: "tubebuddy" | "csv" | "manual") => {
+    setDownloadingExport(true);
+    setShowExportMenu(false);
     try {
-      const url = format === "tubebuddy" ? "/api/export/fix-script?format=tubebuddy" : "/api/export/fix-script";
+      // Build URL based on format
+      let url: string;
+      if (format === "csv") {
+        url = "/api/links/export-csv";
+      } else if (format === "tubebuddy") {
+        url = "/api/export/fix-script?format=tubebuddy";
+      } else {
+        // "manual" uses the default fix script format (no format parameter)
+        url = "/api/export/fix-script";
+      }
+
       const response = await fetch(url);
       if (response.ok) {
         const blob = await response.blob();
@@ -293,23 +316,26 @@ export function FixCenterClient({
         // Extract filename from Content-Disposition header or use default
         const contentDisposition = response.headers.get("Content-Disposition");
         const filenameMatch = contentDisposition?.match(/filename="(.+)"/);
-        const defaultFilename = format === "tubebuddy"
-          ? `LinkMedic_TubeBuddy_FixScript_${new Date().toISOString().split("T")[0]}.txt`
-          : `LinkMedic_FixScript_${new Date().toISOString().split("T")[0]}.txt`;
-        a.download = filenameMatch ? filenameMatch[1] : defaultFilename;
+        const date = new Date().toISOString().split("T")[0];
+        const defaultFilenames: Record<string, string> = {
+          tubebuddy: `LinkMedic_TubeBuddy_${date}.txt`,
+          csv: `LinkMedic_Export_${date}.csv`,
+          manual: `LinkMedic_FixScript_${date}.txt`,
+        };
+        a.download = filenameMatch ? filenameMatch[1] : defaultFilenames[format];
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(blobUrl);
       } else {
         const data = await response.json();
-        alert(data.error || "Failed to generate Fix Script");
+        alert(data.error || "Failed to generate export");
       }
     } catch (error) {
-      console.error("Error downloading fix script:", error);
-      alert("Failed to download Fix Script");
+      console.error("Error downloading export:", error);
+      alert("Failed to download export");
     } finally {
-      setDownloadingFixScript(false);
+      setDownloadingExport(false);
     }
   };
 
@@ -327,28 +353,55 @@ export function FixCenterClient({
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {/* Download Fix Script buttons - paid tier only - REQUIRED, DO NOT REMOVE */}
+          {/* Export dropdown - paid tier only - REQUIRED, DO NOT REMOVE */}
           {tier !== "FREE" && needsFixIssues.length > 0 && (
-            <>
+            <div className="relative export-dropdown">
               <button
-                onClick={() => handleDownloadFixScript()}
-                disabled={downloadingFixScript || !needsFixIssues.some(i => i.suggestedLink)}
-                className="flex items-center gap-2 px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-                title={needsFixIssues.some(i => i.suggestedLink) ? "Download standard fix script with YouTube Studio links" : "Run 'Find Replacements' first to generate suggestions"}
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                disabled={downloadingExport}
+                className="flex items-center gap-2 px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium rounded-lg transition disabled:opacity-50"
               >
                 <FileDown className="w-4 h-4" />
-                {downloadingFixScript ? "Generating..." : "Fix Script"}
+                {downloadingExport ? "Exporting..." : "Export"}
+                <ChevronDown className="w-4 h-4" />
               </button>
-              <button
-                onClick={() => handleDownloadFixScript("tubebuddy")}
-                disabled={downloadingFixScript || !needsFixIssues.some(i => i.suggestedLink)}
-                className="flex items-center gap-2 px-4 py-2.5 bg-purple-700 hover:bg-purple-600 text-white text-sm font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-                title={needsFixIssues.some(i => i.suggestedLink) ? "Download TubeBuddy-optimized fix script with video IDs" : "Run 'Find Replacements' first to generate suggestions"}
-              >
-                <FileDown className="w-4 h-4" />
-                {downloadingFixScript ? "Generating..." : "TubeBuddy Script"}
-              </button>
-            </>
+
+              {showExportMenu && (
+                <div className="absolute right-0 mt-2 w-64 bg-slate-800 rounded-lg shadow-lg border border-slate-700 z-20 overflow-hidden">
+                  <button
+                    onClick={() => handleDownloadExport("tubebuddy")}
+                    disabled={!needsFixIssues.some(i => i.suggestedLink)}
+                    className="w-full px-4 py-3 text-left hover:bg-slate-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="font-medium text-white flex items-center gap-2">
+                      <span>📋</span> TubeBuddy (Bulk Fix)
+                    </div>
+                    <div className="text-xs text-slate-400 mt-0.5">Fix all videos at once with Find & Replace</div>
+                  </button>
+
+                  <button
+                    onClick={() => handleDownloadExport("csv")}
+                    className="w-full px-4 py-3 text-left hover:bg-slate-700 transition border-t border-slate-700/50"
+                  >
+                    <div className="font-medium text-white flex items-center gap-2">
+                      <span>📊</span> CSV Spreadsheet
+                    </div>
+                    <div className="text-xs text-slate-400 mt-0.5">Open in Excel or Google Sheets</div>
+                  </button>
+
+                  <button
+                    onClick={() => handleDownloadExport("manual")}
+                    disabled={!needsFixIssues.some(i => i.suggestedLink)}
+                    className="w-full px-4 py-3 text-left hover:bg-slate-700 transition border-t border-slate-700/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="font-medium text-white flex items-center gap-2">
+                      <span>📄</span> Fix Script (Manual)
+                    </div>
+                    <div className="text-xs text-slate-400 mt-0.5">Step-by-step with YouTube Studio links</div>
+                  </button>
+                </div>
+              )}
+            </div>
           )}
           {issuesNeedingReplacements > 0 && <FindReplacementsButton canUseAI={canUseAI} />}
         </div>

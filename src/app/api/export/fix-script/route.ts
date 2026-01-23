@@ -384,6 +384,217 @@ Questions? support@link-medic.app
   };
 }
 
+/**
+ * Generates a detailed summary report of broken links.
+ * Includes statistics breakdown and link details.
+ */
+async function generateReport(userId: string): Promise<{
+  script: string;
+  channelName: string;
+  uniqueLinks: number;
+  totalInstances: number;
+  totalRevenue: number;
+}> {
+  // Get user info including affiliate tag
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { name: true, affiliateTag: true },
+  });
+
+  const userTag = user?.affiliateTag;
+
+  // Get all broken links (with or without suggestions)
+  const links = await prisma.affiliateLink.findMany({
+    where: {
+      video: { userId },
+      status: { in: ["NOT_FOUND", "OOS", "OOS_THIRD_PARTY", "SEARCH_REDIRECT", "MISSING_TAG", "REDIRECT"] },
+      isFixed: false,
+    },
+    include: {
+      video: {
+        select: { id: true, title: true, youtubeVideoId: true, viewCount: true },
+      },
+    },
+    orderBy: { originalUrl: "asc" },
+  });
+
+  // Group by original URL
+  const grouped = new Map<
+    string,
+    {
+      originalUrl: string;
+      suggestedLink: string | null;
+      suggestedTitle: string | null;
+      suggestedPrice: string | null;
+      confidenceScore: number | null;
+      status: string;
+      videos: { title: string; youtubeVideoId: string; viewCount: number }[];
+    }
+  >();
+
+  // Count by status for breakdown
+  const statusCounts = {
+    NOT_FOUND: 0,
+    OOS: 0,
+    OOS_THIRD_PARTY: 0,
+    SEARCH_REDIRECT: 0,
+    MISSING_TAG: 0,
+    REDIRECT: 0,
+  };
+
+  let totalRevenue = 0;
+
+  for (const link of links) {
+    const key = link.originalUrl;
+
+    // Count statuses
+    if (link.status in statusCounts) {
+      statusCounts[link.status as keyof typeof statusCounts]++;
+    }
+
+    if (!grouped.has(key)) {
+      // Ensure replacement URL has user's affiliate tag (if they have one set)
+      let finalSuggestedLink = link.suggestedLink;
+      if (finalSuggestedLink && userTag) {
+        finalSuggestedLink = ensureAffiliateTag(finalSuggestedLink, userTag);
+      }
+
+      grouped.set(key, {
+        originalUrl: link.originalUrl,
+        suggestedLink: finalSuggestedLink,
+        suggestedTitle: link.suggestedTitle,
+        suggestedPrice: link.suggestedPrice,
+        confidenceScore: link.confidenceScore,
+        status: link.status,
+        videos: [],
+      });
+    }
+    grouped.get(key)!.videos.push({
+      title: link.video.title,
+      youtubeVideoId: link.video.youtubeVideoId,
+      viewCount: link.video.viewCount,
+    });
+  }
+
+  // Calculate estimated revenue
+  for (const [, data] of grouped) {
+    const totalViews = data.videos.reduce((sum, v) => sum + v.viewCount, 0);
+    const monthlyViews = totalViews * 0.07;
+    const impact = monthlyViews * 0.01 * 0.015 * 45 * 0.03;
+    totalRevenue += Math.min(impact * 12, 600);
+  }
+
+  const channelName = user?.name || "Channel";
+  const date = new Date().toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  // Generate report text
+  let script = `================================================================================
+LINKMEDIC REPORT
+================================================================================
+Channel: ${channelName}
+Generated: ${date}
+
+================================================================================
+SUMMARY
+================================================================================
+Total broken links: ${grouped.size} unique links across ${links.length} video instances
+Estimated annual loss: ${formatCurrency(Math.round(totalRevenue))}
+
+================================================================================
+BREAKDOWN BY ISSUE TYPE
+================================================================================
+404 Dead Links:        ${statusCounts.NOT_FOUND}
+Out of Stock:          ${statusCounts.OOS}
+3rd Party Only:        ${statusCounts.OOS_THIRD_PARTY}
+Search Redirects:      ${statusCounts.SEARCH_REDIRECT}
+Missing Tag:           ${statusCounts.MISSING_TAG}
+Other Redirects:       ${statusCounts.REDIRECT}
+
+================================================================================
+BROKEN LINKS DETAIL
+================================================================================
+`;
+
+  let linkNum = 1;
+  for (const [, data] of grouped) {
+    const statusLabel = getStatusLabel(data.status);
+    const confidenceLabel = data.confidenceScore ? `${data.confidenceScore}%` : "N/A";
+    const totalViews = data.videos.reduce((sum, v) => sum + v.viewCount, 0);
+
+    script += `
+--------------------------------------------------------------------------------
+${linkNum}. [${statusLabel}]
+--------------------------------------------------------------------------------
+BROKEN URL:
+${data.originalUrl}
+
+`;
+
+    if (data.suggestedLink) {
+      script += `REPLACEMENT:
+${data.suggestedLink}
+`;
+      if (data.suggestedTitle) {
+        script += `Product: ${data.suggestedTitle}
+`;
+      }
+      if (data.suggestedPrice) {
+        script += `Price: ${data.suggestedPrice}
+`;
+      }
+      script += `Confidence: ${confidenceLabel}
+`;
+    } else {
+      script += `REPLACEMENT: No suggestion found yet
+`;
+    }
+
+    script += `
+Affects: ${data.videos.length} video${data.videos.length !== 1 ? "s" : ""} (${totalViews.toLocaleString()} total views)
+Videos:
+`;
+
+    data.videos.slice(0, 5).forEach((video, i) => {
+      const truncatedTitle = video.title.length > 50 ? video.title.slice(0, 47) + "..." : video.title;
+      script += `  ${i + 1}. ${truncatedTitle}
+`;
+    });
+
+    if (data.videos.length > 5) {
+      script += `  ... and ${data.videos.length - 5} more
+`;
+    }
+
+    linkNum++;
+  }
+
+  script += `
+================================================================================
+NEXT STEPS
+================================================================================
+1. Use "Find AI Replacements" in LinkMedic to get suggestions for links without them
+2. Export the TubeBuddy script for bulk fixing
+3. After fixing, click "Resync" in LinkMedic to verify
+
+Questions? Contact support@link-medic.app
+================================================================================
+`;
+
+  script = fixUtf8Encoding(script);
+
+  return {
+    script,
+    channelName,
+    uniqueLinks: grouped.size,
+    totalInstances: links.length,
+    totalRevenue,
+  };
+}
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -405,18 +616,23 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check format parameter - default to standard, support "tubebuddy"
+    // Check format parameter - default to standard, support "tubebuddy" and "report"
     const { searchParams } = new URL(request.url);
     const format = searchParams.get("format");
-    const isTubeBuddy = format === "tubebuddy";
 
     let script: string;
     let channelName: string;
     let uniqueLinks: number;
     let totalInstances: number;
 
-    if (isTubeBuddy) {
+    if (format === "tubebuddy") {
       const result = await generateTubeBuddyFixScript(session.user.id);
+      script = result.script;
+      channelName = result.channelName;
+      uniqueLinks = result.uniqueLinks;
+      totalInstances = result.totalInstances;
+    } else if (format === "report") {
+      const result = await generateReport(session.user.id);
       script = result.script;
       channelName = result.channelName;
       uniqueLinks = result.uniqueLinks;
@@ -430,21 +646,30 @@ export async function GET(request: NextRequest) {
     }
 
     if (uniqueLinks === 0) {
+      // Report format can show all broken links, even without suggestions
+      const errorMsg = format === "report"
+        ? "No broken links found."
+        : "No broken links with suggestions found. Run AI replacement finder first.";
       return NextResponse.json(
-        { error: "No broken links with suggestions found. Run AI replacement finder first." },
+        { error: errorMsg },
         { status: 404 }
       );
     }
 
-    // Generate filename
+    // Generate filename based on format
     const date = new Date().toISOString().split("T")[0];
     const safeChannelName = channelName.replace(/[^a-z0-9]/gi, "_").slice(0, 30);
-    const filename = isTubeBuddy
-      ? `LinkMedic_TubeBuddy_FixScript_${safeChannelName}_${date}.txt`
-      : `LinkMedic_FixScript_${safeChannelName}_${date}.txt`;
+    let filename: string;
+    if (format === "tubebuddy") {
+      filename = `LinkMedic_TubeBuddy_FixScript_${safeChannelName}_${date}.txt`;
+    } else if (format === "report") {
+      filename = `LinkMedic_Report_${safeChannelName}_${date}.txt`;
+    } else {
+      filename = `LinkMedic_FixScript_${safeChannelName}_${date}.txt`;
+    }
 
     console.log(
-      `[FixScript] Generated ${isTubeBuddy ? "TubeBuddy " : ""}script for ${channelName}: ${uniqueLinks} unique links, ${totalInstances} total instances`
+      `[FixScript] Generated ${format || "standard"} script for ${channelName}: ${uniqueLinks} unique links, ${totalInstances} total instances`
     );
 
     return new NextResponse(script, {
