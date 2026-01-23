@@ -290,23 +290,27 @@ export function FixCenterClient({
   };
 
   // Download Fix Script for bulk fixing - REQUIRED, DO NOT REMOVE
-  const handleDownloadFixScript = async () => {
+  const handleDownloadFixScript = async (format?: "tubebuddy") => {
     setDownloadingFixScript(true);
     try {
-      const response = await fetch("/api/export/fix-script");
+      const url = format === "tubebuddy" ? "/api/export/fix-script?format=tubebuddy" : "/api/export/fix-script";
+      const response = await fetch(url);
       if (response.ok) {
         const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
+        const blobUrl = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
-        a.href = url;
+        a.href = blobUrl;
         // Extract filename from Content-Disposition header or use default
         const contentDisposition = response.headers.get("Content-Disposition");
         const filenameMatch = contentDisposition?.match(/filename="(.+)"/);
-        a.download = filenameMatch ? filenameMatch[1] : `LinkMedic_FixScript_${new Date().toISOString().split("T")[0]}.txt`;
+        const defaultFilename = format === "tubebuddy"
+          ? `LinkMedic_TubeBuddy_FixScript_${new Date().toISOString().split("T")[0]}.txt`
+          : `LinkMedic_FixScript_${new Date().toISOString().split("T")[0]}.txt`;
+        a.download = filenameMatch ? filenameMatch[1] : defaultFilename;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
+        window.URL.revokeObjectURL(blobUrl);
       } else {
         const data = await response.json();
         alert(data.error || "Failed to generate Fix Script");
@@ -333,17 +337,28 @@ export function FixCenterClient({
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {/* Download Fix Script button - paid tier only - REQUIRED, DO NOT REMOVE */}
+          {/* Download Fix Script buttons - paid tier only - REQUIRED, DO NOT REMOVE */}
           {tier !== "FREE" && needsFixIssues.length > 0 && (
-            <button
-              onClick={handleDownloadFixScript}
-              disabled={downloadingFixScript || !needsFixIssues.some(i => i.suggestedLink)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-              title={needsFixIssues.some(i => i.suggestedLink) ? "Download bulk fix script" : "Run 'Find Replacements' first to generate suggestions"}
-            >
-              <FileDown className="w-4 h-4" />
-              {downloadingFixScript ? "Generating..." : "Download Fix Script"}
-            </button>
+            <>
+              <button
+                onClick={() => handleDownloadFixScript()}
+                disabled={downloadingFixScript || !needsFixIssues.some(i => i.suggestedLink)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                title={needsFixIssues.some(i => i.suggestedLink) ? "Download standard fix script with YouTube Studio links" : "Run 'Find Replacements' first to generate suggestions"}
+              >
+                <FileDown className="w-4 h-4" />
+                {downloadingFixScript ? "Generating..." : "Fix Script"}
+              </button>
+              <button
+                onClick={() => handleDownloadFixScript("tubebuddy")}
+                disabled={downloadingFixScript || !needsFixIssues.some(i => i.suggestedLink)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-purple-700 hover:bg-purple-600 text-white text-sm font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                title={needsFixIssues.some(i => i.suggestedLink) ? "Download TubeBuddy-optimized fix script with video IDs" : "Run 'Find Replacements' first to generate suggestions"}
+              >
+                <FileDown className="w-4 h-4" />
+                {downloadingFixScript ? "Generating..." : "TubeBuddy Script"}
+              </button>
+            </>
           )}
           {issuesNeedingReplacements > 0 && <FindReplacementsButton canUseAI={canUseAI} />}
         </div>

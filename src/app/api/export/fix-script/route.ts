@@ -1,8 +1,29 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatCurrency } from "@/lib/revenue-estimator";
+
+/**
+ * Fix common UTF-8 encoding issues in text
+ */
+function fixUtf8Encoding(text: string): string {
+  return text
+    .replace(/â€™/g, "'")
+    .replace(/â€œ/g, '"')
+    .replace(/â€/g, '"')
+    .replace(/â€"/g, "—")
+    .replace(/â€"/g, "–")
+    .replace(/â€¦/g, "...")
+    .replace(/Ã©/g, "é")
+    .replace(/Ã¨/g, "è")
+    .replace(/Ã /g, "à")
+    .replace(/Ã¢/g, "â")
+    .replace(/Ã®/g, "î")
+    .replace(/Ã´/g, "ô")
+    .replace(/Ã»/g, "û")
+    .replace(/Ã§/g, "ç");
+}
 
 /**
  * Generates a Fix Script for bulk fixing broken links.
@@ -174,7 +195,157 @@ function getStatusLabel(status: string): string {
   }
 }
 
-export async function GET() {
+/**
+ * Generates a TubeBuddy-optimized Fix Script for bulk fixing broken links.
+ * Video IDs are comma-separated for easy pasting into TubeBuddy's bulk editor.
+ */
+async function generateTubeBuddyFixScript(userId: string): Promise<{
+  script: string;
+  channelName: string;
+  uniqueLinks: number;
+  totalInstances: number;
+}> {
+  // Get user info
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { name: true },
+  });
+
+  // Get all broken links with suggestions, grouped by original URL
+  const links = await prisma.affiliateLink.findMany({
+    where: {
+      video: { userId },
+      status: { in: ["NOT_FOUND", "OOS", "OOS_THIRD_PARTY", "SEARCH_REDIRECT", "MISSING_TAG", "REDIRECT"] },
+      isFixed: false,
+      suggestedLink: { not: null },
+    },
+    include: {
+      video: {
+        select: { id: true, title: true, youtubeVideoId: true },
+      },
+    },
+    orderBy: { originalUrl: "asc" },
+  });
+
+  // Group by original URL, skipping search URL suggestions
+  const grouped = new Map<
+    string,
+    {
+      originalUrl: string;
+      suggestedLink: string;
+      videos: { title: string; youtubeVideoId: string }[];
+    }
+  >();
+
+  for (const link of links) {
+    // Skip if suggested link is a search URL (not a valid product replacement)
+    if (link.suggestedLink?.includes("/s?k=") || link.suggestedLink?.includes("/s?")) {
+      continue;
+    }
+
+    const key = link.originalUrl;
+    if (!grouped.has(key)) {
+      grouped.set(key, {
+        originalUrl: link.originalUrl,
+        suggestedLink: link.suggestedLink!,
+        videos: [],
+      });
+    }
+    grouped.get(key)!.videos.push({
+      title: fixUtf8Encoding(link.video.title),
+      youtubeVideoId: link.video.youtubeVideoId,
+    });
+  }
+
+  const channelName = user?.name || "Channel";
+  const date = new Date().toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  // Calculate totals
+  const totalUniqueLinks = grouped.size;
+  const totalVideoInstances = Array.from(grouped.values()).reduce((sum, g) => sum + g.videos.length, 0);
+
+  // Generate TubeBuddy-optimized script
+  let script = `================================================================================
+LINKMEDIC FIX SCRIPT - TUBEBUDDY EDITION
+================================================================================
+Channel: ${channelName}
+Generated: ${date}
+Total: ${totalUniqueLinks} unique broken links across ${totalVideoInstances} video instances
+
+================================================================================
+HOW TO USE WITH TUBEBUDDY
+================================================================================
+
+REQUIREMENTS:
+- TubeBuddy browser extension installed
+- TubeBuddy Pro or higher for bulk editing
+
+STEPS:
+1. Click the TubeBuddy dropdown (browser extension)
+2. Select "Find & Replace Text" from Bulk Video Processing
+3. Paste the FIND value into "Find Text" field
+4. Paste the REPLACE value into "Replace Text" field
+5. Click Continue
+6. Choose "A list of video IDs that I specify"
+7. Paste the VIDEO IDs below (comma-separated)
+8. Click Continue
+9. Select All Videos (make sure all are checked)
+10. Confirm Action (Yes, do it)
+11. Click Start
+12. Repeat for each link below
+
+`;
+
+  let linkNum = 1;
+  for (const [, data] of grouped) {
+    // Create comma-separated video ID list (no spaces)
+    const videoIds = data.videos.map((v) => v.youtubeVideoId).join(",");
+
+    script += `================================================================================
+LINK ${linkNum} OF ${totalUniqueLinks}
+================================================================================
+
+FIND:
+${data.originalUrl}
+
+REPLACE:
+${data.suggestedLink}
+
+VIDEO IDs (copy this entire line):
+${videoIds}
+
+`;
+    linkNum++;
+  }
+
+  script += `================================================================================
+SUMMARY
+================================================================================
+Total links to fix: ${totalUniqueLinks}
+Total videos affected: ${totalVideoInstances}
+
+Once complete, return to LinkMedic and click "Resync" to verify fixes.
+
+Questions? support@link-medic.app
+================================================================================
+`;
+
+  // Fix any remaining UTF-8 encoding issues
+  script = fixUtf8Encoding(script);
+
+  return {
+    script,
+    channelName,
+    uniqueLinks: totalUniqueLinks,
+    totalInstances: totalVideoInstances,
+  };
+}
+
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -195,9 +366,29 @@ export async function GET() {
       );
     }
 
-    const { script, channelName, uniqueLinks, totalInstances } = await generateFixScript(
-      session.user.id
-    );
+    // Check format parameter - default to standard, support "tubebuddy"
+    const { searchParams } = new URL(request.url);
+    const format = searchParams.get("format");
+    const isTubeBuddy = format === "tubebuddy";
+
+    let script: string;
+    let channelName: string;
+    let uniqueLinks: number;
+    let totalInstances: number;
+
+    if (isTubeBuddy) {
+      const result = await generateTubeBuddyFixScript(session.user.id);
+      script = result.script;
+      channelName = result.channelName;
+      uniqueLinks = result.uniqueLinks;
+      totalInstances = result.totalInstances;
+    } else {
+      const result = await generateFixScript(session.user.id);
+      script = result.script;
+      channelName = result.channelName;
+      uniqueLinks = result.uniqueLinks;
+      totalInstances = result.totalInstances;
+    }
 
     if (uniqueLinks === 0) {
       return NextResponse.json(
@@ -209,10 +400,12 @@ export async function GET() {
     // Generate filename
     const date = new Date().toISOString().split("T")[0];
     const safeChannelName = channelName.replace(/[^a-z0-9]/gi, "_").slice(0, 30);
-    const filename = `LinkMedic_FixScript_${safeChannelName}_${date}.txt`;
+    const filename = isTubeBuddy
+      ? `LinkMedic_TubeBuddy_FixScript_${safeChannelName}_${date}.txt`
+      : `LinkMedic_FixScript_${safeChannelName}_${date}.txt`;
 
     console.log(
-      `[FixScript] Generated for ${channelName}: ${uniqueLinks} unique links, ${totalInstances} total instances`
+      `[FixScript] Generated ${isTubeBuddy ? "TubeBuddy " : ""}script for ${channelName}: ${uniqueLinks} unique links, ${totalInstances} total instances`
     );
 
     return new NextResponse(script, {

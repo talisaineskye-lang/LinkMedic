@@ -290,6 +290,9 @@ export async function syncUserVideos(userId: string): Promise<{ synced: number; 
           description: video.description,
           thumbnailUrl: video.thumbnailUrl,
           viewCount: video.viewCount,
+          // IMPORTANT: Update userId to ensure video belongs to current user
+          // This fixes the case where a video was previously synced by another account
+          userId,
         },
       });
       synced++;
