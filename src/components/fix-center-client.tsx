@@ -670,6 +670,14 @@ export function FixCenterClient({
                               >
                                 <ExternalLink className="w-3 h-3 text-slate-400" />
                               </a>
+                              <button
+                                onClick={() => handleFindReplacement(group.linkIds[0])}
+                                disabled={findingId === group.linkIds[0]}
+                                className="p-1 rounded bg-slate-700/50 hover:bg-slate-600/50 transition"
+                                title="Re-scan for new suggestion"
+                              >
+                                <RefreshCw className={`w-3 h-3 text-slate-400 ${findingId === group.linkIds[0] ? 'animate-spin' : ''}`} />
+                              </button>
                             </div>
                           </div>
                         ) : (
@@ -712,24 +720,50 @@ export function FixCenterClient({
                       {/* Action */}
                       <td className="px-4 py-4 text-center">
                         {group.suggestedLink ? (
-                          <button
-                            onClick={() => handleMarkAllFixed(group.originalUrl, group.linkIds)}
-                            disabled={markingAllFixedUrl === group.originalUrl}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-600 text-white transition"
-                          >
-                            {markingAllFixedUrl === group.originalUrl ? (
-                              "Marking..."
-                            ) : (
-                              <>
-                                <Check className="w-3 h-3" />
-                                Mark All Fixed ({group.linkIds.length})
-                              </>
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => handleMarkAllFixed(group.originalUrl, group.linkIds)}
+                              disabled={markingAllFixedUrl === group.originalUrl}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-600 text-white transition"
+                            >
+                              {markingAllFixedUrl === group.originalUrl ? (
+                                "Marking..."
+                              ) : (
+                                <>
+                                  <Check className="w-3 h-3" />
+                                  Mark All Fixed ({group.linkIds.length})
+                                </>
+                              )}
+                            </button>
+                            {group.videos.length === 1 && (
+                              <a
+                                href={`https://studio.youtube.com/video/${group.videos[0].youtubeVideoId}/edit`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 transition"
+                                title="Edit in YouTube Studio"
+                              >
+                                <Pencil className="w-3.5 h-3.5 text-slate-300" />
+                              </a>
                             )}
-                          </button>
+                          </div>
                         ) : (
-                          <span className="text-xs text-slate-500 italic">
-                            Find replacement first
-                          </span>
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="text-xs text-slate-500 italic">
+                              Find replacement first
+                            </span>
+                            {group.videos.length === 1 && (
+                              <a
+                                href={`https://studio.youtube.com/video/${group.videos[0].youtubeVideoId}/edit`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 transition"
+                                title="Edit in YouTube Studio"
+                              >
+                                <Pencil className="w-3.5 h-3.5 text-slate-300" />
+                              </a>
+                            )}
+                          </div>
                         )}
                       </td>
                     </tr>
@@ -855,6 +889,16 @@ export function FixCenterClient({
                             >
                               <ExternalLink className="w-3 h-3 text-slate-400" />
                             </a>
+                            {activeTab === "needs-fix" && (
+                              <button
+                                onClick={() => handleFindReplacement(issue.id)}
+                                disabled={findingId === issue.id}
+                                className="p-1 rounded bg-slate-700/50 hover:bg-slate-600/50 transition"
+                                title="Re-scan for new suggestion"
+                              >
+                                <RefreshCw className={`w-3 h-3 text-slate-400 ${findingId === issue.id ? 'animate-spin' : ''}`} />
+                              </button>
+                            )}
                           </div>
                         </div>
                       ) : activeTab === "needs-fix" ? (

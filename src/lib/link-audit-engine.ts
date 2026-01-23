@@ -93,6 +93,29 @@ function isSearchRedirect(url: string): boolean {
   );
 }
 
+/**
+ * Get the appropriate country code for ScrapingBee proxy based on Amazon domain
+ */
+function getCountryCode(url: string): string {
+  const lowerUrl = url.toLowerCase();
+  if (lowerUrl.includes("amazon.ca")) return "ca";
+  if (lowerUrl.includes("amazon.co.uk")) return "gb";
+  if (lowerUrl.includes("amazon.de")) return "de";
+  if (lowerUrl.includes("amazon.fr")) return "fr";
+  if (lowerUrl.includes("amazon.es")) return "es";
+  if (lowerUrl.includes("amazon.it")) return "it";
+  if (lowerUrl.includes("amazon.com.au")) return "au";
+  if (lowerUrl.includes("amazon.co.jp")) return "jp";
+  if (lowerUrl.includes("amazon.in")) return "in";
+  if (lowerUrl.includes("amazon.com.mx")) return "mx";
+  if (lowerUrl.includes("amazon.com.br")) return "br";
+  if (lowerUrl.includes("amazon.nl")) return "nl";
+  if (lowerUrl.includes("amazon.se")) return "se";
+  if (lowerUrl.includes("amazon.pl")) return "pl";
+  if (lowerUrl.includes("amazon.sg")) return "sg";
+  return "us"; // default for amazon.com and others
+}
+
 // ============================================
 // CACHE OPERATIONS
 // ============================================
@@ -192,11 +215,14 @@ async function fetchWithScrapingBee(url: string): Promise<FetchResult> {
   }
 
   try {
+    const countryCode = getCountryCode(url);
+    console.log(`[Audit] Fetching ${url.slice(0, 50)}... with proxy country: ${countryCode}`);
+
     const params = new URLSearchParams({
       api_key: apiKey,
       url: url,
       premium_proxy: "true",
-      country_code: "us",
+      country_code: countryCode,
       render_js: "false",
       transparent_status_code: "true",
     });
