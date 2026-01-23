@@ -31,6 +31,9 @@ model User {
   monitoringEnabled  Boolean   @default(false) // Link Guard feature
   alertsEnabled      Boolean   @default(false) // Email alerts for status changes
 
+  // Affiliate settings
+  affiliateTag       String?                   // User's Amazon affiliate tag (e.g., "mychannel-20")
+
   accounts           Account[]
   sessions           Session[]
   videos             Video[]

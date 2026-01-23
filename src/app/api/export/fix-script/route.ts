@@ -5,6 +5,27 @@ import { prisma } from "@/lib/db";
 import { formatCurrency } from "@/lib/revenue-estimator";
 
 /**
+ * Ensure URL has the correct affiliate tag
+ * Replaces any existing tag with the user's tag
+ */
+function ensureAffiliateTag(url: string, userTag: string): string {
+  try {
+    const urlObj = new URL(url);
+    // Set the tag parameter, replacing any existing one
+    urlObj.searchParams.set("tag", userTag);
+    return urlObj.toString();
+  } catch {
+    // If URL parsing fails, try simple string replacement
+    if (url.includes("tag=")) {
+      return url.replace(/tag=[^&]+/, `tag=${userTag}`);
+    }
+    // Add tag if not present
+    const separator = url.includes("?") ? "&" : "?";
+    return `${url}${separator}tag=${userTag}`;
+  }
+}
+
+/**
  * Fix common UTF-8 encoding issues in text
  */
 function fixUtf8Encoding(text: string): string {
@@ -36,11 +57,14 @@ async function generateFixScript(userId: string): Promise<{
   totalInstances: number;
   totalRevenue: number;
 }> {
-  // Get user info
+  // Get user info including affiliate tag
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { name: true },
+    select: { name: true, affiliateTag: true },
   });
+
+  // User's affiliate tag for ensuring correct tags in replacement URLs
+  const userTag = user?.affiliateTag;
 
   // Get all broken links with suggestions, grouped by original URL
   const links = await prisma.affiliateLink.findMany({
@@ -75,9 +99,15 @@ async function generateFixScript(userId: string): Promise<{
   for (const link of links) {
     const key = link.originalUrl;
     if (!grouped.has(key)) {
+      // Ensure replacement URL has user's affiliate tag (if they have one set)
+      let finalSuggestedLink = link.suggestedLink!;
+      if (userTag) {
+        finalSuggestedLink = ensureAffiliateTag(finalSuggestedLink, userTag);
+      }
+
       grouped.set(key, {
         originalUrl: link.originalUrl,
-        suggestedLink: link.suggestedLink!,
+        suggestedLink: finalSuggestedLink,
         suggestedTitle: link.suggestedTitle,
         status: link.status,
         videos: [],
@@ -205,11 +235,14 @@ async function generateTubeBuddyFixScript(userId: string): Promise<{
   uniqueLinks: number;
   totalInstances: number;
 }> {
-  // Get user info
+  // Get user info including affiliate tag
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { name: true },
+    select: { name: true, affiliateTag: true },
   });
+
+  // User's affiliate tag for ensuring correct tags in replacement URLs
+  const userTag = user?.affiliateTag;
 
   // Get all broken links with suggestions, grouped by original URL
   const links = await prisma.affiliateLink.findMany({
@@ -245,9 +278,15 @@ async function generateTubeBuddyFixScript(userId: string): Promise<{
 
     const key = link.originalUrl;
     if (!grouped.has(key)) {
+      // Ensure replacement URL has user's affiliate tag (if they have one set)
+      let finalSuggestedLink = link.suggestedLink!;
+      if (userTag) {
+        finalSuggestedLink = ensureAffiliateTag(finalSuggestedLink, userTag);
+      }
+
       grouped.set(key, {
         originalUrl: link.originalUrl,
-        suggestedLink: link.suggestedLink!,
+        suggestedLink: finalSuggestedLink,
         videos: [],
       });
     }

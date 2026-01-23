@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { findReplacementProduct, getConfidenceLevel } from "@/lib/suggestion-engine";
-import { extractAffiliateTag, isAmazonDomain } from "@/lib/link-audit-engine";
+import { isAmazonDomain } from "@/lib/link-audit-engine";
 import { checkTierLimits, getUpgradeMessage } from "@/lib/tier-limits";
 import { LinkStatus } from "@prisma/client";
 
@@ -124,28 +124,24 @@ export async function POST(request: Request) {
       });
     }
 
-    // Find user's affiliate tag from existing links
-    let userAffiliateTag: string | null = null;
-    const existingLinks = await prisma.affiliateLink.findMany({
-      where: {
-        video: { userId: session.user.id },
-        merchant: "amazon",
-      },
-      select: { originalUrl: true },
-      take: 50,
+    // Get user's affiliate tag from their settings - REQUIRED
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { affiliateTag: true },
     });
 
-    for (const link of existingLinks) {
-      const tag = extractAffiliateTag(link.originalUrl);
-      if (tag) {
-        userAffiliateTag = tag;
-        console.log(`[find-replacements] Found user affiliate tag: ${tag}`);
-        break;
-      }
+    if (!user?.affiliateTag) {
+      return NextResponse.json({
+        success: false,
+        error: "Please add your Amazon affiliate tag in Settings before finding replacements.",
+        processed: 0,
+        found: 0,
+        requiresTag: true,
+      }, { status: 400 });
     }
 
-    // Default tag if none found
-    const affiliateTag = userAffiliateTag || "projectfarmyo-20";
+    const affiliateTag = user.affiliateTag;
+    console.log(`[find-replacements] Using user's affiliate tag: ${affiliateTag}`);
 
     let found = 0;
     const results: Array<{

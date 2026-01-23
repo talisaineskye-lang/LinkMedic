@@ -13,7 +13,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { ctrPercent, conversionPercent, avgOrderValue } = body;
+    const { ctrPercent, conversionPercent, avgOrderValue, affiliateTag } = body;
 
     // Validate settings
     const validation = validateSettings({
@@ -29,6 +29,18 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Validate affiliate tag format (e.g., "mychannel-20")
+    if (affiliateTag && typeof affiliateTag === "string" && affiliateTag.length > 0) {
+      // Basic validation: should be alphanumeric with hyphens, typically ends in -20
+      const tagPattern = /^[a-zA-Z0-9_-]+$/;
+      if (!tagPattern.test(affiliateTag)) {
+        return NextResponse.json(
+          { error: "Invalid affiliate tag format. Use only letters, numbers, hyphens, and underscores." },
+          { status: 400 }
+        );
+      }
+    }
+
     // Update user settings
     await prisma.user.update({
       where: { id: session.user.id },
@@ -36,6 +48,7 @@ export async function PUT(request: NextRequest) {
         ctrPercent,
         conversionPercent,
         avgOrderValue,
+        affiliateTag: affiliateTag || null,
       },
     });
 

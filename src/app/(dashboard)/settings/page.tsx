@@ -20,6 +20,7 @@ export default async function SettingsPage() {
       ctrPercent: true,
       conversionPercent: true,
       avgOrderValue: true,
+      affiliateTag: true,
       subscriptionStatus: true,
       trialEndsAt: true,
     },
@@ -98,6 +99,7 @@ export default async function SettingsPage() {
             ctrPercent: user.ctrPercent ?? 2.0,
             conversionPercent: user.conversionPercent ?? 3.0,
             avgOrderValue: user.avgOrderValue ?? 45.0,
+            affiliateTag: user.affiliateTag ?? "",
           }}
         />
       </div>

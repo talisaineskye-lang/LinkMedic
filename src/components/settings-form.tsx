@@ -8,6 +8,7 @@ interface SettingsFormProps {
     ctrPercent: number;
     conversionPercent: number;
     avgOrderValue: number;
+    affiliateTag: string;
   };
 }
 
@@ -47,6 +48,25 @@ export function SettingsForm({ initialValues }: SettingsFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label htmlFor="affiliateTag" className="block text-sm font-medium text-slate-300 mb-1">
+          Amazon Affiliate Tag
+        </label>
+        <input
+          type="text"
+          id="affiliateTag"
+          placeholder="e.g., mychannel-20"
+          value={values.affiliateTag}
+          onChange={(e) =>
+            setValues({ ...values, affiliateTag: e.target.value.trim() })
+          }
+          className="w-full max-w-xs px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+        />
+        <p className="text-xs text-slate-500 mt-1">
+          Your Amazon Associates tag (required for AI replacement links). Find it in your Amazon Associates dashboard.
+        </p>
+      </div>
+
       <div>
         <label htmlFor="ctrPercent" className="block text-sm font-medium text-slate-300 mb-1">
           Click-Through Rate (CTR) %

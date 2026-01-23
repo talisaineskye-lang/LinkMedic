@@ -16,7 +16,6 @@ import { extractAsin, appendAffiliateTag } from "./link-audit-engine";
 // CONFIGURATION
 // ============================================
 
-const DEFAULT_AFFILIATE_TAG = "projectfarmyo-20";
 const MAX_SEARCH_RESULTS = 5;
 
 // ============================================
@@ -686,9 +685,20 @@ export async function findReplacementProduct(
   _videoTitle: string,  // Ignored - not reliable for product identification
   _videoDescription?: string,  // Ignored - not reliable for product identification
   originalProductTitle?: string,
-  affiliateTag?: string
+  affiliateTag?: string  // User's affiliate tag - REQUIRED for correct commission attribution
 ): Promise<SuggestionResult> {
-  const tag = affiliateTag || DEFAULT_AFFILIATE_TAG;
+  if (!affiliateTag) {
+    return {
+      success: false,
+      originalProductName: null,
+      searchQuery: null,
+      bestMatch: null,
+      alternativeMatches: [],
+      error: "Affiliate tag is required. Please set your Amazon affiliate tag in Settings.",
+    };
+  }
+
+  const tag = affiliateTag;
 
   console.log(`[Suggestion] Starting replacement search for: ${originalUrl.slice(0, 60)}...`);
 
