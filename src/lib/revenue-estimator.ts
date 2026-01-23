@@ -200,7 +200,7 @@ export const SEVERITY_FACTORS: Record<string, number> = {
 };
 
 /**
- * Calculates estimated current monthly views using a decay function
+ * Calculates estimated current monthly views using smooth exponential decay
  *
  * YouTube views follow a power-law decay:
  * - First month: highest views (viral period)
@@ -209,6 +209,10 @@ export const SEVERITY_FACTORS: Record<string, number> = {
  * - 12+ months: "long tail" - typically 5-10% of average monthly
  *
  * For evergreen/search content, decay is slower
+ *
+ * IMPORTANT: Applies sanity caps to prevent inflated estimates:
+ * - Max 500K monthly views (even massive creators rarely sustain more per video)
+ * - Smooth exponential decay for ALL videos (no cliff effects)
  *
  * @param lifetimeViews - Total views the video has received
  * @param videoAgeMonths - How old the video is
@@ -231,22 +235,28 @@ export function estimateCurrentMonthlyViews(
   const ageInMonths = Math.max(videoAgeMonths, 1);
   const naiveMonthlyAverage = lifetimeViews / ageInMonths;
 
-  // For recent videos (< 3 months), use naive average
-  // They're still in their "growth" phase
-  if (videoAgeMonths < 3) {
-    return naiveMonthlyAverage;
-  }
+  // SANITY CAP: No single video realistically sustains more than 500K views/month
+  // Even massive creators rarely sustain this on a single video
+  const MAX_REALISTIC_MONTHLY_VIEWS = 500000;
 
-  // For videos 3-12 months old, apply mild decay
-  if (videoAgeMonths <= 12) {
-    const decayFactor = isEvergreen ? 0.7 : 0.5;
-    return naiveMonthlyAverage * decayFactor;
-  }
+  // Apply smooth exponential decay for ALL videos (no more cliffs)
+  // Decay rate: higher = faster decay
+  // - Recent videos (0-3 months): minimal decay
+  // - Medium videos (3-12 months): moderate decay
+  // - Old videos (12+ months): significant decay
+  const baseDecayRate = isEvergreen ? 0.03 : 0.08;
+  const minMultiplier = isEvergreen ? 0.10 : 0.05;
 
-  // For videos > 12 months old, apply strong decay
-  // Evergreen content retains ~15% of average, regular content ~7%
-  const longTailFactor = isEvergreen ? 0.15 : 0.07;
-  return naiveMonthlyAverage * longTailFactor;
+  // Smooth decay curve using exponential function
+  const decayMultiplier = Math.max(
+    Math.exp(-baseDecayRate * videoAgeMonths),
+    minMultiplier
+  );
+
+  const estimatedMonthly = naiveMonthlyAverage * decayMultiplier;
+
+  // Apply sanity cap
+  return Math.min(estimatedMonthly, MAX_REALISTIC_MONTHLY_VIEWS);
 }
 
 /**
@@ -255,6 +265,10 @@ export function estimateCurrentMonthlyViews(
  * Formula: Monthly Views × CTR × Conversion Rate × AOV × Commission % × Severity
  *
  * This represents the creator's ACTUAL lost earnings, not gross merchandise value.
+ *
+ * IMPORTANT: Applies a $50/month per-link sanity cap to prevent inflated estimates.
+ * Even with perfect conditions: 500K views × 1% CTR × 1.5% CR × $45 × 3% = $10.13
+ * $50 allows for higher-AOV niches while preventing absurd numbers.
  *
  * @param viewCount - Number of video views (lifetime)
  * @param status - Link status (MISSING_TAG, NOT_FOUND, OOS, REDIRECT, OK, UNKNOWN)
@@ -290,7 +304,7 @@ export function calculateRevenueImpact(
     return 0;
   }
 
-  // Estimate current monthly views (with decay function)
+  // Estimate current monthly views (with decay function and sanity cap)
   const monthlyViews = estimateCurrentMonthlyViews(
     viewCount,
     videoAgeMonths,
@@ -302,8 +316,14 @@ export function calculateRevenueImpact(
   // Monthly Views × CTR × CR × AOV × Commission % × Severity
   const impact = monthlyViews * ctr * conversionRate * avgOrderValue * commissionRate * severityFactor;
 
-  // Round to 2 decimal places
-  return Math.round(impact * 100) / 100;
+  // SANITY CAP: No single broken link realistically costs more than $50/month
+  // This prevents absurd estimates while still being compelling for sales:
+  // - $50/month = $600/year per broken link
+  // - 10 broken links = $6,000/year potential loss (defensible, not snake-oil)
+  const MAX_PER_LINK_IMPACT = 50;
+
+  // Round to 2 decimal places and apply cap
+  return Math.round(Math.min(impact, MAX_PER_LINK_IMPACT) * 100) / 100;
 }
 
 /**
