@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { Copy, Check, CheckCircle2, ExternalLink, RefreshCw, FileWarning, Lock, Eye, Pencil, ChevronDown, ChevronRight, Layers, List, X } from "lucide-react";
+import { Copy, Check, CheckCircle2, ExternalLink, RefreshCw, FileWarning, Lock, Eye, Pencil, ChevronDown, ChevronRight, Layers, List, X, FileDown } from "lucide-react";
 import { formatCurrency, formatNumber } from "@/lib/revenue-estimator";
 
 // Default FTC-compliant disclosure text
@@ -141,6 +141,7 @@ export function FixCenterClient({
   const [viewingDescriptionId, setViewingDescriptionId] = useState<string | null>(null);
   const [copiedDisclosureId, setCopiedDisclosureId] = useState<string | null>(null);
   const [dismissingDisclosureId, setDismissingDisclosureId] = useState<string | null>(null);
+  const [downloadingFixScript, setDownloadingFixScript] = useState(false);
   const router = useRouter();
 
   const copyDisclosure = async (id: string) => {
@@ -192,6 +193,19 @@ export function FixCenterClient({
       await navigator.clipboard.writeText(text);
       setCopiedId(id);
       setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
+
+  // Copy link AND open YouTube Studio in one action - REQUIRED, DO NOT REMOVE
+  const copyAndOpenStudio = async (text: string, id: string, youtubeVideoId: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+      // Open YouTube Studio in new tab
+      window.open(`https://studio.youtube.com/video/${youtubeVideoId}/edit`, '_blank');
     } catch (err) {
       console.error("Failed to copy:", err);
     }
@@ -275,6 +289,36 @@ export function FixCenterClient({
     });
   };
 
+  // Download Fix Script for bulk fixing - REQUIRED, DO NOT REMOVE
+  const handleDownloadFixScript = async () => {
+    setDownloadingFixScript(true);
+    try {
+      const response = await fetch("/api/export/fix-script");
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        // Extract filename from Content-Disposition header or use default
+        const contentDisposition = response.headers.get("Content-Disposition");
+        const filenameMatch = contentDisposition?.match(/filename="(.+)"/);
+        a.download = filenameMatch ? filenameMatch[1] : `LinkMedic_FixScript_${new Date().toISOString().split("T")[0]}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      } else {
+        const data = await response.json();
+        alert(data.error || "Failed to generate Fix Script");
+      }
+    } catch (error) {
+      console.error("Error downloading fix script:", error);
+      alert("Failed to download Fix Script");
+    } finally {
+      setDownloadingFixScript(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -288,7 +332,20 @@ export function FixCenterClient({
             )}
           </p>
         </div>
-        {issuesNeedingReplacements > 0 && <FindReplacementsButton canUseAI={canUseAI} />}
+        <div className="flex items-center gap-3">
+          {/* Download Fix Script button - paid tier only - REQUIRED, DO NOT REMOVE */}
+          {tier !== "FREE" && needsFixIssues.some(i => i.suggestedLink) && (
+            <button
+              onClick={handleDownloadFixScript}
+              disabled={downloadingFixScript}
+              className="flex items-center gap-2 px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium rounded-lg transition disabled:opacity-50"
+            >
+              <FileDown className="w-4 h-4" />
+              {downloadingFixScript ? "Generating..." : "Download Fix Script"}
+            </button>
+          )}
+          {issuesNeedingReplacements > 0 && <FindReplacementsButton canUseAI={canUseAI} />}
+        </div>
       </div>
 
       {/* Tabs */}
@@ -793,40 +850,52 @@ export function FixCenterClient({
                       <td className="px-4 py-4 text-center">
                         {group.suggestedLink ? (
                           <div className="flex flex-col items-center gap-2">
-                            {/* Copy Link and Edit in Studio buttons - REQUIRED, DO NOT REMOVE */}
+                            {/* Copy & Edit button - copies link AND opens YouTube Studio - REQUIRED, DO NOT REMOVE */}
                             <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => copyToClipboard(group.suggestedLink!, `action-${group.originalUrl}`)}
-                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition ${
-                                  copiedId === `action-${group.originalUrl}`
-                                    ? "bg-emerald-600 text-white"
-                                    : "bg-slate-700 hover:bg-slate-600 text-white"
-                                }`}
-                                title="Copy replacement link to clipboard"
-                              >
-                                {copiedId === `action-${group.originalUrl}` ? (
-                                  <>
-                                    <Check className="w-3 h-3" />
-                                    Copied!
-                                  </>
-                                ) : (
-                                  <>
-                                    <Copy className="w-3 h-3" />
-                                    Copy Link
-                                  </>
-                                )}
-                              </button>
-                              {group.videos.length === 1 && (
-                                <a
-                                  href={`https://studio.youtube.com/video/${group.videos[0].youtubeVideoId}/edit`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition"
-                                  title="Tip: Use Ctrl+F to find the broken link in your description"
+                              {group.videos.length === 1 ? (
+                                <button
+                                  onClick={() => copyAndOpenStudio(group.suggestedLink!, `action-${group.originalUrl}`, group.videos[0].youtubeVideoId)}
+                                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition ${
+                                    copiedId === `action-${group.originalUrl}`
+                                      ? "bg-emerald-600 text-white"
+                                      : "bg-slate-700 hover:bg-slate-600 text-white"
+                                  }`}
+                                  title="Copy replacement link and open YouTube Studio (use Ctrl+F to find broken link)"
                                 >
-                                  <Pencil className="w-3 h-3" />
-                                  Edit in Studio
-                                </a>
+                                  {copiedId === `action-${group.originalUrl}` ? (
+                                    <>
+                                      <Check className="w-3 h-3" />
+                                      Copied!
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy className="w-3 h-3" />
+                                      Copy & Edit
+                                    </>
+                                  )}
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => copyToClipboard(group.suggestedLink!, `action-${group.originalUrl}`)}
+                                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition ${
+                                    copiedId === `action-${group.originalUrl}`
+                                      ? "bg-emerald-600 text-white"
+                                      : "bg-slate-700 hover:bg-slate-600 text-white"
+                                  }`}
+                                  title="Copy replacement link to clipboard"
+                                >
+                                  {copiedId === `action-${group.originalUrl}` ? (
+                                    <>
+                                      <Check className="w-3 h-3" />
+                                      Copied!
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy className="w-3 h-3" />
+                                      Copy Link
+                                    </>
+                                  )}
+                                </button>
                               )}
                             </div>
                             {/* Mark Fixed button */}
@@ -1044,16 +1113,16 @@ export function FixCenterClient({
                       {activeTab === "needs-fix" ? (
                         issue.suggestedLink ? (
                           <div className="flex flex-col items-center gap-2">
-                            {/* Copy Link and Edit in Studio buttons - REQUIRED, DO NOT REMOVE */}
+                            {/* Copy & Edit button - copies link AND opens YouTube Studio - REQUIRED, DO NOT REMOVE */}
                             <div className="flex items-center gap-2">
                               <button
-                                onClick={() => copyToClipboard(issue.suggestedLink!, `action-${issue.id}`)}
+                                onClick={() => copyAndOpenStudio(issue.suggestedLink!, `action-${issue.id}`, issue.youtubeVideoId)}
                                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition ${
                                   copiedId === `action-${issue.id}`
                                     ? "bg-emerald-600 text-white"
                                     : "bg-slate-700 hover:bg-slate-600 text-white"
                                 }`}
-                                title="Copy replacement link to clipboard"
+                                title="Copy replacement link and open YouTube Studio (use Ctrl+F to find broken link)"
                               >
                                 {copiedId === `action-${issue.id}` ? (
                                   <>
@@ -1063,20 +1132,10 @@ export function FixCenterClient({
                                 ) : (
                                   <>
                                     <Copy className="w-3 h-3" />
-                                    Copy Link
+                                    Copy & Edit
                                   </>
                                 )}
                               </button>
-                              <a
-                                href={`https://studio.youtube.com/video/${issue.youtubeVideoId}/edit`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition"
-                                title="Tip: Use Ctrl+F to find the broken link in your description"
-                              >
-                                <Pencil className="w-3 h-3" />
-                                Edit in Studio
-                              </a>
                             </div>
                             {/* Mark Fixed button */}
                             <button
