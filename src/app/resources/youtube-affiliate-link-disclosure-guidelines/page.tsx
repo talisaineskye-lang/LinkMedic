@@ -57,7 +57,7 @@ export default function YouTubeAffiliateDisclosureGuidelines() {
         <p className="text-lg text-slate-300 mb-12">
           To stay compliant with the Federal Trade Commission (FTC) in 2026, an affiliate disclaimer must be
           <strong className="text-white"> clear, conspicuous, and unavoidable</strong>. The FTC&apos;s primary goal is to
-          ensure viewers understand your financial relationship with a brand before they click a link.
+          ensure viewers understand their financial relationship with a brand before they click a link.
         </p>
 
         {/* Where to Place the Disclaimer */}
