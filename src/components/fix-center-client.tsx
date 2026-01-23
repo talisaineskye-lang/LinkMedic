@@ -334,11 +334,12 @@ export function FixCenterClient({
         </div>
         <div className="flex items-center gap-3">
           {/* Download Fix Script button - paid tier only - REQUIRED, DO NOT REMOVE */}
-          {tier !== "FREE" && needsFixIssues.some(i => i.suggestedLink) && (
+          {tier !== "FREE" && needsFixIssues.length > 0 && (
             <button
               onClick={handleDownloadFixScript}
-              disabled={downloadingFixScript}
-              className="flex items-center gap-2 px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium rounded-lg transition disabled:opacity-50"
+              disabled={downloadingFixScript || !needsFixIssues.some(i => i.suggestedLink)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+              title={needsFixIssues.some(i => i.suggestedLink) ? "Download bulk fix script" : "Run 'Find Replacements' first to generate suggestions"}
             >
               <FileDown className="w-4 h-4" />
               {downloadingFixScript ? "Generating..." : "Download Fix Script"}
