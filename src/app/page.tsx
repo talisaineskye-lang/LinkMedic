@@ -33,7 +33,7 @@ export default async function Home() {
             href="/audit"
             className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
           >
-            Scan My Channel Free
+            Scan My Channel
           </Link>
         </div>
       </header>
@@ -71,7 +71,7 @@ export default async function Home() {
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all hover:scale-105"
             >
               <Play className="w-5 h-5" />
-              Scan My Channel Free
+              Scan My Channel
             </Link>
             <a
               href="#how-it-works"
@@ -240,7 +240,7 @@ export default async function Home() {
             href="/audit"
             className="inline-block bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-8 rounded-lg text-lg transition-colors"
           >
-            Scan My Channel Free
+            Scan My Channel
           </Link>
         </div>
       </section>
@@ -290,7 +290,7 @@ export default async function Home() {
                 href="/audit"
                 className="block w-full bg-slate-700 hover:bg-slate-600 text-white text-center py-4 rounded-xl font-semibold transition-all border border-slate-600/50"
               >
-                Scan My Channel Free
+                Scan My Channel
               </Link>
             </div>
 
@@ -540,7 +540,7 @@ export default async function Home() {
           className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-8 rounded-lg text-lg transition-colors"
         >
           <Play className="w-5 h-5" />
-          Scan My Channel Free
+          Scan My Channel
         </Link>
         <p className="text-sm text-slate-500 mt-4">
           No credit card required &middot; Results in under 2 minutes

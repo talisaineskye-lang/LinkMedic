@@ -99,13 +99,22 @@ export function SubscriptionSection({
           </div>
 
           {isPaid && hasStripeCustomer && (
-            <button
-              onClick={handleManageSubscription}
-              disabled={loading}
-              className="px-4 py-2 text-sm font-medium text-white bg-slate-700 hover:bg-slate-600 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? "Loading..." : "Manage Subscription"}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleManageSubscription}
+                disabled={loading}
+                className="px-4 py-2 text-sm font-medium text-white bg-slate-700 hover:bg-slate-600 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? "Loading..." : "Manage Subscription"}
+              </button>
+              <button
+                onClick={handleManageSubscription}
+                disabled={loading}
+                className="px-4 py-2 text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+            </div>
           )}
         </div>
 
@@ -166,6 +175,11 @@ export function SubscriptionSection({
               You have access to all {tier === "PORTFOLIO" ? "Portfolio Manager" : "Specialist"} features
               including AI suggestions, exports, and Link Guard monitoring.
             </p>
+            {hasStripeCustomer && (
+              <p className="text-xs text-slate-500 mt-3">
+                Manage your payment method, view invoices, or cancel your subscription through Stripe&apos;s secure portal.
+              </p>
+            )}
           </div>
         )}
 

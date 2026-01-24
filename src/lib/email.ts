@@ -393,3 +393,120 @@ export async function sendPaymentFailedEmail(to: string): Promise<{ success: boo
   console.log(`[Email] Payment failed email sent to ${to}`, data);
   return { success: true, data };
 }
+
+/**
+ * Sends a weekly digest email to paid users with Link Guard monitoring
+ */
+export async function sendWeeklyDigestEmail(
+  to: string,
+  name: string,
+  channelName: string,
+  data: {
+    newBrokenLinks: number;
+    newOutOfStock: number;
+    totalIssues: number;
+    monthlyImpact: number;
+  }
+): Promise<{ success: boolean; error?: unknown; data?: unknown }> {
+  if (!resend) {
+    console.warn("[Email] Not configured - skipping weekly digest email");
+    return { success: false, error: "Email not configured" };
+  }
+
+  const hasIssues = data.totalIssues > 0;
+  const statusText = hasIssues
+    ? `⚠️ ${data.totalIssues} Issue${data.totalIssues > 1 ? "s" : ""} Found`
+    : "✓ All Clear";
+  const statusColor = hasIssues ? "#f87171" : "#10b981";
+
+  try {
+    const { data: result, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: hasIssues
+        ? `⚠️ ${data.totalIssues} new link issue${data.totalIssues > 1 ? "s" : ""} found on ${channelName}`
+        : `✓ ${channelName} weekly checkup — all clear`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+
+          <div style="text-align: center; margin-bottom: 30px;">
+            <span style="color: #10b981; font-size: 24px; font-weight: bold;">Link Medic</span>
+          </div>
+
+          <p>Hi ${name || "there"},</p>
+
+          <p>Here's your weekly link checkup for <strong>${channelName}</strong>:</p>
+
+          <div style="background: #1a1a2e; color: #fff; padding: 24px; border-radius: 8px; margin: 24px 0;">
+            <div style="text-align: center; font-size: 20px; font-weight: bold; color: ${statusColor}; margin-bottom: 16px;">
+              ${statusText}
+            </div>
+
+            ${hasIssues ? `
+              <table style="width: 100%; color: #fff;">
+                <tr>
+                  <td style="padding: 8px 0; color: #9ca3af;">New broken links:</td>
+                  <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #f87171;">${data.newBrokenLinks}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #9ca3af;">Links went out of stock:</td>
+                  <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #fb923c;">${data.newOutOfStock}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #9ca3af;">Estimated monthly impact:</td>
+                  <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #f87171;">-$${data.monthlyImpact.toLocaleString()}</td>
+                </tr>
+              </table>
+            ` : `
+              <p style="text-align: center; color: #9ca3af; margin: 0;">
+                No new issues detected this week. Your links are healthy! 💪
+              </p>
+            `}
+          </div>
+
+          ${hasIssues ? `
+            <p>We found some new issues that need your attention. Click below to see the details and get fix suggestions.</p>
+
+            <div style="text-align: center; margin: 32px 0;">
+              <a href="${APP_URL}/dashboard"
+                 style="display: inline-block; background: #10b981; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                View Issues & Fix
+              </a>
+            </div>
+          ` : `
+            <p>Keep up the great work! We'll keep monitoring and let you know if anything changes.</p>
+          `}
+
+          <p>Stay link-healthy,<br>
+          <strong>The Link Medic Team</strong></p>
+
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
+
+          <p style="color: #6b7280; font-size: 12px; text-align: center;">
+            You're receiving this because you have Link Guard monitoring enabled.<br>
+            <a href="${APP_URL}/settings" style="color: #6b7280;">Manage email preferences</a>
+          </p>
+
+        </body>
+        </html>
+      `,
+    });
+
+    if (error) {
+      console.error("[Email] Weekly digest email error:", error);
+      return { success: false, error };
+    }
+
+    console.log("[Email] Weekly digest email sent:", result?.id);
+    return { success: true, data: result };
+  } catch (error) {
+    console.error("[Email] Failed to send weekly digest email:", error);
+    return { success: false, error };
+  }
+}
