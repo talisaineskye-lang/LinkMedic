@@ -34,6 +34,10 @@ model User {
   // Affiliate settings
   affiliateTag       String?                   // User's Amazon affiliate tag (e.g., "mychannel-20")
 
+  // Stripe subscription fields
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
+
   accounts           Account[]
   sessions           Session[]
   videos             Video[]

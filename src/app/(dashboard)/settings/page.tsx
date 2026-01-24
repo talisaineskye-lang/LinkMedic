@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { SettingsForm } from "@/components/settings-form";
+import { SubscriptionSection } from "@/components/subscription-section";
 
 export default async function SettingsPage() {
   const session = await getServerSession(authOptions);
@@ -23,6 +24,8 @@ export default async function SettingsPage() {
       affiliateTag: true,
       subscriptionStatus: true,
       trialEndsAt: true,
+      tier: true,
+      stripeCustomerId: true,
     },
   });
 
@@ -87,6 +90,12 @@ export default async function SettingsPage() {
           </div>
         </dl>
       </div>
+
+      {/* Subscription */}
+      <SubscriptionSection
+        tier={user.tier}
+        hasStripeCustomer={!!user.stripeCustomerId}
+      />
 
       {/* Revenue Assumptions */}
       <div className="bg-slate-800/40 border border-slate-700/50 rounded-lg p-6 backdrop-blur">
