@@ -16,6 +16,7 @@ export function SubscriptionSection({
   const [error, setError] = useState<string | null>(null);
 
   const handleUpgrade = async () => {
+    console.log("[Upgrade] Starting checkout...");
     setLoading(true);
     setError(null);
 
@@ -25,16 +26,22 @@ export function SubscriptionSection({
       });
 
       const data = await response.json();
+      console.log("[Upgrade] Response:", { ok: response.ok, data });
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to start checkout");
       }
 
+      if (!data.url) {
+        throw new Error("No checkout URL returned");
+      }
+
       // Redirect to Stripe Checkout
+      console.log("[Upgrade] Redirecting to:", data.url);
       window.location.href = data.url;
     } catch (err) {
+      console.error("[Upgrade] Error:", err);
       setError(err instanceof Error ? err.message : "Failed to start checkout");
-    } finally {
       setLoading(false);
     }
   };

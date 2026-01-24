@@ -5,12 +5,31 @@ import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 
 export async function POST() {
+  console.log("[Checkout] Starting checkout session creation...");
+
   try {
+    // Validate environment variables
+    if (!process.env.STRIPE_SECRET_KEY) {
+      console.error("[Checkout] Missing STRIPE_SECRET_KEY");
+      return NextResponse.json({ error: "Stripe not configured - missing secret key" }, { status: 500 });
+    }
+    if (!process.env.STRIPE_PRICE_ID) {
+      console.error("[Checkout] Missing STRIPE_PRICE_ID");
+      return NextResponse.json({ error: "Stripe not configured - missing price ID" }, { status: 500 });
+    }
+    if (!process.env.NEXT_PUBLIC_APP_URL) {
+      console.error("[Checkout] Missing NEXT_PUBLIC_APP_URL");
+      return NextResponse.json({ error: "App URL not configured" }, { status: 500 });
+    }
+
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
+      console.log("[Checkout] No session found");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    console.log("[Checkout] User ID:", session.user.id);
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -18,8 +37,11 @@ export async function POST() {
     });
 
     if (!user) {
+      console.log("[Checkout] User not found in database");
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
+
+    console.log("[Checkout] User tier:", user.tier);
 
     // Check if user is already on a paid tier
     if (user.tier !== "FREE") {
@@ -63,11 +85,13 @@ export async function POST() {
       },
     });
 
+    console.log("[Checkout] Session created successfully:", checkoutSession.id);
     return NextResponse.json({ url: checkoutSession.url });
   } catch (error) {
-    console.error("Stripe checkout error:", error);
+    console.error("[Checkout] Stripe checkout error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Failed to create checkout session" },
+      { error: `Failed to create checkout session: ${errorMessage}` },
       { status: 500 }
     );
   }
