@@ -51,6 +51,7 @@ export default async function DashboardLayout({
       video: { userId: session.user.id },
       status: { in: PROBLEM_STATUSES },
       isFixed: false,
+      isDismissed: false,
     },
   });
 

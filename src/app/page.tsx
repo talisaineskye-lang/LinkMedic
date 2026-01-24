@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { Link as LinkIcon, AlertTriangle, TrendingUp, Check, ArrowRight, LinkIcon as Link2, Play, Zap, Bell } from "lucide-react";
+import { Link as LinkIcon, Check, ArrowRight, Play } from "lucide-react";
 import { RevenueCalculator } from "@/components/revenue-calculator";
 
 export default async function Home() {
@@ -33,7 +33,7 @@ export default async function Home() {
             href="/audit"
             className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
           >
-            Start Free Audit
+            Scan My Channel Free
           </Link>
         </div>
       </header>
@@ -44,7 +44,7 @@ export default async function Home() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-4 py-2 mb-8">
             <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-            <span className="text-emerald-400 text-sm font-medium">Protect Your YouTube Revenue</span>
+            <span className="text-emerald-400 text-sm font-medium">Channel Health &amp; Revenue Recovery</span>
           </div>
 
           {/* Logo Large */}
@@ -55,13 +55,14 @@ export default async function Home() {
           </div>
 
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-6 leading-tight">
-            Stop Losing Money to{" "}
-            <span className="text-amber-500">Broken Links</span>
+            Make Every View Count&mdash;Even on Your{" "}
+            <span className="text-emerald-400">Oldest Videos</span>
           </h1>
 
           <p className="text-lg text-slate-400 mb-8 max-w-2xl mx-auto leading-relaxed">
-            Your old YouTube videos are still getting views — but are their affiliate links still working?
-            Start with a free audit to see exactly which links are costing you money.
+            Your video archive is a 24/7 revenue engine, but broken links are silent killers.
+            Audit your channel in 60 seconds to fix dead ends, restore viewer trust, and
+            reclaim your missing commissions.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
@@ -70,7 +71,7 @@ export default async function Home() {
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all hover:scale-105"
             >
               <Play className="w-5 h-5" />
-              Run Free Audit
+              Scan My Channel Free
             </Link>
             <a
               href="#how-it-works"
@@ -82,7 +83,7 @@ export default async function Home() {
           </div>
 
           <p className="text-sm text-slate-500">
-            No credit card required · See results in 60 seconds
+            No credit card required &middot; Results in 60 seconds
           </p>
         </div>
       </section>
@@ -92,62 +93,62 @@ export default async function Home() {
         <div className="max-w-4xl mx-auto px-6">
           <div className="grid grid-cols-3 gap-8 text-center">
             <div>
-              <div className="text-2xl md:text-3xl font-bold text-white mb-1">15%</div>
-              <div className="text-sm text-slate-500">Average broken link rate</div>
+              <div className="text-2xl md:text-4xl font-bold text-emerald-400 mb-1">15%</div>
+              <div className="text-sm text-slate-400">Average link decay rate across YouTube</div>
             </div>
             <div>
-              <div className="text-2xl md:text-3xl font-bold text-amber-500 mb-1">$1,500</div>
-              <div className="text-sm text-slate-500">Avg. annual revenue lost</div>
+              <div className="text-2xl md:text-4xl font-bold text-emerald-400 mb-1">$1,500+</div>
+              <div className="text-sm text-slate-400">Average annual revenue lost to broken links*</div>
             </div>
             <div>
-              <div className="text-2xl md:text-3xl font-bold text-emerald-500 mb-1">60 sec</div>
-              <div className="text-sm text-slate-500">To scan your channel</div>
+              <div className="text-2xl md:text-4xl font-bold text-emerald-400 mb-1">60 sec</div>
+              <div className="text-sm text-slate-400">To scan your entire channel history</div>
             </div>
           </div>
+          <p className="text-xs text-slate-500 text-center mt-4">
+            *Based on channels with 50K+ subscribers
+          </p>
         </div>
       </section>
 
-      {/* Problem Section */}
+      {/* Problem Section - Stop the Revenue Leaks */}
       <section id="problem" className="py-20 px-6">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
-              The Hidden Problem Costing You Money
+              Is Your Back Catalog Working Against You?
             </h2>
-            <p className="text-slate-400 max-w-2xl mx-auto">
-              Every day, your old videos generate views. But the affiliate links in those descriptions?
-              Many are silently failing.
+            <p className="text-xl text-slate-400 max-w-2xl mx-auto">
+              Every day, your old videos generate views. If your links are broken, you&apos;re not
+              just losing money&mdash;you&apos;re losing the trust of your audience.
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
             <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
-              <div className="w-12 h-12 rounded-lg bg-red-500/10 flex items-center justify-center mb-4">
-                <AlertTriangle className="w-6 h-6 text-red-500" />
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-2">Products Discontinued</h3>
-              <p className="text-sm text-slate-400">
-                Amazon removes products, pages go 404. Your link sends viewers to a dead end.
+              <div className="text-3xl mb-4">🔗</div>
+              <h3 className="text-xl font-semibold text-white mb-2">Rescue Discontinued Products</h3>
+              <p className="text-slate-400">
+                Amazon pages vanish and URLs 404. We flag the dead ends so you can
+                redirect viewers to active alternatives.
               </p>
             </div>
 
             <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
-              <div className="w-12 h-12 rounded-lg bg-amber-500/10 flex items-center justify-center mb-4">
-                <Link2 className="w-6 h-6 text-amber-500" />
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-2">Affiliate Tags Expire</h3>
-              <p className="text-sm text-slate-400">
-                Short links get recycled. Your old affiliate tag might be earning someone else money.
+              <div className="text-3xl mb-4">🏷️</div>
+              <h3 className="text-xl font-semibold text-white mb-2">Protect Your Affiliate Credit</h3>
+              <p className="text-slate-400">
+                Affiliate tags can expire or break during redirects. We ensure your tags
+                are active and correctly attributed to your account.
               </p>
             </div>
 
             <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
-              <div className="w-12 h-12 rounded-lg bg-orange-500/10 flex items-center justify-center mb-4">
-                <TrendingUp className="w-6 h-6 text-orange-500" />
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-2">Out of Stock</h3>
-              <p className="text-sm text-slate-400">
-                Product exists but shows &ldquo;currently unavailable.&rdquo; Viewers click, see nothing to buy, leave.
+              <div className="text-3xl mb-4">📦</div>
+              <h3 className="text-xl font-semibold text-white mb-2">Monitor Stock Availability</h3>
+              <p className="text-slate-400">
+                Don&apos;t send fans to a &ldquo;Currently Unavailable&rdquo; page. Know exactly when your
+                top products are out of stock so you can swap them out.
               </p>
             </div>
           </div>
@@ -159,10 +160,10 @@ export default async function Home() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
-              How Much Are Broken Links Costing You?
+              See Your Revenue Recovery Potential
             </h2>
-            <p className="text-slate-400">
-              Drag the slider to see the potential revenue you&apos;re losing each year.
+            <p className="text-xl text-slate-400">
+              Use the slider to estimate the commissions hiding in your description boxes.
             </p>
           </div>
 
@@ -170,59 +171,71 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* How It Works */}
+      {/* How It Works - The Medic Process */}
       <section id="how-it-works" className="py-20 px-6">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
-              How It Works
+              The &ldquo;Medic&rdquo; Process
             </h2>
-            <p className="text-slate-400">
-              Start free. See your biggest leaks. Fix them and start recovering revenue.
+            <p className="text-xl text-slate-400">
+              Three steps to healthier links and recovered revenue.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-3 gap-8">
             {/* Step 1 */}
             <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center">
-                <span className="text-2xl font-bold text-emerald-400">1</span>
-              </div>
-              <h3 className="font-semibold text-white mb-2">Free Calculator</h3>
-              <p className="text-sm text-slate-400">Enter your channel URL to estimate revenue loss</p>
-              <p className="text-xs text-emerald-400 mt-2 font-medium">$0</p>
+              <div className="w-12 h-12 bg-emerald-600 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4 text-white">1</div>
+              <h3 className="text-xl font-semibold text-white mb-2">Connect Your Channel</h3>
+              <p className="text-slate-400">
+                Securely sync your YouTube library with one click. We use the official
+                YouTube API &mdash; we never see your password.
+              </p>
             </div>
 
             {/* Step 2 */}
             <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center">
-                <span className="text-2xl font-bold text-emerald-400">2</span>
-              </div>
-              <h3 className="font-semibold text-white mb-2">See Your Leak</h3>
-              <p className="text-sm text-slate-400">View estimated annual revenue loss</p>
-              <p className="text-xs text-emerald-400 mt-2 font-medium">$0</p>
+              <div className="w-12 h-12 bg-emerald-600 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4 text-white">2</div>
+              <h3 className="text-xl font-semibold text-white mb-2">The 60-Second Scan</h3>
+              <p className="text-slate-400">
+                Our &ldquo;Medic&rdquo; scans every description for 404s, expired tags, and
+                out-of-stock items.
+              </p>
             </div>
 
             {/* Step 3 */}
             <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center">
-                <span className="text-2xl font-bold text-emerald-400">3</span>
-              </div>
-              <h3 className="font-semibold text-white mb-2">Free Audit</h3>
-              <p className="text-sm text-slate-400">Connect with Google to see top 3-5 broken links</p>
-              <p className="text-xs text-emerald-400 mt-2 font-medium">$0 (No CC)</p>
-            </div>
-
-            {/* Step 4 */}
-            <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center">
-                <span className="text-2xl font-bold text-emerald-400">4</span>
-              </div>
-              <h3 className="font-semibold text-white mb-2">Fix Everything</h3>
-              <p className="text-sm text-slate-400">Upgrade to see all links + auto-fix</p>
-              <p className="text-xs text-emerald-400 mt-2 font-medium">$19/mo</p>
+              <div className="w-12 h-12 bg-emerald-600 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4 text-white">3</div>
+              <h3 className="text-xl font-semibold text-white mb-2">Heal Your Links</h3>
+              <p className="text-slate-400">
+                Get your &ldquo;Prescription&rdquo; &mdash; a prioritized fix list with one-click
+                export to TubeBuddy.
+              </p>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* The Challenge Section */}
+      <section className="py-20 bg-gradient-to-b from-slate-900 to-slate-800">
+        <div className="max-w-4xl mx-auto text-center px-6">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            The Link Medic Challenge
+          </h2>
+          <p className="text-xl text-slate-300 mb-8">
+            We&apos;ve never scanned a channel with 50+ videos that didn&apos;t have
+            at least one broken link.
+          </p>
+          <p className="text-2xl font-semibold text-white mb-8">
+            Think your channel is clean? Prove us wrong.
+          </p>
+          <Link
+            href="/audit"
+            className="inline-block bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-8 rounded-lg text-lg transition-colors"
+          >
+            Scan My Channel Free
+          </Link>
         </div>
       </section>
 
@@ -271,7 +284,7 @@ export default async function Home() {
                 href="/audit"
                 className="block w-full bg-slate-700 hover:bg-slate-600 text-white text-center py-4 rounded-xl font-semibold transition-all border border-slate-600/50"
               >
-                Start Free Audit
+                Scan My Channel Free
               </Link>
             </div>
 
@@ -289,7 +302,7 @@ export default async function Home() {
                   <span className="text-5xl font-bold text-white">$19</span>
                   <span className="text-slate-400">/month</span>
                 </div>
-                <p className="text-emerald-400 font-medium">Recovery & Protection</p>
+                <p className="text-emerald-400 font-medium">Recovery &amp; Protection</p>
               </div>
 
               <p className="text-slate-300 mb-6">
@@ -315,9 +328,9 @@ export default async function Home() {
                 href="/login"
                 className="block w-full bg-emerald-500 hover:bg-emerald-600 text-white text-center py-4 rounded-xl font-semibold transition-all shadow-lg shadow-emerald-500/20"
               >
-                Start 7-Day Free Trial
+                Start Free Trial
               </Link>
-              <p className="text-xs text-slate-500 text-center mt-3">No charge today · Cancel anytime</p>
+              <p className="text-xs text-slate-500 text-center mt-3">No charge today &middot; Cancel anytime</p>
             </div>
 
             {/* Tier 3: The Portfolio Manager ($49/mo) - Greyed Out */}
@@ -366,8 +379,43 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ROI Section */}
+      {/* Why Not Manual Section */}
       <section className="py-20 px-6">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-3xl font-bold text-center text-white mb-4">
+            Why Not Just Check Manually?
+          </h2>
+          <p className="text-xl text-slate-400 text-center mb-12">
+            You could click through every video description yourself. For a channel
+            with 200 videos and 10 links each, that&apos;s 2,000 clicks.
+          </p>
+
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className="bg-slate-800/50 border border-slate-700/50 p-6 rounded-xl">
+              <h3 className="text-xl font-bold mb-4 text-red-400">❌ Manual Check</h3>
+              <ul className="space-y-3 text-slate-400">
+                <li>&bull; 8+ hours of clicking</li>
+                <li>&bull; Easy to miss expired tags</li>
+                <li>&bull; No fix suggestions</li>
+                <li>&bull; One-time snapshot only</li>
+              </ul>
+            </div>
+
+            <div className="bg-slate-800/50 border-2 border-emerald-600 p-6 rounded-xl">
+              <h3 className="text-xl font-bold mb-4 text-emerald-400">✓ Link Medic</h3>
+              <ul className="space-y-3 text-slate-400">
+                <li>&bull; 60 seconds</li>
+                <li>&bull; Catches everything (404s, OOS, tags)</li>
+                <li>&bull; AI-powered replacements</li>
+                <li>&bull; Weekly monitoring included</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ROI Section */}
+      <section className="py-20 px-6 bg-slate-900/50">
         <div className="max-w-3xl mx-auto bg-slate-800/30 border border-emerald-500/30 rounded-2xl p-8">
           <h2 className="text-2xl font-bold text-white text-center mb-6">The ROI is a No-Brainer</h2>
 
@@ -392,61 +440,99 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Trust Badges */}
-      <section className="py-16 px-6 bg-slate-900/50">
-        <div className="max-w-4xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center p-6">
-              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-emerald-500/10 flex items-center justify-center">
-                <Zap className="w-6 h-6 text-emerald-400" />
-              </div>
-              <h4 className="font-semibold text-white mb-2">Instant Setup</h4>
-              <p className="text-sm text-slate-400">
-                Connect your channel and scan in under 60 seconds
-              </p>
-            </div>
+      {/* FAQ Section - The Prescription */}
+      <section className="py-20 bg-slate-800/50 px-6">
+        <div className="max-w-3xl mx-auto">
+          <h2 className="text-3xl font-bold text-center text-white mb-4">
+            The Prescription
+          </h2>
+          <p className="text-xl text-slate-400 text-center mb-12">
+            Everything you need to know.
+          </p>
 
-            <div className="text-center p-6">
-              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-emerald-500/10 flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-emerald-400" />
-              </div>
-              <h4 className="font-semibold text-white mb-2">Recover Revenue</h4>
-              <p className="text-sm text-slate-400">
-                Fix broken links and stop leaving money on the table
+          <div className="space-y-4">
+            <details className="bg-slate-800 rounded-xl p-6 cursor-pointer group">
+              <summary className="font-bold text-lg flex justify-between items-center list-none">
+                <span>How does Link Medic access my channel?</span>
+                <span className="text-emerald-400 group-open:rotate-45 transition-transform text-2xl">+</span>
+              </summary>
+              <p className="text-slate-400 mt-4">
+                We use the official YouTube API to securely read your video descriptions.
+                We never see your password, and we don&apos;t have permission to change anything
+                without your direct action. You are always in control.
               </p>
-            </div>
+            </details>
 
-            <div className="text-center p-6">
-              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-emerald-500/10 flex items-center justify-center">
-                <Bell className="w-6 h-6 text-emerald-400" />
-              </div>
-              <h4 className="font-semibold text-white mb-2">24/7 Monitoring</h4>
-              <p className="text-sm text-slate-400">
-                Get instant alerts when links break
+            <details className="bg-slate-800 rounded-xl p-6 cursor-pointer group">
+              <summary className="font-bold text-lg flex justify-between items-center list-none">
+                <span>Will this scan affect my YouTube SEO?</span>
+                <span className="text-emerald-400 group-open:rotate-45 transition-transform text-2xl">+</span>
+              </summary>
+              <p className="text-slate-400 mt-4">
+                Not at all. In fact, keeping your links healthy is widely considered a
+                best practice. YouTube&apos;s algorithm prefers videos that lead to high-quality
+                user experiences, and fixing 404 dead-ends is a major part of that.
               </p>
-            </div>
+            </details>
+
+            <details className="bg-slate-800 rounded-xl p-6 cursor-pointer group">
+              <summary className="font-bold text-lg flex justify-between items-center list-none">
+                <span>I have thousands of videos. Can it handle that?</span>
+                <span className="text-emerald-400 group-open:rotate-45 transition-transform text-2xl">+</span>
+              </summary>
+              <p className="text-slate-400 mt-4">
+                Yes. Whether you have 10 videos or 10,000, our engine is built to crawl
+                your entire archive in about 60 seconds. We prioritize your most-viewed
+                videos first so you can fix the high-impact leaks immediately.
+              </p>
+            </details>
+
+            <details className="bg-slate-800 rounded-xl p-6 cursor-pointer group">
+              <summary className="font-bold text-lg flex justify-between items-center list-none">
+                <span>Does this work for links outside of Amazon?</span>
+                <span className="text-emerald-400 group-open:rotate-45 transition-transform text-2xl">+</span>
+              </summary>
+              <p className="text-slate-400 mt-4">
+                While we have deep integration with Amazon Associates to check stock levels,
+                Link Medic flags 404 errors and broken redirects for any affiliate platform,
+                including ShareASale, Impact, and direct brand partnerships.
+              </p>
+            </details>
+
+            <details className="bg-slate-800 rounded-xl p-6 cursor-pointer group">
+              <summary className="font-bold text-lg flex justify-between items-center list-none">
+                <span>What happens after the free audit?</span>
+                <span className="text-emerald-400 group-open:rotate-45 transition-transform text-2xl">+</span>
+              </summary>
+              <p className="text-slate-400 mt-4">
+                You&apos;ll get a Health Report showing exactly how many links are broken and
+                which videos are losing the most revenue. From there, you can choose to
+                fix them manually or upgrade to use our Pro tools to streamline the entire
+                recovery process.
+              </p>
+            </details>
           </div>
         </div>
       </section>
 
       {/* Final CTA */}
-      <section className="py-20 px-6">
-        <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
-            Ready to Stop Losing Money?
-          </h2>
-          <p className="text-slate-400 mb-8">
-            Start with a free audit. See your top broken links in 60 seconds.
-          </p>
-          <Link
-            href="/audit"
-            className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all hover:scale-105 shadow-lg shadow-emerald-500/20"
-          >
-            <Play className="w-5 h-5" />
-            Run Free Audit
-          </Link>
-          <p className="text-sm text-slate-500 mt-4">No credit card required · See results instantly</p>
-        </div>
+      <section className="py-20 px-6 text-center">
+        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+          Ready to Restore Your Channel&apos;s Health?
+        </h2>
+        <p className="text-xl text-slate-400 mb-8">
+          Your old videos are getting views right now. Make sure those clicks count.
+        </p>
+        <Link
+          href="/audit"
+          className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-8 rounded-lg text-lg transition-colors"
+        >
+          <Play className="w-5 h-5" />
+          Scan My Channel Free
+        </Link>
+        <p className="text-sm text-slate-500 mt-4">
+          No credit card required &middot; Results in 60 seconds
+        </p>
       </section>
 
       {/* Footer */}
