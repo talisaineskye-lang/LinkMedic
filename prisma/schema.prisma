@@ -32,7 +32,8 @@ model User {
   alertsEnabled      Boolean   @default(false) // Email alerts for status changes
 
   // Affiliate settings
-  affiliateTag       String?                   // User's Amazon affiliate tag (e.g., "mychannel-20")
+  affiliateTag          String?                   // User's Amazon affiliate tag (e.g., "mychannel-20")
+  hasCompletedFirstScan Boolean   @default(false) // Track if user has done their first scan
 
   // Stripe subscription fields
   stripeCustomerId     String?   @unique

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import Link from "next/link";
 import { Link as LinkIcon } from "lucide-react";
 import { UserMenu } from "@/components/user-menu";
+import { OnboardingModal } from "@/components/onboarding-modal";
 import { LinkStatus } from "@prisma/client";
 
 // All statuses that indicate a broken/problematic link
@@ -27,15 +28,22 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  // Check if user has selected a YouTube channel
+  // Check if user has selected a YouTube channel and get onboarding status
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { youtubeChannelId: true },
+    select: {
+      youtubeChannelId: true,
+      affiliateTag: true,
+      hasCompletedFirstScan: true,
+    },
   });
 
   if (!user?.youtubeChannelId) {
     redirect("/onboarding/select-channel");
   }
+
+  // Show onboarding modal if user hasn't set up affiliate tag or completed first scan
+  const showOnboardingModal = !user.affiliateTag || !user.hasCompletedFirstScan;
 
   // Get count of broken links for badge
   const brokenCount = await prisma.affiliateLink.count({
@@ -120,6 +128,9 @@ export default async function DashboardLayout({
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>
+
+      {/* Onboarding Modal */}
+      <OnboardingModal show={showOnboardingModal} />
     </div>
   );
 }

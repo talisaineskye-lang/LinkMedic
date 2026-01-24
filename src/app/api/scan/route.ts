@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { scanUserLinks, getScanStats } from "@/lib/scanner";
+import { prisma } from "@/lib/db";
 
 export async function POST() {
   try {
@@ -13,6 +14,12 @@ export async function POST() {
 
     // Run the scan
     const { checked, issues } = await scanUserLinks(session.user.id);
+
+    // Mark first scan as completed (for onboarding flow)
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { hasCompletedFirstScan: true },
+    });
 
     // Get updated stats
     const stats = await getScanStats(session.user.id);
