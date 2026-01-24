@@ -232,6 +232,133 @@ export async function sendWeeklyAlert(
 /**
  * Sends a payment failed notification email
  */
+/**
+ * Sends an email after a user's first channel scan completes
+ */
+export async function sendScanCompleteEmail(
+  to: string,
+  name: string,
+  data: {
+    totalLinks: number;
+    brokenLinks: number;
+    monthlyRecovery: number;
+  },
+  tier: "FREE" | "SPECIALIST" | "PORTFOLIO" = "FREE"
+): Promise<{ success: boolean; error?: unknown; data?: unknown }> {
+  if (!resend) {
+    console.warn("[Email] Not configured - skipping scan complete email");
+    return { success: false, error: "Email not configured" };
+  }
+
+  const showUpgradeButton = tier === "FREE";
+
+  const upgradeSection = showUpgradeButton ? `
+    <div style="background: linear-gradient(135deg, #065f46 0%, #047857 100%); padding: 24px; border-radius: 8px; margin: 24px 0; text-align: center;">
+      <p style="color: #d1fae5; font-size: 14px; margin: 0 0 8px 0;">UNLOCK YOUR FULL POTENTIAL</p>
+      <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 0 0 16px 0;">
+        Upgrade to fix all your links with AI-powered suggestions
+      </p>
+      <a href="${APP_URL}/settings"
+         style="display: inline-block; background: #fff; color: #065f46; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px;">
+        Upgrade to Specialist - $19/mo
+      </a>
+    </div>
+  ` : "";
+
+  try {
+    const { data: result, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: "Your Channel's Lab Results Are In 🩺",
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+
+          <div style="text-align: center; margin-bottom: 30px;">
+            <span style="color: #10b981; font-size: 24px; font-weight: bold;">Link Medic</span>
+          </div>
+
+          <p>Hi ${name || "there"},</p>
+
+          <p><strong>Good news:</strong> Your channel audit is complete. No waiting rooms involved.</p>
+
+          <p>While you were reading this, Link Medic scanned your video archives for 404 errors, expired affiliate tags, and out-of-stock products. Here's what we found:</p>
+
+          <div style="background: #1a1a2e; color: #fff; padding: 24px; border-radius: 8px; margin: 24px 0; font-family: monospace;">
+            <div style="text-align: center; font-weight: bold; margin-bottom: 16px; color: #10b981; font-size: 14px; letter-spacing: 1px;">
+              YOUR CHANNEL HEALTH SNAPSHOT
+            </div>
+            <table style="width: 100%; color: #fff;">
+              <tr>
+                <td style="padding: 8px 0; color: #9ca3af;">Total Links Scanned:</td>
+                <td style="padding: 8px 0; text-align: right; font-weight: bold;">${data.totalLinks.toLocaleString()}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #9ca3af;">Revenue Leaks Detected:</td>
+                <td style="padding: 8px 0; text-align: right; font-weight: bold; color: ${data.brokenLinks > 0 ? "#f87171" : "#10b981"};">${data.brokenLinks}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #9ca3af;">Estimated Monthly Recovery:</td>
+                <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #10b981;">$${data.monthlyRecovery.toLocaleString()}</td>
+              </tr>
+            </table>
+          </div>
+
+          <p><strong>The diagnosis:</strong> Every broken link is a dead end for viewers and a lost commission for you. The good news? These are easy fixes — no surgery required.</p>
+
+          <p><strong>YOUR PRESCRIPTION:</strong><br>
+          We've prioritized your most-viewed videos so you can fix the highest-impact leaks first. Most creators recover 80% of lost revenue by fixing just their Top 10 videos.</p>
+
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="${APP_URL}/dashboard"
+               style="display: inline-block; background: #10b981; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              View My Full Report
+            </a>
+          </div>
+
+          ${upgradeSection}
+
+          <p><strong>Pro tip:</strong> Grab a coffee, fix your top 10 links, and give yourself a raise on work you finished months ago. Not a bad way to spend 15 minutes.</p>
+
+          <p>Stay link-healthy,<br>
+          <strong>The Link Medic Team</strong></p>
+
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
+
+          <p style="color: #6b7280; font-size: 14px;">
+            <strong>P.S.</strong> Worried about SEO? Don't be. Updating your descriptions to fix broken links signals to YouTube that your content is maintained and high-quality for viewers.
+          </p>
+
+          <div style="text-align: center; margin-top: 32px; color: #9ca3af; font-size: 12px;">
+            <p>
+              <a href="${APP_URL}" style="color: #9ca3af;">Link Medic</a> ·
+              Affiliate link health for YouTube creators
+            </p>
+          </div>
+
+        </body>
+        </html>
+      `,
+    });
+
+    if (error) {
+      console.error("[Email] Scan complete email error:", error);
+      return { success: false, error };
+    }
+
+    console.log("[Email] Scan complete email sent:", result?.id);
+    return { success: true, data: result };
+  } catch (error) {
+    console.error("[Email] Failed to send scan complete email:", error);
+    return { success: false, error };
+  }
+}
+
 export async function sendPaymentFailedEmail(to: string): Promise<{ success: boolean; error?: unknown; data?: unknown }> {
   if (!resend) {
     console.warn("[Email] Not configured - skipping payment failed email");

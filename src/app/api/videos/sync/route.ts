@@ -5,6 +5,18 @@ import { prisma } from "@/lib/db";
 import { syncUserVideos } from "@/lib/youtube";
 import { extractLinksForUser } from "@/lib/scanner";
 import { checkTierLimits, getUpgradeMessage } from "@/lib/tier-limits";
+import { sendScanCompleteEmail } from "@/lib/email";
+import { calculateRevenueImpact, DEFAULT_SETTINGS } from "@/lib/revenue-estimator";
+import { LinkStatus } from "@prisma/client";
+
+// Statuses that indicate a broken/problematic link
+const PROBLEM_STATUSES: LinkStatus[] = [
+  LinkStatus.NOT_FOUND,
+  LinkStatus.OOS,
+  LinkStatus.OOS_THIRD_PARTY,
+  LinkStatus.SEARCH_REDIRECT,
+  LinkStatus.MISSING_TAG,
+];
 
 export async function POST() {
   try {
@@ -39,6 +51,62 @@ export async function POST() {
     // Extract affiliate links from video descriptions and analyze disclosures
     // Also auto-detects and saves affiliate tag if user doesn't have one
     const { links, disclosureIssues, detectedAffiliateTag } = await extractLinksForUser(session.user.id);
+
+    // Send scan complete email for first-time scans
+    if (isFirstScan) {
+      try {
+        // Get user info and broken links for email
+        const user = await prisma.user.findUnique({
+          where: { id: session.user.id },
+          select: { email: true, name: true, tier: true },
+        });
+
+        // Get all links with video data for revenue calculation
+        const allLinks = await prisma.affiliateLink.findMany({
+          where: { video: { userId: session.user.id } },
+          select: {
+            status: true,
+            video: {
+              select: { viewCount: true },
+            },
+          },
+        });
+
+        const totalLinks = allLinks.length;
+        const brokenLinks = allLinks.filter(
+          (l) => PROBLEM_STATUSES.includes(l.status)
+        );
+        const brokenCount = brokenLinks.length;
+
+        // Calculate monthly recovery from broken links
+        const monthlyRecovery = Math.round(
+          brokenLinks.reduce((sum, link) => {
+            return sum + calculateRevenueImpact(
+              link.video.viewCount,
+              link.status,
+              DEFAULT_SETTINGS
+            );
+          }, 0)
+        );
+
+        if (user?.email) {
+          await sendScanCompleteEmail(
+            user.email,
+            user.name || "there",
+            {
+              totalLinks,
+              brokenLinks: brokenCount,
+              monthlyRecovery,
+            },
+            user.tier
+          );
+          console.log(`[Scan] Results email sent to ${user.email}`);
+        }
+      } catch (emailError) {
+        // Log but don't fail the scan
+        console.error("[Scan] Failed to send results email:", emailError);
+      }
+    }
 
     return NextResponse.json({
       success: true,
