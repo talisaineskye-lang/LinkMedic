@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { Link as LinkIcon, Check, ArrowRight, Play } from "lucide-react";
+import { Link as LinkIcon, Check, ArrowRight, Play, Link2, Tag, Package, XCircle, CheckCircle } from "lucide-react";
 import { RevenueCalculator } from "@/components/revenue-calculator";
 
 export default async function Home() {
@@ -61,11 +61,11 @@ export default async function Home() {
 
           <p className="text-lg text-slate-400 mb-8 max-w-2xl mx-auto leading-relaxed">
             Your video archive is a 24/7 revenue engine, but broken links are silent killers.
-            Audit your channel in 60 seconds to fix dead ends, restore viewer trust, and
+            Audit your channel in under 2 minutes to fix dead ends, restore viewer trust, and
             reclaim your missing commissions.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
+          <div className="flex flex-col items-center justify-center gap-3 mb-4">
             <Link
               href="/audit"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all hover:scale-105"
@@ -83,7 +83,7 @@ export default async function Home() {
           </div>
 
           <p className="text-sm text-slate-500">
-            No credit card required &middot; Results in 60 seconds
+            No credit card required &middot; Results in under 2 minutes
           </p>
         </div>
       </section>
@@ -101,7 +101,7 @@ export default async function Home() {
               <div className="text-sm text-slate-400">Average annual revenue lost to broken links*</div>
             </div>
             <div>
-              <div className="text-2xl md:text-4xl font-bold text-emerald-400 mb-1">60 sec</div>
+              <div className="text-2xl md:text-4xl font-bold text-emerald-400 mb-1">&lt;2 min</div>
               <div className="text-sm text-slate-400">To scan your entire channel history</div>
             </div>
           </div>
@@ -126,7 +126,9 @@ export default async function Home() {
 
           <div className="grid md:grid-cols-3 gap-6">
             <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
-              <div className="text-3xl mb-4">🔗</div>
+              <div className="w-12 h-12 rounded-lg bg-red-500/10 flex items-center justify-center mb-4">
+                <Link2 className="w-6 h-6 text-red-400" />
+              </div>
               <h3 className="text-xl font-semibold text-white mb-2">Rescue Discontinued Products</h3>
               <p className="text-slate-400">
                 Amazon pages vanish and URLs 404. We flag the dead ends so you can
@@ -135,7 +137,9 @@ export default async function Home() {
             </div>
 
             <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
-              <div className="text-3xl mb-4">🏷️</div>
+              <div className="w-12 h-12 rounded-lg bg-amber-500/10 flex items-center justify-center mb-4">
+                <Tag className="w-6 h-6 text-amber-400" />
+              </div>
               <h3 className="text-xl font-semibold text-white mb-2">Protect Your Affiliate Credit</h3>
               <p className="text-slate-400">
                 Affiliate tags can expire or break during redirects. We ensure your tags
@@ -144,7 +148,9 @@ export default async function Home() {
             </div>
 
             <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
-              <div className="text-3xl mb-4">📦</div>
+              <div className="w-12 h-12 rounded-lg bg-orange-500/10 flex items-center justify-center mb-4">
+                <Package className="w-6 h-6 text-orange-400" />
+              </div>
               <h3 className="text-xl font-semibold text-white mb-2">Monitor Stock Availability</h3>
               <p className="text-slate-400">
                 Don&apos;t send fans to a &ldquo;Currently Unavailable&rdquo; page. Know exactly when your
@@ -197,10 +203,10 @@ export default async function Home() {
             {/* Step 2 */}
             <div className="text-center">
               <div className="w-12 h-12 bg-emerald-600 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4 text-white">2</div>
-              <h3 className="text-xl font-semibold text-white mb-2">The 60-Second Scan</h3>
+              <h3 className="text-xl font-semibold text-white mb-2">The Quick Scan</h3>
               <p className="text-slate-400">
                 Our &ldquo;Medic&rdquo; scans every description for 404s, expired tags, and
-                out-of-stock items.
+                out-of-stock items in under 2 minutes.
               </p>
             </div>
 
@@ -392,7 +398,10 @@ export default async function Home() {
 
           <div className="grid md:grid-cols-2 gap-8">
             <div className="bg-slate-800/50 border border-slate-700/50 p-6 rounded-xl">
-              <h3 className="text-xl font-bold mb-4 text-red-400">❌ Manual Check</h3>
+              <h3 className="text-xl font-bold mb-4 text-red-400 flex items-center gap-2">
+                <XCircle className="w-5 h-5" />
+                Manual Check
+              </h3>
               <ul className="space-y-3 text-slate-400">
                 <li>&bull; 8+ hours of clicking</li>
                 <li>&bull; Easy to miss expired tags</li>
@@ -402,9 +411,12 @@ export default async function Home() {
             </div>
 
             <div className="bg-slate-800/50 border-2 border-emerald-600 p-6 rounded-xl">
-              <h3 className="text-xl font-bold mb-4 text-emerald-400">✓ Link Medic</h3>
+              <h3 className="text-xl font-bold mb-4 text-emerald-400 flex items-center gap-2">
+                <CheckCircle className="w-5 h-5" />
+                Link Medic
+              </h3>
               <ul className="space-y-3 text-slate-400">
-                <li>&bull; 60 seconds</li>
+                <li>&bull; Under 2 minutes</li>
                 <li>&bull; Catches everything (404s, OOS, tags)</li>
                 <li>&bull; AI-powered replacements</li>
                 <li>&bull; Weekly monitoring included</li>
@@ -482,7 +494,7 @@ export default async function Home() {
               </summary>
               <p className="text-slate-400 mt-4">
                 Yes. Whether you have 10 videos or 10,000, our engine is built to crawl
-                your entire archive in about 60 seconds. We prioritize your most-viewed
+                your entire archive in under 2 minutes. We prioritize your most-viewed
                 videos first so you can fix the high-impact leaks immediately.
               </p>
             </details>
@@ -531,7 +543,7 @@ export default async function Home() {
           Scan My Channel Free
         </Link>
         <p className="text-sm text-slate-500 mt-4">
-          No credit card required &middot; Results in 60 seconds
+          No credit card required &middot; Results in under 2 minutes
         </p>
       </section>
 
