@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Settings, X } from "lucide-react";
 import Link from "next/link";
+
+const STORAGE_KEY = "linkmedic-onboarding-dismissed";
 
 interface OnboardingModalProps {
   show: boolean;
@@ -10,8 +12,25 @@ interface OnboardingModalProps {
 
 export function OnboardingModal({ show }: OnboardingModalProps) {
   const [dismissed, setDismissed] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  if (!show || dismissed) {
+  // Check localStorage on mount
+  useEffect(() => {
+    setMounted(true);
+    const wasDismissed = localStorage.getItem(STORAGE_KEY) === "true";
+    if (wasDismissed) {
+      setDismissed(true);
+    }
+  }, []);
+
+  // Persist dismissal to localStorage
+  const handleDismiss = () => {
+    setDismissed(true);
+    localStorage.setItem(STORAGE_KEY, "true");
+  };
+
+  // Don't render until mounted (prevents hydration mismatch)
+  if (!mounted || !show || dismissed) {
     return null;
   }
 
@@ -20,7 +39,7 @@ export function OnboardingModal({ show }: OnboardingModalProps) {
       <div className="relative w-full max-w-md mx-4 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl">
         {/* Close button */}
         <button
-          onClick={() => setDismissed(true)}
+          onClick={handleDismiss}
           className="absolute top-4 right-4 p-1 text-slate-400 hover:text-white transition-colors"
           aria-label="Close"
         >
@@ -71,7 +90,7 @@ export function OnboardingModal({ show }: OnboardingModalProps) {
           {/* CTA */}
           <Link
             href="/settings"
-            onClick={() => setDismissed(true)}
+            onClick={handleDismiss}
             className="block w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-center font-medium rounded-lg transition-colors"
           >
             Go to Settings
@@ -79,7 +98,7 @@ export function OnboardingModal({ show }: OnboardingModalProps) {
 
           {/* Skip */}
           <button
-            onClick={() => setDismissed(true)}
+            onClick={handleDismiss}
             className="block w-full mt-3 py-2 text-sm text-slate-500 hover:text-slate-300 transition-colors text-center"
           >
             I&apos;ll do this later
