@@ -291,6 +291,57 @@ export default function YouTubeAffiliateDisclosureGuidelines() {
               </a>
             </li>
           </ul>
+
+          {/* UK Sources */}
+          <h3 className="text-sm font-semibold text-slate-500 mt-6 mb-3">United Kingdom</h3>
+          <ul className="space-y-3 text-sm">
+            <li>
+              <a
+                href="https://www.asa.org.uk/resource/influencers-guide-to-making-clear-that-ads-are-ads.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-slate-400 hover:text-emerald-400 transition underline underline-offset-2"
+              >
+                ASA: Influencers&apos; Guide to making clear that ads are ads
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://www.gov.uk/government/publications/social-media-endorsements-guide-for-influencers/social-media-endorsements-being-transparent-with-your-followers"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-slate-400 hover:text-emerald-400 transition underline underline-offset-2"
+              >
+                CMA: Social media endorsements - Guide for content creators
+              </a>
+            </li>
+          </ul>
+
+          {/* Canada Sources */}
+          <h3 className="text-sm font-semibold text-slate-500 mt-6 mb-3">Canada</h3>
+          <ul className="space-y-3 text-sm">
+            <li>
+              <a
+                href="https://ised-isde.canada.ca/site/competition-bureau-canada/en/how-we-foster-competition/education-and-outreach/influencer-marketing-and-competition-act"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-slate-400 hover:text-emerald-400 transition underline underline-offset-2"
+              >
+                Competition Bureau: Influencer marketing and the Competition Act
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://adstandards.ca/resources/influencer-marketing-disclosure-guidelines/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-slate-400 hover:text-emerald-400 transition underline underline-offset-2"
+              >
+                Ad Standards Canada: Influencer Marketing Disclosure Guidelines
+              </a>
+            </li>
+          </ul>
+
           <p className="text-xs text-slate-600 mt-6">Last updated: January 2026</p>
         </section>
       </article>
