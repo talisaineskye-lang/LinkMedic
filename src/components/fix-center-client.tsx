@@ -3,11 +3,9 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { Copy, Check, CheckCircle2, ExternalLink, RefreshCw, FileWarning, Lock, Eye, Pencil, ChevronDown, ChevronRight, Layers, List, X, FileDown } from "lucide-react";
+import { Copy, Check, CheckCircle2, ExternalLink, RefreshCw, FileWarning, Lock, Eye, Pencil, ChevronDown, ChevronRight, Layers, List, X, FileDown, Trash2, Undo2 } from "lucide-react";
 import { formatCurrency, formatNumber } from "@/lib/revenue-estimator";
-
-// Default FTC-compliant disclosure text
-const DEFAULT_DISCLOSURE_TEXT = "DISCLOSURE: Some of the links above are affiliate links, meaning I may earn a commission if you make a purchase at no additional cost to you.";
+import { DISCLOSURE_TEMPLATES } from "@/lib/disclosure-detector";
 import { FindReplacementsButton } from "./find-replacements-button";
 import Link from "next/link";
 
@@ -141,25 +139,97 @@ export function FixCenterClient({
   const [viewingDescriptionId, setViewingDescriptionId] = useState<string | null>(null);
   const [copiedDisclosureId, setCopiedDisclosureId] = useState<string | null>(null);
   const [dismissingDisclosureId, setDismissingDisclosureId] = useState<string | null>(null);
+  const [dismissingLinkId, setDismissingLinkId] = useState<string | null>(null);
+  const [dismissingAllUrl, setDismissingAllUrl] = useState<string | null>(null);
   const [downloadingExport, setDownloadingExport] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
+  const [undoingLinkId, setUndoingLinkId] = useState<string | null>(null);
+  const [showDisclosureMenu, setShowDisclosureMenu] = useState<string | null>(null);
   const router = useRouter();
 
-  // Close export dropdown when clicking outside
+  // Group fixed links by date
+  const groupedFixedByDate = fixedIssues.reduce((acc, link) => {
+    const date = link.dateFixed
+      ? new Date(link.dateFixed).toLocaleDateString('en-US', {
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric'
+        })
+      : 'Unknown Date';
+    if (!acc[date]) acc[date] = [];
+    acc[date].push(link);
+    return acc;
+  }, {} as Record<string, Issue[]>);
+
+  // Sort dates descending (newest first)
+  const sortedFixedDates = Object.keys(groupedFixedByDate).sort((a, b) => {
+    if (a === 'Unknown Date') return 1;
+    if (b === 'Unknown Date') return -1;
+    return new Date(b).getTime() - new Date(a).getTime();
+  });
+
+  // Initialize expandedDates with the most recent date on first render
+  useEffect(() => {
+    if (sortedFixedDates.length > 0 && expandedDates.size === 0) {
+      setExpandedDates(new Set([sortedFixedDates[0]]));
+    }
+  }, [sortedFixedDates.length]);
+
+  const toggleDateExpanded = (date: string) => {
+    setExpandedDates(prev => {
+      const next = new Set(prev);
+      if (next.has(date)) {
+        next.delete(date);
+      } else {
+        next.add(date);
+      }
+      return next;
+    });
+  };
+
+  const handleUndoFix = async (linkId: string) => {
+    setUndoingLinkId(linkId);
+    try {
+      const response = await fetch("/api/links/undo-fix", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ linkId }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to undo fix");
+      }
+
+      router.refresh();
+    } catch (error) {
+      console.error("Error undoing fix:", error);
+      alert("Failed to undo fix");
+    } finally {
+      setUndoingLinkId(null);
+    }
+  };
+
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (showExportMenu && !(e.target as Element).closest('.export-dropdown')) {
         setShowExportMenu(false);
       }
+      if (showDisclosureMenu && !(e.target as Element).closest('.disclosure-dropdown')) {
+        setShowDisclosureMenu(null);
+      }
     };
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
-  }, [showExportMenu]);
+  }, [showExportMenu, showDisclosureMenu]);
 
-  const copyDisclosure = async (id: string) => {
+  const copyDisclosure = async (id: string, template: "standard" | "short" = "standard") => {
     try {
-      await navigator.clipboard.writeText(DEFAULT_DISCLOSURE_TEXT);
+      const text = DISCLOSURE_TEMPLATES[template];
+      await navigator.clipboard.writeText(text);
       setCopiedDisclosureId(id);
+      setShowDisclosureMenu(null);
       setTimeout(() => setCopiedDisclosureId(null), 2000);
     } catch (err) {
       console.error("Failed to copy disclosure:", err);
@@ -276,6 +346,50 @@ export function FixCenterClient({
       alert("Failed to mark links as fixed");
     } finally {
       setMarkingAllFixedUrl(null);
+    }
+  };
+
+  const handleDismissLink = async (id: string) => {
+    setDismissingLinkId(id);
+    try {
+      const response = await fetch("/api/links/dismiss", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ linkId: id }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to dismiss link");
+      }
+
+      router.refresh();
+    } catch (error) {
+      console.error("Error dismissing link:", error);
+      alert("Failed to dismiss link");
+    } finally {
+      setDismissingLinkId(null);
+    }
+  };
+
+  const handleDismissAllLinks = async (originalUrl: string, linkIds: string[]) => {
+    setDismissingAllUrl(originalUrl);
+    try {
+      const response = await fetch("/api/links/dismiss", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ linkIds }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to dismiss links");
+      }
+
+      router.refresh();
+    } catch (error) {
+      console.error("Error dismissing links:", error);
+      alert("Failed to dismiss links");
+    } finally {
+      setDismissingAllUrl(null);
     }
   };
 
@@ -562,35 +676,59 @@ export function FixCenterClient({
 
                       {/* Suggested Disclosure */}
                       <td className="px-4 py-4">
-                        <p className="text-sm text-slate-300 max-w-[280px] line-clamp-2" title={DEFAULT_DISCLOSURE_TEXT}>
-                          {DEFAULT_DISCLOSURE_TEXT}
+                        <p className="text-sm text-slate-300 max-w-[280px] line-clamp-2" title={DISCLOSURE_TEMPLATES.standard}>
+                          {DISCLOSURE_TEMPLATES.standard}
                         </p>
                       </td>
 
                       {/* Action */}
                       <td className="px-4 py-4">
                         <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => copyDisclosure(item.id)}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition ${
-                              copiedDisclosureId === item.id
-                                ? "bg-emerald-600 text-white"
-                                : "bg-slate-700 hover:bg-slate-600 text-white"
-                            }`}
-                            title="Copy disclosure text to paste at the TOP of your video description"
-                          >
+                          {/* Copy Disclosure Dropdown */}
+                          <div className="relative disclosure-dropdown">
                             {copiedDisclosureId === item.id ? (
-                              <>
+                              <button
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 text-white"
+                              >
                                 <Check className="w-3 h-3" />
                                 Copied!
-                              </>
+                              </button>
                             ) : (
                               <>
-                                <Copy className="w-3 h-3" />
-                                Copy
+                                <button
+                                  onClick={() => setShowDisclosureMenu(showDisclosureMenu === item.id ? null : item.id)}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition"
+                                  title="Copy disclosure text to paste at the TOP of your video description"
+                                >
+                                  <Copy className="w-3 h-3" />
+                                  Copy
+                                  <ChevronDown className="w-3 h-3" />
+                                </button>
+                                {showDisclosureMenu === item.id && (
+                                  <div className="absolute left-0 mt-1 w-64 bg-slate-800 rounded-lg shadow-lg border border-slate-700 z-20 overflow-hidden">
+                                    <button
+                                      onClick={() => copyDisclosure(item.id, "standard")}
+                                      className="w-full px-3 py-2 text-left hover:bg-slate-700 transition"
+                                    >
+                                      <div className="font-medium text-white text-xs">Standard (Recommended)</div>
+                                      <div className="text-xs text-slate-400 mt-0.5 line-clamp-2">
+                                        {DISCLOSURE_TEMPLATES.standard}
+                                      </div>
+                                    </button>
+                                    <button
+                                      onClick={() => copyDisclosure(item.id, "short")}
+                                      className="w-full px-3 py-2 text-left hover:bg-slate-700 transition border-t border-slate-700/50"
+                                    >
+                                      <div className="font-medium text-white text-xs">Short</div>
+                                      <div className="text-xs text-slate-400 mt-0.5 line-clamp-2">
+                                        {DISCLOSURE_TEMPLATES.short}
+                                      </div>
+                                    </button>
+                                  </div>
+                                )}
                               </>
                             )}
-                          </button>
+                          </div>
                           <a
                             href={`https://studio.youtube.com/video/${item.youtubeVideoId}/edit`}
                             target="_blank"
@@ -732,6 +870,105 @@ export function FixCenterClient({
               <CheckCircle2 className="w-16 h-16 mx-auto text-emerald-400 mb-4" />
               <p className="text-xl font-semibold text-white mb-2">All Links Fixed!</p>
               <p className="text-slate-400">Great job! All your affiliate links are working properly.</p>
+            </div>
+          ) : activeTab === "fixed" ? (
+            /* Fixed Links Grouped by Date */
+            <div className="divide-y divide-slate-700/30">
+              {sortedFixedDates.map((date) => {
+                const linksForDate = groupedFixedByDate[date];
+                const isExpanded = expandedDates.has(date);
+
+                return (
+                  <div key={date}>
+                    {/* Date Header - Collapsible */}
+                    <button
+                      onClick={() => toggleDateExpanded(date)}
+                      className="w-full px-4 py-3 flex justify-between items-center hover:bg-slate-700/30 transition"
+                    >
+                      <div className="flex items-center gap-2">
+                        {isExpanded ? (
+                          <ChevronDown className="w-4 h-4 text-slate-400" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4 text-slate-400" />
+                        )}
+                        <span className="font-medium text-white">{date}</span>
+                      </div>
+                      <span className="text-sm text-slate-400">
+                        {linksForDate.length} link{linksForDate.length !== 1 ? "s" : ""} fixed
+                      </span>
+                    </button>
+
+                    {/* Expanded Content */}
+                    {isExpanded && (
+                      <div className="bg-slate-900/30">
+                        {linksForDate.map((link) => (
+                          <div
+                            key={link.id}
+                            className="px-4 py-3 flex items-center justify-between border-t border-slate-700/30 hover:bg-slate-700/20 transition"
+                          >
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              {/* Video Thumbnail */}
+                              {link.videoThumbnailUrl ? (
+                                <Image
+                                  src={link.videoThumbnailUrl}
+                                  alt={link.videoTitle}
+                                  width={48}
+                                  height={27}
+                                  className="rounded object-cover flex-shrink-0"
+                                />
+                              ) : (
+                                <div className="w-12 h-7 bg-slate-700 rounded flex-shrink-0" />
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm text-white font-medium truncate" title={link.videoTitle}>
+                                  {link.videoTitle.length > 50
+                                    ? link.videoTitle.slice(0, 50) + "..."
+                                    : link.videoTitle}
+                                </p>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className="text-xs text-slate-500 truncate max-w-[200px]" title={link.url}>
+                                    {link.url.length > 40 ? link.url.slice(0, 40) + "..." : link.url}
+                                  </span>
+                                  {link.suggestedTitle && (
+                                    <>
+                                      <span className="text-xs text-slate-600">→</span>
+                                      <span className="text-xs text-emerald-400 truncate max-w-[200px]" title={link.suggestedTitle}>
+                                        {link.suggestedTitle.length > 30
+                                          ? link.suggestedTitle.slice(0, 30) + "..."
+                                          : link.suggestedTitle}
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+                              <span className="text-sm font-medium text-emerald-400">
+                                {formatCurrency(link.estimatedLoss)}
+                              </span>
+                              <button
+                                onClick={() => handleUndoFix(link.id)}
+                                disabled={undoingLinkId === link.id}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-slate-700 hover:bg-red-950/50 hover:text-red-400 text-slate-400 transition disabled:opacity-50"
+                                title="Undo fix (move back to Broken Links)"
+                              >
+                                {undoingLinkId === link.id ? (
+                                  "..."
+                                ) : (
+                                  <>
+                                    <Undo2 className="w-3 h-3" />
+                                    Undo
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           ) : activeTab === "needs-fix" && viewMode === "grouped" ? (
             /* Grouped View */
@@ -973,24 +1210,58 @@ export function FixCenterClient({
                                 </>
                               )}
                             </button>
+                            {/* Dismiss button */}
+                            <button
+                              onClick={() => handleDismissAllLinks(group.originalUrl, group.linkIds)}
+                              disabled={dismissingAllUrl === group.originalUrl}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-700 hover:bg-red-950/50 hover:text-red-400 text-slate-400 transition disabled:opacity-50"
+                              title="Dismiss this link (can't be fixed)"
+                            >
+                              {dismissingAllUrl === group.originalUrl ? (
+                                "Dismissing..."
+                              ) : (
+                                <>
+                                  <Trash2 className="w-3 h-3" />
+                                  Dismiss
+                                </>
+                              )}
+                            </button>
                           </div>
                         ) : (
-                          <div className="flex items-center justify-center gap-2">
+                          <div className="flex flex-col items-center gap-2">
                             <span className="text-xs text-slate-500 italic">
                               Find replacement first
                             </span>
-                            {group.videos.length === 1 && (
-                              <a
-                                href={`https://studio.youtube.com/video/${group.videos[0].youtubeVideoId}/edit`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition"
-                                title="Edit in YouTube Studio"
+                            <div className="flex items-center gap-2">
+                              {group.videos.length === 1 && (
+                                <a
+                                  href={`https://studio.youtube.com/video/${group.videos[0].youtubeVideoId}/edit`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition"
+                                  title="Edit in YouTube Studio"
+                                >
+                                  <Pencil className="w-3 h-3" />
+                                  Edit in Studio
+                                </a>
+                              )}
+                              {/* Dismiss button for links without suggestions */}
+                              <button
+                                onClick={() => handleDismissAllLinks(group.originalUrl, group.linkIds)}
+                                disabled={dismissingAllUrl === group.originalUrl}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-700 hover:bg-red-950/50 hover:text-red-400 text-slate-400 transition disabled:opacity-50"
+                                title="Dismiss this link (can't be fixed)"
                               >
-                                <Pencil className="w-3 h-3" />
-                                Edit in Studio
-                              </a>
-                            )}
+                                {dismissingAllUrl === group.originalUrl ? (
+                                  "Dismissing..."
+                                ) : (
+                                  <>
+                                    <Trash2 className="w-3 h-3" />
+                                    Dismiss
+                                  </>
+                                )}
+                              </button>
+                            </div>
                           </div>
                         )}
                       </td>
@@ -999,8 +1270,8 @@ export function FixCenterClient({
                 </tbody>
               </table>
             </div>
-          ) : (
-          /* By-Video View (original table) */
+          ) : activeTab === "needs-fix" && viewMode === "by-video" ? (
+          /* By-Video View for Needs Fix */
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-slate-900/50 border-b border-slate-700/50">
@@ -1164,15 +1435,14 @@ export function FixCenterClient({
 
                     {/* Revenue at Risk */}
                     <td className="px-4 py-4 text-right">
-                      <span className={`text-sm font-semibold ${activeTab === "fixed" ? "text-emerald-400" : "text-red-400"}`}>
+                      <span className="text-sm font-semibold text-red-400">
                         {formatCurrency(issue.estimatedLoss)}
                       </span>
                     </td>
 
                     {/* Action */}
                     <td className="px-4 py-4 text-center">
-                      {activeTab === "needs-fix" ? (
-                        issue.suggestedLink ? (
+                      {issue.suggestedLink ? (
                           <div className="flex flex-col items-center gap-2">
                             {/* Copy & Edit button - copies link AND opens YouTube Studio - REQUIRED, DO NOT REMOVE */}
                             <div className="flex items-center gap-2">
@@ -1213,38 +1483,59 @@ export function FixCenterClient({
                                 </>
                               )}
                             </button>
+                            {/* Dismiss button */}
+                            <button
+                              onClick={() => handleDismissLink(issue.id)}
+                              disabled={dismissingLinkId === issue.id}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-700 hover:bg-red-950/50 hover:text-red-400 text-slate-400 transition disabled:opacity-50"
+                              title="Dismiss this link (can't be fixed)"
+                            >
+                              {dismissingLinkId === issue.id ? (
+                                "..."
+                              ) : (
+                                <Trash2 className="w-3 h-3" />
+                              )}
+                            </button>
                           </div>
                         ) : (
-                          <div className="flex items-center justify-center gap-2">
+                          <div className="flex flex-col items-center gap-2">
                             <span className="text-xs text-slate-500 italic">
                               Find replacement first
                             </span>
-                            <a
-                              href={`https://studio.youtube.com/video/${issue.youtubeVideoId}/edit`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition"
-                              title="Edit in YouTube Studio"
-                            >
-                              <Pencil className="w-3 h-3" />
-                              Edit in Studio
-                            </a>
+                            <div className="flex items-center gap-2">
+                              <a
+                                href={`https://studio.youtube.com/video/${issue.youtubeVideoId}/edit`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition"
+                                title="Edit in YouTube Studio"
+                              >
+                                <Pencil className="w-3 h-3" />
+                                Edit in Studio
+                              </a>
+                              {/* Dismiss button for links without suggestions */}
+                              <button
+                                onClick={() => handleDismissLink(issue.id)}
+                                disabled={dismissingLinkId === issue.id}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-700 hover:bg-red-950/50 hover:text-red-400 text-slate-400 transition disabled:opacity-50"
+                                title="Dismiss this link (can't be fixed)"
+                              >
+                                {dismissingLinkId === issue.id ? (
+                                  "..."
+                                ) : (
+                                  <Trash2 className="w-3 h-3" />
+                                )}
+                              </button>
+                            </div>
                           </div>
-                        )
-                      ) : (
-                        <span className="text-xs text-emerald-400">
-                          {issue.dateFixed
-                            ? new Date(issue.dateFixed).toLocaleDateString()
-                            : "Fixed"}
-                        </span>
-                      )}
+                        )}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        )}
+        ) : null}
       </div>
       )}
 

@@ -221,7 +221,7 @@ export default function YouTubeAffiliateDisclosureGuidelines() {
         </section>
 
         {/* CTA */}
-        <section className="bg-emerald-900/20 border border-emerald-700/30 rounded-xl p-8 text-center">
+        <section className="bg-emerald-900/20 border border-emerald-700/30 rounded-xl p-8 text-center mb-12">
           <h2 className="text-2xl font-bold mb-4">Check Your Disclosure Compliance</h2>
           <p className="text-slate-300 mb-6">
             LinkMedic automatically scans your video descriptions for missing or weak affiliate disclosures —
@@ -234,6 +234,64 @@ export default function YouTubeAffiliateDisclosureGuidelines() {
             Run Free Audit
             <ArrowRight className="w-4 h-4" />
           </Link>
+        </section>
+
+        {/* Sources */}
+        <section className="border-t border-slate-700/50 pt-8">
+          <h2 className="text-lg font-semibold text-slate-400 mb-4">Sources &amp; References</h2>
+          <ul className="space-y-3 text-sm">
+            <li>
+              <a
+                href="https://www.ftc.gov/business-guidance/resources/ftcs-endorsement-guides-what-people-are-asking"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-slate-400 hover:text-emerald-400 transition underline underline-offset-2"
+              >
+                FTC Endorsement Guides: What People Are Asking
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://www.ftc.gov/business-guidance/advertising-marketing/endorsements-influencers-reviews"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-slate-400 hover:text-emerald-400 transition underline underline-offset-2"
+              >
+                FTC Endorsements, Influencers, and Reviews
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://www.ftc.gov/news-events/topics/truth-advertising/advertisement-endorsements"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-slate-400 hover:text-emerald-400 transition underline underline-offset-2"
+              >
+                FTC Advertisement Endorsements Overview
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://affiliate-program.amazon.com/help/operating/agreement"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-slate-400 hover:text-emerald-400 transition underline underline-offset-2"
+              >
+                Amazon Associates Program Operating Agreement
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://support.google.com/youtube/answer/154235"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-slate-400 hover:text-emerald-400 transition underline underline-offset-2"
+              >
+                YouTube Paid Product Placements &amp; Endorsements
+              </a>
+            </li>
+          </ul>
+          <p className="text-xs text-slate-600 mt-6">Last updated: January 2026</p>
         </section>
       </article>
 

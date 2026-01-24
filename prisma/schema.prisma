@@ -134,6 +134,9 @@ model AffiliateLink {
   searchQuery      String?      // The search query used to find this replacement
   isFixed          Boolean      @default(false) // Has user marked this as fixed?
   dateFixed        DateTime?    // When was it fixed?
+  isDismissed      Boolean      @default(false) // Has user dismissed this unfixable link?
+  dateDismissed    DateTime?    // When was it dismissed?
+  dismissReason    String?      // Optional reason for dismissing
   video         Video        @relation(fields: [videoId], references: [id], onDelete: Cascade)
   scanResults   ScanResult[]
   statusHistory LinkStatusHistory[]

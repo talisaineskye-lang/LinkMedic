@@ -1,6 +1,10 @@
 /**
  * Affiliate Disclosure Detection Utility
  * Scans video descriptions for FTC-compliant affiliate disclosures
+ *
+ * A disclosure is "compliant" if:
+ * - Contains clear affiliate language (not just "affiliate")
+ * - Appears in first 200 characters (above the fold)
  */
 
 // Affiliate link patterns to detect
@@ -37,39 +41,35 @@ const AFFILIATE_LINK_PATTERNS = [
   /rakuten\.com.*affiliate/i,
 ];
 
-// Disclosure keywords (case-insensitive)
-const DISCLOSURE_KEYWORDS = [
-  "affiliate",
-  "commission",
-  "paid link",
-  "sponsored",
-  "#ad",
-  "partner link",
-  "i may earn",
-  "at no extra cost to you",
+// COMPLIANT phrases - clear, specific language that meets FTC requirements
+const COMPLIANT_PHRASES = [
   "i earn from qualifying purchases",
-  "amazon associate",
+  "i may receive a commission",
+  "i earn a commission",
+  "i may earn a commission",
+  "commission earned",
+  "affiliate links",
   "affiliate link",
-  "affiliate program",
-  "paid partnership",
+  "paid promotion",
+  "as an amazon associate",
+  "amazon associate",
+  "at no extra cost to you",
+  "at no additional cost to you",
+  "i receive a small commission",
+  "earn a small commission",
   "contains affiliate",
-  "earn a commission",
-  "small commission",
+  "paid partnership",
 ];
 
-// Common disclosure phrases (for better matching)
-const DISCLOSURE_PHRASES = [
-  /affiliate\s+link/i,
-  /affiliate\s+disclosure/i,
-  /paid\s+partner/i,
-  /sponsored\s+link/i,
-  /earn\s+(a\s+)?commission/i,
-  /may\s+earn\s+(a\s+)?(small\s+)?commission/i,
-  /at\s+no\s+(extra|additional)\s+cost\s+to\s+you/i,
-  /amazon\s+associate/i,
-  /qualifying\s+purchases/i,
-  /#ad\b/i,
-  /\bad\b/i, // standalone "ad" word
+// WEAK phrases - too vague or insufficient alone
+const WEAK_PHRASES = [
+  "affiliate",  // Too vague alone without "link" or "commission"
+  "#ad",
+  "#sponsored",
+  "#sp",
+  "#spon",
+  "#collab",
+  "partner",
 ];
 
 // Position threshold for "above the fold" (first 200 characters)
@@ -107,45 +107,44 @@ function countAffiliateLinks(description: string): number {
 }
 
 /**
- * Find disclosure in description
- * Returns the position and text of the first disclosure found
+ * Check if text contains a compliant phrase
  */
-function findDisclosure(description: string): { position: number; text: string } | null {
-  const lowerDesc = description.toLowerCase();
+function findCompliantPhrase(text: string): { phrase: string; position: number } | null {
+  const lowerText = text.toLowerCase();
 
-  // First check for phrase patterns (more accurate)
-  for (const pattern of DISCLOSURE_PHRASES) {
-    const match = description.match(pattern);
-    if (match && match.index !== undefined) {
-      // Extract surrounding context (up to 100 chars before and after)
-      const start = Math.max(0, match.index - 50);
-      const end = Math.min(description.length, match.index + match[0].length + 50);
-      const context = description.slice(start, end).trim();
-
-      return {
-        position: match.index,
-        text: context,
-      };
-    }
-  }
-
-  // Fall back to keyword search
-  for (const keyword of DISCLOSURE_KEYWORDS) {
-    const index = lowerDesc.indexOf(keyword.toLowerCase());
+  for (const phrase of COMPLIANT_PHRASES) {
+    const index = lowerText.indexOf(phrase);
     if (index !== -1) {
-      // Extract surrounding context
-      const start = Math.max(0, index - 50);
-      const end = Math.min(description.length, index + keyword.length + 50);
-      const context = description.slice(start, end).trim();
-
-      return {
-        position: index,
-        text: context,
-      };
+      return { phrase, position: index };
     }
   }
 
   return null;
+}
+
+/**
+ * Check if text contains a weak phrase
+ */
+function findWeakPhrase(text: string): { phrase: string; position: number } | null {
+  const lowerText = text.toLowerCase();
+
+  for (const phrase of WEAK_PHRASES) {
+    const index = lowerText.indexOf(phrase);
+    if (index !== -1) {
+      return { phrase, position: index };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Extract context around a found phrase
+ */
+function extractContext(description: string, position: number, phraseLength: number): string {
+  const start = Math.max(0, position - 50);
+  const end = Math.min(description.length, position + phraseLength + 50);
+  return description.slice(start, end).trim();
 }
 
 /**
@@ -180,40 +179,56 @@ export function analyzeDisclosure(description: string | null | undefined): Discl
     };
   }
 
-  // Find disclosure
-  const disclosure = findDisclosure(description);
+  const firstFold = description.slice(0, ABOVE_FOLD_THRESHOLD);
+  const fullText = description;
 
-  if (!disclosure) {
-    return {
-      hasAffiliateLinks: true,
-      affiliateLinkCount,
-      disclosureStatus: "MISSING",
-      disclosureText: null,
-      disclosurePosition: null,
-      issue: "No affiliate disclosure found",
-    };
-  }
-
-  // Check if disclosure is "above the fold"
-  if (disclosure.position <= ABOVE_FOLD_THRESHOLD) {
+  // Step 1: Check for compliant phrase above the fold
+  const compliantAboveFold = findCompliantPhrase(firstFold);
+  if (compliantAboveFold) {
     return {
       hasAffiliateLinks: true,
       affiliateLinkCount,
       disclosureStatus: "COMPLIANT",
-      disclosureText: disclosure.text,
-      disclosurePosition: disclosure.position,
+      disclosureText: extractContext(description, compliantAboveFold.position, compliantAboveFold.phrase.length),
+      disclosurePosition: compliantAboveFold.position,
       issue: null,
     };
   }
 
-  // Disclosure exists but is buried
+  // Step 2: Check if compliant phrase exists but is buried
+  const compliantBuried = findCompliantPhrase(fullText);
+  if (compliantBuried) {
+    return {
+      hasAffiliateLinks: true,
+      affiliateLinkCount,
+      disclosureStatus: "WEAK",
+      disclosureText: extractContext(description, compliantBuried.position, compliantBuried.phrase.length),
+      disclosurePosition: compliantBuried.position,
+      issue: "Disclosure found but buried below 'Show More'. Move it to the first 2 lines.",
+    };
+  }
+
+  // Step 3: Check for weak phrases only (anywhere in text)
+  const weakPhrase = findWeakPhrase(fullText);
+  if (weakPhrase) {
+    return {
+      hasAffiliateLinks: true,
+      affiliateLinkCount,
+      disclosureStatus: "WEAK",
+      disclosureText: extractContext(description, weakPhrase.position, weakPhrase.phrase.length),
+      disclosurePosition: weakPhrase.position,
+      issue: "Disclosure language is too vague. Use clearer terms like 'I may earn a commission' or 'affiliate links'.",
+    };
+  }
+
+  // Step 4: No disclosure found at all
   return {
     hasAffiliateLinks: true,
     affiliateLinkCount,
-    disclosureStatus: "WEAK",
-    disclosureText: disclosure.text,
-    disclosurePosition: disclosure.position,
-    issue: `Disclosure buried at position ${disclosure.position} (should be in first ${ABOVE_FOLD_THRESHOLD} characters)`,
+    disclosureStatus: "MISSING",
+    disclosureText: null,
+    disclosurePosition: null,
+    issue: "No affiliate disclosure found. Add one above the fold.",
   };
 }
 
@@ -221,21 +236,28 @@ export function analyzeDisclosure(description: string | null | undefined): Discl
  * Get human-readable issue description
  */
 export function getDisclosureIssueText(
-  status: "COMPLIANT" | "WEAK" | "MISSING" | "UNKNOWN",
+  status: "COMPLIANT" | "WEAK" | "MISSING" | "UNKNOWN" | string,
   position?: number | null
 ): string {
   switch (status) {
     case "COMPLIANT":
       return "Disclosure properly placed";
     case "WEAK":
-      return position
-        ? `Disclosure buried at character ${position}`
-        : "Disclosure buried below the fold";
+      if (position && position > ABOVE_FOLD_THRESHOLD) {
+        return "Disclosure found but buried below 'Show More'. Move it to the first 2 lines.";
+      }
+      return "Disclosure language is too vague. Use clearer terms like 'affiliate links' or 'I may earn a commission'.";
     case "MISSING":
-      return "No disclosure found";
+      return "No affiliate disclosure found. Add one above the fold.";
     case "UNKNOWN":
       return "Not yet scanned";
     default:
       return "Unknown status";
   }
 }
+
+// Disclosure templates for copying
+export const DISCLOSURE_TEMPLATES = {
+  standard: `Disclosure: As an Amazon Associate, I earn from qualifying purchases. If you click a link and buy something, I may receive a small commission at no extra cost to you.`,
+  short: `Commission Earned: Links below are affiliate links that help support the channel at no extra cost to you.`,
+};

@@ -44,11 +44,12 @@ export default async function FixCenterPage() {
     avgOrderValue: user?.avgOrderValue ?? DEFAULT_SETTINGS.avgOrderValue,
   };
 
-  // Get all broken/problematic links (both fixed and unfixed)
+  // Get all broken/problematic links (both fixed and unfixed, excluding dismissed)
   const allBrokenLinks = await prisma.affiliateLink.findMany({
     where: {
       video: { userId: session.user.id },
       status: { in: PROBLEM_STATUSES },
+      isDismissed: false, // Exclude dismissed links
     },
     select: {
       id: true,
