@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 import { syncUserVideos } from "@/lib/youtube";
 import { extractLinksForUser } from "@/lib/scanner";
 import { checkTierLimits, getUpgradeMessage } from "@/lib/tier-limits";
@@ -13,15 +14,23 @@ export async function POST() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check tier access for resync feature
-    const tierCheck = await checkTierLimits(session.user.id, "resync");
-    if (!tierCheck.allowed) {
-      return NextResponse.json({
-        error: "Upgrade required",
-        message: getUpgradeMessage("resync"),
-        upgradeRequired: true,
-        currentTier: tierCheck.currentTier,
-      }, { status: 403 });
+    // Check if user has ever synced before
+    const existingVideos = await prisma.video.count({
+      where: { userId: session.user.id },
+    });
+    const isFirstScan = existingVideos === 0;
+
+    // Only check tier limits for RE-syncs, not first scans
+    if (!isFirstScan) {
+      const tierCheck = await checkTierLimits(session.user.id, "resync");
+      if (!tierCheck.allowed) {
+        return NextResponse.json({
+          error: "Upgrade required",
+          message: getUpgradeMessage("resync"),
+          upgradeRequired: true,
+          currentTier: tierCheck.currentTier,
+        }, { status: 403 });
+      }
     }
 
     // Sync videos from YouTube

@@ -71,6 +71,7 @@ export function OnboardingModal({ show }: OnboardingModalProps) {
           {/* CTA */}
           <Link
             href="/settings"
+            onClick={() => setDismissed(true)}
             className="block w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-center font-medium rounded-lg transition-colors"
           >
             Go to Settings

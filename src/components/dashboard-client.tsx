@@ -289,7 +289,7 @@ export function DashboardClient({
             ) : (
               <RotateCw className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
             )}
-            {isSyncing ? "Syncing..." : "Resync"}
+            {isSyncing ? "Syncing..." : tierInfo.videoCount === 0 ? "Sync" : "Resync"}
           </button>
           <button
             onClick={handleExportCSV}

@@ -180,11 +180,13 @@ export default async function DashboardPage() {
     disclosureIssues,
   };
 
+  const isFirstScan = videoCount === 0;
+
   const tierInfo = {
     tier,
     videoCount,
     videoLimit,
-    canResync: tierFeatures.resync,
+    canResync: tierFeatures.resync || isFirstScan, // Allow first scan for free users
     canExportCSV: tierFeatures.csvExport,
     canUseAI: tierFeatures.aiSuggestions,
   };
