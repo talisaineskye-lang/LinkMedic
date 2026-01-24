@@ -93,15 +93,15 @@ export default async function Home() {
         <div className="max-w-4xl mx-auto px-6">
           <div className="grid grid-cols-3 gap-8 text-center">
             <div>
-              <div className="text-2xl md:text-4xl font-bold text-emerald-400 mb-1">15%</div>
+              <div className="text-2xl md:text-4xl font-bold text-orange-400 mb-1">15%</div>
               <div className="text-sm text-slate-400">Average link decay rate across YouTube</div>
             </div>
             <div>
-              <div className="text-2xl md:text-4xl font-bold text-emerald-400 mb-1">$1,500+</div>
+              <div className="text-2xl md:text-4xl font-bold text-red-400 mb-1">$1,500+</div>
               <div className="text-sm text-slate-400">Average annual revenue lost to broken links*</div>
             </div>
             <div>
-              <div className="text-2xl md:text-4xl font-bold text-emerald-400 mb-1">&lt;2 min</div>
+              <div className="text-2xl md:text-4xl font-bold text-green-400 mb-1">&lt;2 min</div>
               <div className="text-sm text-slate-400">To scan your entire channel history</div>
             </div>
           </div>
