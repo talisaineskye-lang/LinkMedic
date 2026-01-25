@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { Anton, Inter, Geist_Mono } from "next/font/google";
+import { Bebas_Neue, Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 
-const anton = Anton({
+const bebasNeue = Bebas_Neue({
   weight: "400",
   subsets: ["latin"],
   variable: "--font-display",
@@ -20,7 +20,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LinkMedic - Protect Your Affiliate Revenue",
+  title: "LinkMedic - Stop Leaking Revenue From Your Old Videos",
   description: "Detect, prioritize, and fix broken affiliate links across all your YouTube videos.",
 };
 
@@ -32,7 +32,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${anton.variable} ${inter.variable} ${geistMono.variable} font-sans antialiased bg-zinc-950`}
+        className={`${bebasNeue.variable} ${inter.variable} ${geistMono.variable} font-sans antialiased bg-[#0F0F0F]`}
       >
         <Providers>{children}</Providers>
       </body>

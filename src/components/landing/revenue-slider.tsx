@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 
-export function RevenueSlider() {
+export function LeakCalculator() {
   const [monthlyViews, setMonthlyViews] = useState(100000);
 
   const clickRate = 0.02;
@@ -14,14 +15,18 @@ export function RevenueSlider() {
   const monthlyLoss = Math.round(monthlyViews * clickRate * brokenRate * conversionRate * avgCommission);
   const annualLoss = monthlyLoss * 12;
 
+  const sliderPercentage = ((monthlyViews - 10000) / (1000000 - 10000)) * 100;
+
   return (
-    <section className="bg-zinc-900 py-24">
+    <section className="bg-[#0F0F0F] py-24">
       <div className="max-w-2xl mx-auto px-6 text-center">
-        <h2 className="font-display text-3xl md:text-5xl text-zinc-100 mb-4 tracking-tight">
-          HOW MUCH IS <span className="text-red-400">SLIPPING THROUGH?</span>
+
+        <p className="text-[#FF0000] font-mono text-sm mb-4 tracking-wider animate-pulse">⚠ LEAK CALCULATOR</p>
+        <h2 className="font-display text-4xl md:text-5xl text-white tracking-wide mb-4">
+          HOW MUCH ARE YOU <span className="text-[#FF0000]">LOSING?</span>
         </h2>
-        <p className="text-zinc-500 mb-12">
-          Drag to see what broken links might cost you.
+        <p className="text-[#AAAAAA] mb-12">
+          Drag to estimate the revenue leaking from your back catalog.
         </p>
 
         {/* Slider */}
@@ -33,33 +38,50 @@ export function RevenueSlider() {
             step="10000"
             value={monthlyViews}
             onChange={(e) => setMonthlyViews(Number(e.target.value))}
-            className="w-full h-3 bg-zinc-800 rounded-lg appearance-none cursor-pointer"
-            style={{ accentColor: '#f97316' }}
+            className="w-full h-2 bg-[#272727] rounded-lg appearance-none cursor-pointer"
+            style={{
+              accentColor: '#FF0000',
+              background: `linear-gradient(to right, #FF0000 0%, #FF0000 ${sliderPercentage}%, #272727 ${sliderPercentage}%, #272727 100%)`
+            }}
           />
-          <div className="flex justify-between text-sm text-zinc-600 mt-3">
+          <div className="flex justify-between text-sm text-[#AAAAAA]/50 mt-3 font-mono">
             <span>10K views/mo</span>
             <span>1M views/mo</span>
           </div>
         </div>
 
-        {/* THE GUT PUNCH */}
-        <div className="bg-zinc-950 rounded-2xl p-10 mb-8 border border-zinc-800">
-          <p className="text-zinc-500 text-sm mb-3 uppercase tracking-wide">Estimated Annual Loss</p>
-          <p className="font-display text-6xl md:text-8xl text-red-400 mb-3">
+        {/* The gut punch */}
+        <motion.div
+          className="bg-[#272727]/70 backdrop-blur-sm rounded-2xl p-10 border border-[#FF0000]/30 relative overflow-hidden"
+          animate={{
+            boxShadow: [
+              '0 0 20px rgba(255,0,0,0.1)',
+              '0 0 40px rgba(255,0,0,0.2)',
+              '0 0 20px rgba(255,0,0,0.1)',
+            ]
+          }}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
+          <p className="text-[#AAAAAA] text-sm mb-2 uppercase tracking-wider font-mono">Estimated Annual Loss</p>
+          <p className="font-display text-6xl md:text-8xl text-[#FF0000] drop-shadow-[0_0_30px_rgba(255,0,0,0.5)]">
             ${annualLoss.toLocaleString()}
           </p>
-          <p className="text-zinc-400">
-            That&apos;s <span className="text-zinc-100 font-semibold">${monthlyLoss.toLocaleString()}/month</span> you&apos;re not earning
+          <p className="text-[#AAAAAA] mt-4">
+            That&apos;s <span className="text-white font-bold">${monthlyLoss.toLocaleString()}/month</span> leaking from your back catalog
           </p>
-        </div>
+        </motion.div>
 
         <Link
           href="/audit"
-          className="inline-block rounded-xl bg-orange-500 text-zinc-950 px-8 py-4 font-bold hover:bg-orange-400 transition shadow-[0_0_30px_rgba(249,115,22,0.3)]"
+          className="inline-block mt-8 rounded-lg bg-[#00FF00] text-black px-10 py-5 font-bold text-lg hover:brightness-110 transition shadow-[0_0_40px_rgba(0,255,0,0.3)]"
         >
-          FIND MY BROKEN LINKS →
+          PLUG THE LEAKS — FREE SCAN
         </Link>
+
       </div>
     </section>
   );
 }
+
+// Keep the old export name for backwards compatibility
+export { LeakCalculator as RevenueSlider };

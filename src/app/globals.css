@@ -1,13 +1,23 @@
 @import "tailwindcss";
 
 :root {
-  --background: #09090b;
-  --foreground: #fafafa;
+  --background: #0F0F0F;
+  --foreground: #FFFFFF;
+  --yt-black: #0F0F0F;
+  --yt-gray: #272727;
+  --yt-light: #AAAAAA;
+  --emergency-red: #FF0000;
+  --profit-green: #00FF00;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-yt-black: var(--yt-black);
+  --color-yt-gray: var(--yt-gray);
+  --color-yt-light: var(--yt-light);
+  --color-emergency-red: var(--emergency-red);
+  --color-profit-green: var(--profit-green);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-display);
@@ -25,4 +35,26 @@ body {
 
 .font-sans {
   font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.font-mono {
+  font-family: var(--font-geist-mono), monospace;
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0F0F0F;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #272727;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #333;
 }
