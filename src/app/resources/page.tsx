@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import Link from "next/link";
-import { Link as LinkIcon, ArrowRight, AlertTriangle, ShoppingCart, FileSearch, ExternalLink, FileText } from "lucide-react";
+import { Link as LinkIcon, ArrowRight, ExternalLink, FileText, FileSearch, AlertTriangle } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Resources | LinkMedic - YouTube Affiliate Link Guides",
@@ -17,22 +17,16 @@ const RESOURCES = [
     featured: true,
   },
   {
-    href: "/resources/broken-affiliate-links-youtube",
-    title: "Broken Affiliate Links on YouTube: Why It Happens",
-    description: "Learn why YouTube affiliate links break and how to fix them. Protect your revenue from silent decay.",
-    icon: AlertTriangle,
-  },
-  {
-    href: "/resources/amazon-affiliate-links-not-working",
-    title: "Amazon Affiliate Links Not Working?",
-    description: "Discover why Amazon affiliate links stop converting. Buy Box issues, discontinued products, and more.",
-    icon: ShoppingCart,
-  },
-  {
-    href: "/resources/audit-youtube-descriptions-affiliate-links",
-    title: "How to Audit YouTube Descriptions (The Right Way)",
+    href: "/resources/audit-youtube-affiliate-links",
+    title: "How to Audit YouTube Affiliate Links (The Right Way)",
     description: "The right approach to auditing affiliate links. Prioritize by revenue impact, not random checks.",
     icon: FileSearch,
+  },
+  {
+    href: "/resources/why-affiliate-links-break",
+    title: "Why Affiliate Links Break on YouTube (And What to Do)",
+    description: "Learn why YouTube affiliate links fail silently, common Amazon link issues, and how to fix them.",
+    icon: AlertTriangle,
   },
   {
     href: "/resources/youtube-affiliate-link-disclosure-guidelines",
