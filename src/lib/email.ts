@@ -337,7 +337,7 @@ export async function sendScanCompleteEmail(
           <div style="text-align: center; margin-top: 32px; color: #9ca3af; font-size: 12px;">
             <p>
               <a href="${APP_URL}" style="color: #9ca3af;">Link Medic</a> ·
-              Affiliate link health for YouTube creators
+              Detect broken links. Suggest fixes. Scan weekly.
             </p>
           </div>
 
@@ -395,7 +395,7 @@ export async function sendPaymentFailedEmail(to: string): Promise<{ success: boo
 }
 
 /**
- * Sends a weekly digest email to paid users with Link Guard monitoring
+ * Sends a weekly digest email to paid users with weekly scans enabled
  */
 export async function sendWeeklyDigestEmail(
   to: string,
@@ -489,7 +489,7 @@ export async function sendWeeklyDigestEmail(
           <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
 
           <p style="color: #6b7280; font-size: 12px; text-align: center;">
-            You're receiving this because you have Link Guard monitoring enabled.<br>
+            You're receiving this because you have weekly scans enabled.<br>
             <a href="${APP_URL}/settings" style="color: #6b7280;">Manage email preferences</a>
           </p>
 

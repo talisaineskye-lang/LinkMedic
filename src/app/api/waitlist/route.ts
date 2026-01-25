@@ -54,7 +54,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: "You're on the list! We'll email you when Portfolio Manager launches.",
+      message: "You're on the list! We'll email you when Operator tier launches.",
     });
   } catch (error) {
     console.error("Error adding to waitlist:", error);

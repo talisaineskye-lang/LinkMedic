@@ -373,7 +373,7 @@ export function AuditResultsClient({ auditId, initialData }: AuditResultsClientP
               </li>
               <li className="flex items-start gap-2 text-sm text-slate-300">
                 <Check className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
-                <span>24/7 &quot;Link Guard&quot; Monitoring</span>
+                <span>Weekly Scans</span>
               </li>
               <li className="flex items-start gap-2 text-sm text-slate-300">
                 <Check className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
@@ -393,30 +393,30 @@ export function AuditResultsClient({ auditId, initialData }: AuditResultsClientP
             </p>
           </div>
 
-          {/* Tier 3: The Portfolio Manager ($49/mo) - Greyed Out */}
+          {/* Tier 3: Operator ($29/mo) - Greyed Out */}
           <div className="bg-slate-800/20 border border-slate-700/30 rounded-xl p-6 opacity-60">
             <div className="mb-4">
-              <h4 className="text-lg font-semibold text-slate-400">The Portfolio Manager</h4>
-              <p className="text-3xl font-bold text-slate-400 mt-1">$49<span className="text-sm text-slate-500">/mo</span></p>
+              <h4 className="text-lg font-semibold text-slate-400">Operator</h4>
+              <p className="text-3xl font-bold text-slate-400 mt-1">$29<span className="text-sm text-slate-500">/mo</span></p>
               <p className="text-sm text-slate-500 mt-1">Scale</p>
             </div>
 
             <ul className="space-y-3 mb-6">
               <li className="flex items-start gap-2 text-sm text-slate-500">
                 <Users className="w-4 h-4 text-slate-600 mt-0.5 flex-shrink-0" />
-                <span>Manage up to 10 Channels</span>
+                <span>Up to 5 Channels</span>
               </li>
               <li className="flex items-start gap-2 text-sm text-slate-500">
                 <FileText className="w-4 h-4 text-slate-600 mt-0.5 flex-shrink-0" />
-                <span>Aggregate Dashboard</span>
+                <span>Unified Dashboard</span>
               </li>
               <li className="flex items-start gap-2 text-sm text-slate-500">
                 <FileText className="w-4 h-4 text-slate-600 mt-0.5 flex-shrink-0" />
-                <span>Agency PDF Reporting</span>
+                <span>Export Fix List</span>
               </li>
               <li className="flex items-start gap-2 text-sm text-slate-500">
                 <Users className="w-4 h-4 text-slate-600 mt-0.5 flex-shrink-0" />
-                <span>Team Access</span>
+                <span>Priority Support</span>
               </li>
             </ul>
 

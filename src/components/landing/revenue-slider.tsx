@@ -21,7 +21,7 @@ export function LeakCalculator() {
     <section className="bg-[#0F0F0F] py-24">
       <div className="max-w-2xl mx-auto px-6 text-center">
 
-        <p className="text-[#FF0000] font-mono text-sm mb-4 tracking-wider animate-pulse">⚠ LEAK CALCULATOR</p>
+        <p className="text-[#FF0000] font-mono text-sm mb-4 tracking-wider">⚠ LEAK CALCULATOR</p>
         <h2 className="font-display text-4xl md:text-5xl text-white tracking-wide mb-4">
           HOW MUCH ARE YOU <span className="text-[#FF0000]">LOSING?</span>
         </h2>

@@ -79,13 +79,13 @@ function ConfidenceBadge({ score }: { score: number | null }) {
   if (score === null) return null;
 
   const getColor = () => {
-    if (score >= 85) return "bg-emerald-950/50 border-emerald-600/50 text-emerald-400";
-    if (score >= 60) return "bg-amber-950/30 border-amber-700/50 text-amber-400";
-    return "bg-slate-700/30 border-slate-600/50 text-slate-400";
+    if (score >= 85) return "bg-profit-green/20 border-profit-green/50 text-profit-green";
+    if (score >= 60) return "bg-orange-500/20 border-orange-500/50 text-orange-400";
+    return "bg-yt-gray border-white/20 text-yt-light";
   };
 
   return (
-    <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full border ${getColor()}`}>
+    <span className={`inline-flex px-2 py-0.5 text-xs font-bold rounded border ${getColor()}`}>
       {score}%
     </span>
   );
@@ -95,24 +95,24 @@ function IssueTypeBadge({ status }: { status: string }) {
   const getConfig = () => {
     switch (status) {
       case "NOT_FOUND":
-        return { label: "404", color: "bg-red-950/50 border-red-600/50 text-red-400" };
+        return { label: "404", color: "bg-emergency-red/20 border-emergency-red/50 text-emergency-red" };
       case "OOS":
-        return { label: "Out of Stock", color: "bg-amber-950/50 border-amber-600/50 text-amber-400" };
+        return { label: "Out of Stock", color: "bg-orange-500/20 border-orange-500/50 text-orange-400" };
       case "OOS_THIRD_PARTY":
-        return { label: "3rd Party Only", color: "bg-orange-950/50 border-orange-600/50 text-orange-400" };
+        return { label: "3rd Party Only", color: "bg-yellow-500/20 border-yellow-500/50 text-yellow-400" };
       case "SEARCH_REDIRECT":
-        return { label: "Redirect", color: "bg-purple-950/50 border-purple-600/50 text-purple-400" };
+        return { label: "Redirect", color: "bg-orange-500/20 border-orange-500/50 text-orange-400" };
       case "MISSING_TAG":
-        return { label: "Missing Tag", color: "bg-blue-950/50 border-blue-600/50 text-blue-400" };
+        return { label: "Missing Tag", color: "bg-yellow-500/20 border-yellow-500/50 text-yellow-400" };
       default:
-        return { label: status, color: "bg-slate-700/50 border-slate-600/50 text-slate-400" };
+        return { label: status, color: "bg-yt-gray border-white/20 text-yt-light" };
     }
   };
 
   const { label, color } = getConfig();
 
   return (
-    <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full border ${color}`}>
+    <span className={`inline-flex px-2 py-0.5 text-xs font-bold rounded border ${color}`}>
       {label}
     </span>
   );
@@ -458,11 +458,11 @@ export function FixCenterClient({
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-2xl font-bold text-white">Fix Center</h1>
-          <p className="text-slate-400 mt-1">
+          <h1 className="font-display text-3xl tracking-wide">FIX CENTER</h1>
+          <p className="text-yt-light mt-1">
             {needsFixIssues.length} broken link{needsFixIssues.length !== 1 ? "s" : ""}
             {totalLoss > 0 && (
-              <> losing <span className="text-red-400 font-semibold">{formatCurrency(totalLoss)}</span>/month</>
+              <> losing <span className="text-emergency-red font-semibold">{formatCurrency(totalLoss)}</span>/month</>
             )}
           </p>
         </div>
@@ -473,7 +473,7 @@ export function FixCenterClient({
               <button
                 onClick={() => setShowExportMenu(!showExportMenu)}
                 disabled={downloadingExport}
-                className="flex items-center gap-2 px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium rounded-lg transition disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2.5 bg-yt-gray hover:bg-white/5 border border-white/20 text-white text-sm font-medium rounded-lg transition disabled:opacity-50"
               >
                 <FileDown className="w-4 h-4" />
                 {downloadingExport ? "Exporting..." : "Export"}
@@ -481,37 +481,37 @@ export function FixCenterClient({
               </button>
 
               {showExportMenu && (
-                <div className="absolute right-0 mt-2 w-64 bg-slate-800 rounded-lg shadow-lg border border-slate-700 z-20 overflow-hidden">
+                <div className="absolute right-0 mt-2 w-64 bg-yt-gray rounded-xl shadow-lg border border-white/10 z-20 overflow-hidden">
                   <button
                     onClick={() => handleDownloadExport("tubebuddy")}
                     disabled={!needsFixIssues.some(i => i.suggestedLink)}
-                    className="w-full px-4 py-3 text-left hover:bg-slate-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-3 text-left hover:bg-white/5 transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <div className="font-medium text-white flex items-center gap-2">
                       <span>📋</span> TubeBuddy (Bulk Fix)
                     </div>
-                    <div className="text-xs text-slate-400 mt-0.5">Fix all videos at once with Find & Replace</div>
+                    <div className="text-xs text-yt-light mt-0.5">Fix all videos at once with Find & Replace</div>
                   </button>
 
                   <button
                     onClick={() => handleDownloadExport("csv")}
-                    className="w-full px-4 py-3 text-left hover:bg-slate-700 transition border-t border-slate-700/50"
+                    className="w-full px-4 py-3 text-left hover:bg-white/5 transition border-t border-white/10"
                   >
                     <div className="font-medium text-white flex items-center gap-2">
                       <span>📊</span> CSV Spreadsheet
                     </div>
-                    <div className="text-xs text-slate-400 mt-0.5">Open in Excel or Google Sheets</div>
+                    <div className="text-xs text-yt-light mt-0.5">Open in Excel or Google Sheets</div>
                   </button>
 
                   <button
                     onClick={() => handleDownloadExport("manual")}
                     disabled={!needsFixIssues.some(i => i.suggestedLink)}
-                    className="w-full px-4 py-3 text-left hover:bg-slate-700 transition border-t border-slate-700/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-3 text-left hover:bg-white/5 transition border-t border-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <div className="font-medium text-white flex items-center gap-2">
                       <span>📄</span> Fix Script (Manual)
                     </div>
-                    <div className="text-xs text-slate-400 mt-0.5">Step-by-step with YouTube Studio links</div>
+                    <div className="text-xs text-yt-light mt-0.5">Step-by-step with YouTube Studio links</div>
                   </button>
                 </div>
               )}
@@ -522,23 +522,23 @@ export function FixCenterClient({
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-slate-800/40 p-1 rounded-lg w-fit">
+      <div className="flex gap-1 bg-yt-gray/70 backdrop-blur-sm p-1 rounded-xl w-fit border border-white/10">
         <button
           onClick={() => setActiveTab("needs-fix")}
-          className={`px-4 py-2 text-sm font-medium rounded-md transition ${
+          className={`px-4 py-2 text-sm font-medium rounded-lg transition ${
             activeTab === "needs-fix"
-              ? "bg-slate-700 text-white"
-              : "text-slate-400 hover:text-white"
+              ? "bg-emergency-red/20 text-emergency-red border border-emergency-red/30"
+              : "text-yt-light hover:text-white"
           }`}
         >
           Broken Links ({needsFixIssues.length})
         </button>
         <button
           onClick={() => setActiveTab("disclosure")}
-          className={`px-4 py-2 text-sm font-medium rounded-md transition flex items-center gap-1.5 ${
+          className={`px-4 py-2 text-sm font-medium rounded-lg transition flex items-center gap-1.5 ${
             activeTab === "disclosure"
-              ? "bg-slate-700 text-white"
-              : "text-slate-400 hover:text-white"
+              ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+              : "text-yt-light hover:text-white"
           }`}
         >
           <FileWarning className="w-3.5 h-3.5" />
@@ -546,10 +546,10 @@ export function FixCenterClient({
         </button>
         <button
           onClick={() => setActiveTab("fixed")}
-          className={`px-4 py-2 text-sm font-medium rounded-md transition ${
+          className={`px-4 py-2 text-sm font-medium rounded-lg transition ${
             activeTab === "fixed"
-              ? "bg-slate-700 text-white"
-              : "text-slate-400 hover:text-white"
+              ? "bg-profit-green/20 text-profit-green border border-profit-green/30"
+              : "text-yt-light hover:text-white"
           }`}
         >
           Fixed ({fixedIssues.length})
@@ -558,29 +558,29 @@ export function FixCenterClient({
 
       {/* Disclosure Issues Tab */}
       {activeTab === "disclosure" && (
-        <div className="bg-slate-800/40 border border-slate-700/50 rounded-lg backdrop-blur overflow-hidden">
+        <div className="bg-yt-gray/70 backdrop-blur-sm border border-white/10 rounded-xl overflow-hidden">
           {disclosureIssues.length === 0 ? (
             <div className="p-12 text-center">
-              <CheckCircle2 className="w-16 h-16 mx-auto text-emerald-400 mb-4" />
+              <CheckCircle2 className="w-16 h-16 mx-auto text-profit-green mb-4" />
               <p className="text-xl font-semibold text-white mb-2">No Disclosure Issues!</p>
-              <p className="text-slate-400">
+              <p className="text-yt-light">
                 All your videos with affiliate links have proper disclosures.
               </p>
             </div>
           ) : !canViewDisclosureDetails ? (
             // Free tier: show count but blur details
             <div className="relative">
-              <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-8">
-                <Lock className="w-12 h-12 text-slate-500 mb-4" />
+              <div className="absolute inset-0 bg-yt-dark/90 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-8">
+                <Lock className="w-12 h-12 text-yt-light/50 mb-4" />
                 <p className="text-lg font-semibold text-white mb-2">
                   {disclosureIssues.length} video{disclosureIssues.length !== 1 ? "s" : ""} with disclosure issues
                 </p>
-                <p className="text-slate-400 text-center mb-4 max-w-md">
+                <p className="text-yt-light text-center mb-4 max-w-md">
                   Upgrade to see which videos are missing FTC-compliant affiliate disclosures.
                 </p>
                 <Link
                   href="/settings"
-                  className="px-6 py-3 bg-amber-600 hover:bg-amber-500 rounded-lg font-semibold text-white transition"
+                  className="px-6 py-3 bg-profit-green hover:brightness-110 rounded-lg font-bold text-black transition shadow-[0_0_20px_rgba(0,255,0,0.2)]"
                 >
                   Upgrade to View Details
                 </Link>
@@ -588,23 +588,23 @@ export function FixCenterClient({
               {/* Blurred preview */}
               <div className="overflow-x-auto opacity-30 pointer-events-none">
                 <table className="w-full">
-                  <thead className="bg-slate-900/50 border-b border-slate-700/50">
+                  <thead className="bg-yt-dark/50 border-b border-white/10">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase">Video</th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase">Affiliate Links</th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase">Status</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase">Issue</th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase">Action</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-yt-light uppercase">Video</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-yt-light uppercase">Affiliate Links</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-yt-light uppercase">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-yt-light uppercase">Issue</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-yt-light uppercase">Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     {[1, 2, 3].map((i) => (
-                      <tr key={i} className="border-b border-slate-700/30">
-                        <td className="px-4 py-4"><div className="h-4 w-32 bg-slate-700 rounded" /></td>
-                        <td className="px-4 py-4 text-center"><div className="h-4 w-8 bg-slate-700 rounded mx-auto" /></td>
-                        <td className="px-4 py-4 text-center"><div className="h-6 w-20 bg-slate-700 rounded mx-auto" /></td>
-                        <td className="px-4 py-4"><div className="h-4 w-40 bg-slate-700 rounded" /></td>
-                        <td className="px-4 py-4 text-center"><div className="h-8 w-24 bg-slate-700 rounded mx-auto" /></td>
+                      <tr key={i} className="border-b border-white/5">
+                        <td className="px-4 py-4"><div className="h-4 w-32 bg-yt-gray rounded" /></td>
+                        <td className="px-4 py-4 text-center"><div className="h-4 w-8 bg-yt-gray rounded mx-auto" /></td>
+                        <td className="px-4 py-4 text-center"><div className="h-6 w-20 bg-yt-gray rounded mx-auto" /></td>
+                        <td className="px-4 py-4"><div className="h-4 w-40 bg-yt-gray rounded" /></td>
+                        <td className="px-4 py-4 text-center"><div className="h-8 w-24 bg-yt-gray rounded mx-auto" /></td>
                       </tr>
                     ))}
                   </tbody>
@@ -614,25 +614,25 @@ export function FixCenterClient({
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-slate-900/50 border-b border-slate-700/50">
+                <thead className="bg-yt-dark/50 border-b border-white/10">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-yt-light uppercase tracking-wider">
                       Video
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-yt-light uppercase tracking-wider">
                       Issue
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-yt-light uppercase tracking-wider">
                       Suggested Disclosure
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-yt-light uppercase tracking-wider">
                       Action
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-700/30">
+                <tbody className="divide-y divide-white/5">
                   {disclosureIssues.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-700/20 transition">
+                    <tr key={item.id} className="hover:bg-white/5 transition">
                       {/* Video */}
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-3">
@@ -645,7 +645,7 @@ export function FixCenterClient({
                               className="rounded object-cover flex-shrink-0"
                             />
                           ) : (
-                            <div className="w-16 h-9 bg-slate-700 rounded flex-shrink-0" />
+                            <div className="w-16 h-9 bg-yt-gray rounded flex-shrink-0" />
                           )}
                           <div className="min-w-0">
                             <p className="text-sm text-white font-medium truncate max-w-[180px]" title={item.videoTitle}>
@@ -653,7 +653,7 @@ export function FixCenterClient({
                                 ? item.videoTitle.slice(0, 40) + "..."
                                 : item.videoTitle}
                             </p>
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-yt-light/50">
                               {formatNumber(item.videoViewCount)} views • {item.affiliateLinkCount} affiliate link{item.affiliateLinkCount !== 1 ? "s" : ""}
                             </p>
                           </div>
@@ -663,20 +663,20 @@ export function FixCenterClient({
                       {/* Issue Description */}
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-2">
-                          <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${
+                          <span className={`inline-flex px-2 py-0.5 text-xs font-bold rounded border ${
                             item.disclosureStatus === "MISSING"
-                              ? "bg-red-950/50 border border-red-600/50 text-red-400"
-                              : "bg-amber-950/50 border border-amber-600/50 text-amber-400"
+                              ? "bg-emergency-red/20 border-emergency-red/50 text-emergency-red"
+                              : "bg-orange-500/20 border-orange-500/50 text-orange-400"
                           }`}>
                             {item.disclosureStatus === "MISSING" ? "Missing" : "Weak"}
                           </span>
                         </div>
-                        <p className="text-sm text-slate-400 mt-1">{item.issue}</p>
+                        <p className="text-sm text-yt-light mt-1">{item.issue}</p>
                       </td>
 
                       {/* Suggested Disclosure */}
                       <td className="px-4 py-4">
-                        <p className="text-sm text-slate-300 max-w-[280px] line-clamp-2" title={DISCLOSURE_TEMPLATES.standard}>
+                        <p className="text-sm text-yt-light/70 max-w-[280px] line-clamp-2" title={DISCLOSURE_TEMPLATES.standard}>
                           {DISCLOSURE_TEMPLATES.standard}
                         </p>
                       </td>
@@ -688,7 +688,7 @@ export function FixCenterClient({
                           <div className="relative disclosure-dropdown">
                             {copiedDisclosureId === item.id ? (
                               <button
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 text-white"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-profit-green text-black"
                               >
                                 <Check className="w-3 h-3" />
                                 Copied!
@@ -697,7 +697,7 @@ export function FixCenterClient({
                               <>
                                 <button
                                   onClick={() => setShowDisclosureMenu(showDisclosureMenu === item.id ? null : item.id)}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition"
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-yt-gray hover:bg-white/10 border border-white/20 text-white transition"
                                   title="Copy disclosure text to paste at the TOP of your video description"
                                 >
                                   <Copy className="w-3 h-3" />
@@ -705,22 +705,22 @@ export function FixCenterClient({
                                   <ChevronDown className="w-3 h-3" />
                                 </button>
                                 {showDisclosureMenu === item.id && (
-                                  <div className="absolute left-0 mt-1 w-64 bg-slate-800 rounded-lg shadow-lg border border-slate-700 z-20 overflow-hidden">
+                                  <div className="absolute left-0 mt-1 w-64 bg-yt-gray rounded-xl shadow-lg border border-white/10 z-20 overflow-hidden">
                                     <button
                                       onClick={() => copyDisclosure(item.id, "standard")}
-                                      className="w-full px-3 py-2 text-left hover:bg-slate-700 transition"
+                                      className="w-full px-3 py-2 text-left hover:bg-white/5 transition"
                                     >
                                       <div className="font-medium text-white text-xs">Standard (Recommended)</div>
-                                      <div className="text-xs text-slate-400 mt-0.5 line-clamp-2">
+                                      <div className="text-xs text-yt-light mt-0.5 line-clamp-2">
                                         {DISCLOSURE_TEMPLATES.standard}
                                       </div>
                                     </button>
                                     <button
                                       onClick={() => copyDisclosure(item.id, "short")}
-                                      className="w-full px-3 py-2 text-left hover:bg-slate-700 transition border-t border-slate-700/50"
+                                      className="w-full px-3 py-2 text-left hover:bg-white/5 transition border-t border-white/10"
                                     >
                                       <div className="font-medium text-white text-xs">Short</div>
-                                      <div className="text-xs text-slate-400 mt-0.5 line-clamp-2">
+                                      <div className="text-xs text-yt-light mt-0.5 line-clamp-2">
                                         {DISCLOSURE_TEMPLATES.short}
                                       </div>
                                     </button>
@@ -733,7 +733,7 @@ export function FixCenterClient({
                             href={`https://studio.youtube.com/video/${item.youtubeVideoId}/edit`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-yt-gray hover:bg-white/10 border border-white/20 text-white transition"
                             title="Edit in YouTube Studio"
                           >
                             <Pencil className="w-3 h-3" />
@@ -741,7 +741,7 @@ export function FixCenterClient({
                           </a>
                           <button
                             onClick={() => setViewingDescriptionId(viewingDescriptionId === item.id ? null : item.id)}
-                            className="p-1.5 rounded-lg bg-slate-700/50 hover:bg-slate-600/50 text-slate-400 transition"
+                            className="p-1.5 rounded-lg bg-yt-gray/50 hover:bg-white/10 text-yt-light transition"
                             title="View current description"
                           >
                             <Eye className="w-3.5 h-3.5" />
@@ -749,7 +749,7 @@ export function FixCenterClient({
                           <button
                             onClick={() => handleDismissDisclosure(item.id)}
                             disabled={dismissingDisclosureId === item.id}
-                            className="p-1.5 rounded-lg bg-slate-700/50 hover:bg-red-950/50 text-slate-400 hover:text-red-400 transition disabled:opacity-50"
+                            className="p-1.5 rounded-lg bg-yt-gray/50 hover:bg-emergency-red/20 text-yt-light hover:text-emergency-red transition disabled:opacity-50"
                             title="Dismiss this issue"
                           >
                             <X className="w-3.5 h-3.5" />
@@ -765,7 +765,7 @@ export function FixCenterClient({
 
           {/* Description Modal/Expanded View */}
           {viewingDescriptionId && (
-            <div className="border-t border-slate-700/50 p-6 bg-slate-900/50">
+            <div className="border-t border-white/10 p-6 bg-yt-dark/50">
               {(() => {
                 const item = disclosureIssues.find(d => d.id === viewingDescriptionId);
                 if (!item) return null;
@@ -775,19 +775,19 @@ export function FixCenterClient({
                       <h3 className="text-lg font-semibold text-white">{item.videoTitle}</h3>
                       <button
                         onClick={() => setViewingDescriptionId(null)}
-                        className="text-slate-400 hover:text-white"
+                        className="text-yt-light hover:text-white"
                       >
                         Close
                       </button>
                     </div>
-                    <div className="bg-slate-800 rounded-lg p-4 max-h-64 overflow-y-auto">
-                      <pre className="text-sm text-slate-300 whitespace-pre-wrap font-sans">
+                    <div className="bg-yt-gray rounded-xl p-4 max-h-64 overflow-y-auto border border-white/10">
+                      <pre className="text-sm text-yt-light/70 whitespace-pre-wrap font-sans">
                         {item.description ? (
                           item.disclosureText ? (
                             // Highlight disclosure text if found
                             <>
                               {item.description.slice(0, item.disclosurePosition || 0)}
-                              <mark className="bg-amber-500/30 text-amber-300 px-1 rounded">
+                              <mark className="bg-orange-500/30 text-orange-300 px-1 rounded">
                                 {item.disclosureText}
                               </mark>
                               {item.description.slice((item.disclosurePosition || 0) + (item.disclosureText?.length || 0))}
@@ -796,17 +796,17 @@ export function FixCenterClient({
                             item.description
                           )
                         ) : (
-                          <span className="text-slate-500 italic">No description available</span>
+                          <span className="text-yt-light/50 italic">No description available</span>
                         )}
                       </pre>
                     </div>
                     {item.disclosureStatus === "WEAK" && item.disclosurePosition && (
-                      <p className="mt-3 text-sm text-amber-400">
+                      <p className="mt-3 text-sm text-orange-400">
                         Disclosure found at character {item.disclosurePosition}. FTC recommends placing disclosures in the first 200 characters.
                       </p>
                     )}
                     {item.disclosureStatus === "MISSING" && (
-                      <p className="mt-3 text-sm text-red-400">
+                      <p className="mt-3 text-sm text-emergency-red">
                         No affiliate disclosure found. Consider adding language like &quot;This description contains affiliate links&quot; near the top.
                       </p>
                     )}
@@ -820,19 +820,19 @@ export function FixCenterClient({
 
       {/* Broken Links / Fixed Table */}
       {activeTab !== "disclosure" && (
-        <div className="bg-slate-800/40 border border-slate-700/50 rounded-lg backdrop-blur overflow-hidden">
+        <div className="bg-yt-gray/70 backdrop-blur-sm border border-white/10 rounded-xl overflow-hidden">
           {/* View Toggle - only show for needs-fix tab */}
           {activeTab === "needs-fix" && needsFixIssues.length > 0 && (
-            <div className="px-4 py-3 border-b border-slate-700/50 flex items-center justify-between">
+            <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-400">View:</span>
-                <div className="flex gap-1 bg-slate-900/50 p-0.5 rounded-md">
+                <span className="text-xs text-yt-light">View:</span>
+                <div className="flex gap-1 bg-yt-dark/50 p-0.5 rounded-lg">
                   <button
                     onClick={() => setViewMode("grouped")}
-                    className={`px-3 py-1.5 text-xs font-medium rounded transition flex items-center gap-1.5 ${
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition flex items-center gap-1.5 ${
                       viewMode === "grouped"
-                        ? "bg-slate-700 text-white"
-                        : "text-slate-400 hover:text-white"
+                        ? "bg-yt-gray text-white"
+                        : "text-yt-light hover:text-white"
                     }`}
                   >
                     <Layers className="w-3 h-3" />
@@ -840,10 +840,10 @@ export function FixCenterClient({
                   </button>
                   <button
                     onClick={() => setViewMode("by-video")}
-                    className={`px-3 py-1.5 text-xs font-medium rounded transition flex items-center gap-1.5 ${
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition flex items-center gap-1.5 ${
                       viewMode === "by-video"
-                        ? "bg-slate-700 text-white"
-                        : "text-slate-400 hover:text-white"
+                        ? "bg-yt-gray text-white"
+                        : "text-yt-light hover:text-white"
                     }`}
                   >
                     <List className="w-3 h-3" />
@@ -852,7 +852,7 @@ export function FixCenterClient({
                 </div>
               </div>
               {viewMode === "grouped" && (
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-yt-light/50">
                   {groupedIssues.length} unique link{groupedIssues.length !== 1 ? "s" : ""} across {needsFixIssues.length} video{needsFixIssues.length !== 1 ? "s" : ""}
                 </span>
               )}
@@ -861,19 +861,19 @@ export function FixCenterClient({
 
           {issues.length === 0 && activeTab === "fixed" ? (
             <div className="p-12 text-center">
-              <CheckCircle2 className="w-16 h-16 mx-auto text-emerald-400 mb-4" />
+              <CheckCircle2 className="w-16 h-16 mx-auto text-profit-green mb-4" />
               <p className="text-xl font-semibold text-white mb-2">No Fixed Links Yet</p>
-              <p className="text-slate-400">Links you mark as fixed will appear here.</p>
+              <p className="text-yt-light">Links you mark as fixed will appear here.</p>
             </div>
           ) : needsFixIssues.length === 0 && activeTab === "needs-fix" ? (
             <div className="p-12 text-center">
-              <CheckCircle2 className="w-16 h-16 mx-auto text-emerald-400 mb-4" />
+              <CheckCircle2 className="w-16 h-16 mx-auto text-profit-green mb-4" />
               <p className="text-xl font-semibold text-white mb-2">All Links Fixed!</p>
-              <p className="text-slate-400">Great job! All your affiliate links are working properly.</p>
+              <p className="text-yt-light">Great job! All your affiliate links are working properly.</p>
             </div>
           ) : activeTab === "fixed" ? (
             /* Fixed Links Grouped by Date */
-            <div className="divide-y divide-slate-700/30">
+            <div className="divide-y divide-white/5">
               {sortedFixedDates.map((date) => {
                 const linksForDate = groupedFixedByDate[date];
                 const isExpanded = expandedDates.has(date);
@@ -883,28 +883,28 @@ export function FixCenterClient({
                     {/* Date Header - Collapsible */}
                     <button
                       onClick={() => toggleDateExpanded(date)}
-                      className="w-full px-4 py-3 flex justify-between items-center hover:bg-slate-700/30 transition"
+                      className="w-full px-4 py-3 flex justify-between items-center hover:bg-white/5 transition"
                     >
                       <div className="flex items-center gap-2">
                         {isExpanded ? (
-                          <ChevronDown className="w-4 h-4 text-slate-400" />
+                          <ChevronDown className="w-4 h-4 text-yt-light" />
                         ) : (
-                          <ChevronRight className="w-4 h-4 text-slate-400" />
+                          <ChevronRight className="w-4 h-4 text-yt-light" />
                         )}
                         <span className="font-medium text-white">{date}</span>
                       </div>
-                      <span className="text-sm text-slate-400">
+                      <span className="text-sm text-yt-light">
                         {linksForDate.length} link{linksForDate.length !== 1 ? "s" : ""} fixed
                       </span>
                     </button>
 
                     {/* Expanded Content */}
                     {isExpanded && (
-                      <div className="bg-slate-900/30">
+                      <div className="bg-yt-dark/30">
                         {linksForDate.map((link) => (
                           <div
                             key={link.id}
-                            className="px-4 py-3 flex items-center justify-between border-t border-slate-700/30 hover:bg-slate-700/20 transition"
+                            className="px-4 py-3 flex items-center justify-between border-t border-white/5 hover:bg-white/5 transition"
                           >
                             <div className="flex items-center gap-3 min-w-0 flex-1">
                               {/* Video Thumbnail */}
@@ -917,7 +917,7 @@ export function FixCenterClient({
                                   className="rounded object-cover flex-shrink-0"
                                 />
                               ) : (
-                                <div className="w-12 h-7 bg-slate-700 rounded flex-shrink-0" />
+                                <div className="w-12 h-7 bg-yt-gray rounded flex-shrink-0" />
                               )}
                               <div className="min-w-0 flex-1">
                                 <p className="text-sm text-white font-medium truncate" title={link.videoTitle}>
@@ -926,13 +926,13 @@ export function FixCenterClient({
                                     : link.videoTitle}
                                 </p>
                                 <div className="flex items-center gap-2 mt-0.5">
-                                  <span className="text-xs text-slate-500 truncate max-w-[200px]" title={link.url}>
+                                  <span className="text-xs text-yt-light/50 truncate max-w-[200px]" title={link.url}>
                                     {link.url.length > 40 ? link.url.slice(0, 40) + "..." : link.url}
                                   </span>
                                   {link.suggestedTitle && (
                                     <>
-                                      <span className="text-xs text-slate-600">→</span>
-                                      <span className="text-xs text-emerald-400 truncate max-w-[200px]" title={link.suggestedTitle}>
+                                      <span className="text-xs text-yt-light/30">→</span>
+                                      <span className="text-xs text-profit-green truncate max-w-[200px]" title={link.suggestedTitle}>
                                         {link.suggestedTitle.length > 30
                                           ? link.suggestedTitle.slice(0, 30) + "..."
                                           : link.suggestedTitle}
@@ -943,13 +943,13 @@ export function FixCenterClient({
                               </div>
                             </div>
                             <div className="flex items-center gap-2 flex-shrink-0 ml-4">
-                              <span className="text-sm font-medium text-emerald-400">
+                              <span className="text-sm font-medium text-profit-green">
                                 {formatCurrency(link.estimatedLoss)}
                               </span>
                               <button
                                 onClick={() => handleUndoFix(link.id)}
                                 disabled={undoingLinkId === link.id}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-slate-700 hover:bg-red-950/50 hover:text-red-400 text-slate-400 transition disabled:opacity-50"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-yt-gray hover:bg-emergency-red/20 hover:text-emergency-red text-yt-light transition disabled:opacity-50"
                                 title="Undo fix (move back to Broken Links)"
                               >
                                 {undoingLinkId === link.id ? (
@@ -974,41 +974,41 @@ export function FixCenterClient({
             /* Grouped View */
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-slate-900/50 border-b border-slate-700/50">
+                <thead className="bg-yt-dark/50 border-b border-white/10">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-yt-light uppercase tracking-wider">
                       Broken Link
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-yt-light uppercase tracking-wider">
                       Issue Type
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-yt-light uppercase tracking-wider">
                       Videos Affected
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-yt-light uppercase tracking-wider">
                       AI Suggestion
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-yt-light uppercase tracking-wider">
                       Confidence
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-right text-xs font-medium text-yt-light uppercase tracking-wider">
                       Total Revenue at Risk
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-yt-light uppercase tracking-wider">
                       Action
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-700/30">
+                <tbody className="divide-y divide-white/5">
                   {groupedIssues.map((group) => (
-                    <tr key={group.originalUrl} className="hover:bg-slate-700/20 transition">
+                    <tr key={group.originalUrl} className="hover:bg-white/5 transition">
                       {/* Broken Link */}
                       <td className="px-4 py-4">
                         <a
                           href={group.originalUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-sm text-red-400 hover:underline truncate block max-w-[180px]"
+                          className="text-sm text-emergency-red hover:underline truncate block max-w-[180px]"
                           title={group.originalUrl}
                         >
                           {group.originalUrl.length > 40 ? group.originalUrl.slice(0, 40) + "..." : group.originalUrl}
@@ -1024,7 +1024,7 @@ export function FixCenterClient({
                       <td className="px-4 py-4">
                         <button
                           onClick={() => toggleUrlExpanded(group.originalUrl)}
-                          className="flex items-center gap-1.5 text-sm text-slate-300 hover:text-white transition mx-auto"
+                          className="flex items-center gap-1.5 text-sm text-yt-light/70 hover:text-white transition mx-auto"
                         >
                           {expandedUrls.has(group.originalUrl) ? (
                             <ChevronDown className="w-4 h-4" />
@@ -1032,7 +1032,7 @@ export function FixCenterClient({
                             <ChevronRight className="w-4 h-4" />
                           )}
                           <span className="font-medium">{group.videos.length}</span>
-                          <span className="text-slate-500">video{group.videos.length !== 1 ? "s" : ""}</span>
+                          <span className="text-yt-light/50">video{group.videos.length !== 1 ? "s" : ""}</span>
                         </button>
                         {expandedUrls.has(group.originalUrl) && (
                           <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
@@ -1042,7 +1042,7 @@ export function FixCenterClient({
                                   href={`https://studio.youtube.com/video/${video.youtubeVideoId}/edit`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-slate-400 hover:text-emerald-400 truncate max-w-[150px] flex items-center gap-1"
+                                  className="text-yt-light hover:text-profit-green truncate max-w-[150px] flex items-center gap-1"
                                   title={video.title}
                                 >
                                   <Pencil className="w-3 h-3 flex-shrink-0" />
@@ -1059,7 +1059,7 @@ export function FixCenterClient({
                         {group.suggestedLink && group.suggestedTitle ? (
                           <div className="space-y-1">
                             <p
-                              className="text-sm text-emerald-400 font-medium max-w-[200px] truncate"
+                              className="text-sm text-profit-green font-medium max-w-[200px] truncate"
                               title={group.suggestedTitle}
                             >
                               {group.suggestedTitle.length > 40
@@ -1068,11 +1068,11 @@ export function FixCenterClient({
                             </p>
                             <div className="flex items-center gap-2">
                               {group.suggestedPrice && (
-                                <span className="text-xs text-slate-400">{group.suggestedPrice}</span>
+                                <span className="text-xs text-yt-light">{group.suggestedPrice}</span>
                               )}
                               <button
                                 onClick={() => copyAndOpenStudio(group.suggestedLink!, group.originalUrl, group.videos[0].youtubeVideoId)}
-                                className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-slate-700/50 hover:bg-emerald-950/50 text-slate-300 hover:text-emerald-400 transition"
+                                className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-yt-gray/50 hover:bg-profit-green/20 text-yt-light/70 hover:text-profit-green transition"
                                 title="Copy link and open YouTube Studio"
                               >
                                 {copiedId === group.originalUrl ? (
@@ -1091,18 +1091,18 @@ export function FixCenterClient({
                                 href={group.suggestedLink}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="p-1 rounded bg-slate-700/50 hover:bg-slate-600/50 transition"
+                                className="p-1 rounded bg-yt-gray/50 hover:bg-white/10 transition"
                                 title="Preview product"
                               >
-                                <ExternalLink className="w-3 h-3 text-slate-400" />
+                                <ExternalLink className="w-3 h-3 text-yt-light" />
                               </a>
                               <button
                                 onClick={() => handleFindReplacement(group.linkIds[0])}
                                 disabled={findingId === group.linkIds[0]}
-                                className="p-1 rounded bg-slate-700/50 hover:bg-slate-600/50 transition"
+                                className="p-1 rounded bg-yt-gray/50 hover:bg-white/10 transition"
                                 title="Re-scan for new suggestion"
                               >
-                                <RefreshCw className={`w-3 h-3 text-slate-400 ${findingId === group.linkIds[0] ? 'animate-spin' : ''}`} />
+                                <RefreshCw className={`w-3 h-3 text-yt-light ${findingId === group.linkIds[0] ? 'animate-spin' : ''}`} />
                               </button>
                             </div>
                           </div>
@@ -1110,7 +1110,7 @@ export function FixCenterClient({
                           <button
                             onClick={() => handleFindReplacement(group.linkIds[0])}
                             disabled={findingId === group.linkIds[0]}
-                            className="text-sm text-slate-400 hover:text-emerald-400 flex items-center gap-1 transition disabled:opacity-50"
+                            className="text-sm text-yt-light hover:text-profit-green flex items-center gap-1 transition disabled:opacity-50"
                           >
                             {findingId === group.linkIds[0] ? (
                               <>
@@ -1132,13 +1132,13 @@ export function FixCenterClient({
                         {group.suggestedLink ? (
                           <ConfidenceBadge score={group.confidenceScore} />
                         ) : (
-                          <span className="text-xs text-slate-500">-</span>
+                          <span className="text-xs text-yt-light/50">-</span>
                         )}
                       </td>
 
                       {/* Total Revenue at Risk */}
                       <td className="px-4 py-4 text-right">
-                        <span className="text-sm font-semibold text-red-400">
+                        <span className="text-sm font-semibold text-emergency-red">
                           {formatCurrency(group.totalRevenueAtRisk)}
                         </span>
                       </td>
@@ -1154,8 +1154,8 @@ export function FixCenterClient({
                                   onClick={() => copyAndOpenStudio(group.suggestedLink!, `action-${group.originalUrl}`, group.videos[0].youtubeVideoId)}
                                   className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition ${
                                     copiedId === `action-${group.originalUrl}`
-                                      ? "bg-emerald-600 text-white"
-                                      : "bg-slate-700 hover:bg-slate-600 text-white"
+                                      ? "bg-profit-green text-black"
+                                      : "bg-yt-gray hover:bg-white/10 border border-white/20 text-white"
                                   }`}
                                   title="Copy replacement link and open YouTube Studio (use Ctrl+F to find broken link)"
                                 >
@@ -1176,8 +1176,8 @@ export function FixCenterClient({
                                   onClick={() => copyAndOpenStudio(group.suggestedLink!, `action-${group.originalUrl}`, group.videos[0].youtubeVideoId)}
                                   className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition ${
                                     copiedId === `action-${group.originalUrl}`
-                                      ? "bg-emerald-600 text-white"
-                                      : "bg-slate-700 hover:bg-slate-600 text-white"
+                                      ? "bg-profit-green text-black"
+                                      : "bg-yt-gray hover:bg-white/10 border border-white/20 text-white"
                                   }`}
                                   title="Copy replacement link and open YouTube Studio (use Ctrl+F to find broken link)"
                                 >
@@ -1199,7 +1199,7 @@ export function FixCenterClient({
                             <button
                               onClick={() => handleMarkAllFixed(group.originalUrl, group.linkIds)}
                               disabled={markingAllFixedUrl === group.originalUrl}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-600 text-white transition"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-profit-green hover:brightness-110 disabled:bg-yt-gray text-black transition shadow-[0_0_15px_rgba(0,255,0,0.15)]"
                             >
                               {markingAllFixedUrl === group.originalUrl ? (
                                 "Marking..."
@@ -1214,7 +1214,7 @@ export function FixCenterClient({
                             <button
                               onClick={() => handleDismissAllLinks(group.originalUrl, group.linkIds)}
                               disabled={dismissingAllUrl === group.originalUrl}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-700 hover:bg-red-950/50 hover:text-red-400 text-slate-400 transition disabled:opacity-50"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-yt-gray hover:bg-emergency-red/20 hover:text-emergency-red text-yt-light transition disabled:opacity-50"
                               title="Dismiss this link (can't be fixed)"
                             >
                               {dismissingAllUrl === group.originalUrl ? (
@@ -1229,7 +1229,7 @@ export function FixCenterClient({
                           </div>
                         ) : (
                           <div className="flex flex-col items-center gap-2">
-                            <span className="text-xs text-slate-500 italic">
+                            <span className="text-xs text-yt-light/50 italic">
                               Find replacement first
                             </span>
                             <div className="flex items-center gap-2">
@@ -1238,7 +1238,7 @@ export function FixCenterClient({
                                   href={`https://studio.youtube.com/video/${group.videos[0].youtubeVideoId}/edit`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition"
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-yt-gray hover:bg-white/10 border border-white/20 text-white transition"
                                   title="Edit in YouTube Studio"
                                 >
                                   <Pencil className="w-3 h-3" />
@@ -1249,7 +1249,7 @@ export function FixCenterClient({
                               <button
                                 onClick={() => handleDismissAllLinks(group.originalUrl, group.linkIds)}
                                 disabled={dismissingAllUrl === group.originalUrl}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-700 hover:bg-red-950/50 hover:text-red-400 text-slate-400 transition disabled:opacity-50"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-yt-gray hover:bg-emergency-red/20 hover:text-emergency-red text-yt-light transition disabled:opacity-50"
                                 title="Dismiss this link (can't be fixed)"
                               >
                                 {dismissingAllUrl === group.originalUrl ? (
@@ -1274,34 +1274,34 @@ export function FixCenterClient({
           /* By-Video View for Needs Fix */
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-slate-900/50 border-b border-slate-700/50">
+              <thead className="bg-yt-dark/50 border-b border-white/10">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-yt-light uppercase tracking-wider">
                     Video
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-yt-light uppercase tracking-wider">
                     Broken Link
                   </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-xs font-medium text-yt-light uppercase tracking-wider">
                     Issue Type
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-yt-light uppercase tracking-wider">
                     AI Suggestion
                   </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-xs font-medium text-yt-light uppercase tracking-wider">
                     Confidence
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-yt-light uppercase tracking-wider">
                     Revenue at Risk
                   </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-xs font-medium text-yt-light uppercase tracking-wider">
                     Action
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-700/30">
+              <tbody className="divide-y divide-white/5">
                 {issues.map((issue) => (
-                  <tr key={issue.id} className="hover:bg-slate-700/20 transition">
+                  <tr key={issue.id} className="hover:bg-white/5 transition">
                     {/* Video with Thumbnail */}
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
@@ -1314,7 +1314,7 @@ export function FixCenterClient({
                             className="rounded object-cover flex-shrink-0"
                           />
                         ) : (
-                          <div className="w-16 h-9 bg-slate-700 rounded flex-shrink-0" />
+                          <div className="w-16 h-9 bg-yt-gray rounded flex-shrink-0" />
                         )}
                         <div className="min-w-0">
                           <p className="text-sm text-white font-medium truncate max-w-[180px]" title={issue.videoTitle}>
@@ -1322,7 +1322,7 @@ export function FixCenterClient({
                               ? issue.videoTitle.slice(0, 40) + "..."
                               : issue.videoTitle}
                           </p>
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-yt-light/50">
                             {formatNumber(issue.videoViewCount)} views
                           </p>
                         </div>
@@ -1335,7 +1335,7 @@ export function FixCenterClient({
                         href={issue.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-red-400 hover:underline truncate block max-w-[160px]"
+                        className="text-sm text-emergency-red hover:underline truncate block max-w-[160px]"
                         title={issue.url}
                       >
                         {issue.url.length > 35 ? issue.url.slice(0, 35) + "..." : issue.url}
@@ -1352,7 +1352,7 @@ export function FixCenterClient({
                       {issue.suggestedLink && issue.suggestedTitle ? (
                         <div className="space-y-1">
                           <p
-                            className="text-sm text-emerald-400 font-medium max-w-[200px] truncate"
+                            className="text-sm text-profit-green font-medium max-w-[200px] truncate"
                             title={issue.suggestedTitle}
                           >
                             {issue.suggestedTitle.length > 40
@@ -1361,11 +1361,11 @@ export function FixCenterClient({
                           </p>
                           <div className="flex items-center gap-2">
                             {issue.suggestedPrice && (
-                              <span className="text-xs text-slate-400">{issue.suggestedPrice}</span>
+                              <span className="text-xs text-yt-light">{issue.suggestedPrice}</span>
                             )}
                             <button
                               onClick={() => copyAndOpenStudio(issue.suggestedLink!, issue.id, issue.youtubeVideoId)}
-                              className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-slate-700/50 hover:bg-emerald-950/50 text-slate-300 hover:text-emerald-400 transition"
+                              className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-yt-gray/50 hover:bg-profit-green/20 text-yt-light/70 hover:text-profit-green transition"
                               title="Copy link and open YouTube Studio"
                             >
                               {copiedId === issue.id ? (
@@ -1384,19 +1384,19 @@ export function FixCenterClient({
                               href={issue.suggestedLink}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="p-1 rounded bg-slate-700/50 hover:bg-slate-600/50 transition"
+                              className="p-1 rounded bg-yt-gray/50 hover:bg-white/10 transition"
                               title="Preview product"
                             >
-                              <ExternalLink className="w-3 h-3 text-slate-400" />
+                              <ExternalLink className="w-3 h-3 text-yt-light" />
                             </a>
                             {activeTab === "needs-fix" && (
                               <button
                                 onClick={() => handleFindReplacement(issue.id)}
                                 disabled={findingId === issue.id}
-                                className="p-1 rounded bg-slate-700/50 hover:bg-slate-600/50 transition"
+                                className="p-1 rounded bg-yt-gray/50 hover:bg-white/10 transition"
                                 title="Re-scan for new suggestion"
                               >
-                                <RefreshCw className={`w-3 h-3 text-slate-400 ${findingId === issue.id ? 'animate-spin' : ''}`} />
+                                <RefreshCw className={`w-3 h-3 text-yt-light ${findingId === issue.id ? 'animate-spin' : ''}`} />
                               </button>
                             )}
                           </div>
@@ -1405,7 +1405,7 @@ export function FixCenterClient({
                         <button
                           onClick={() => handleFindReplacement(issue.id)}
                           disabled={findingId === issue.id}
-                          className="text-sm text-slate-400 hover:text-emerald-400 flex items-center gap-1 transition disabled:opacity-50"
+                          className="text-sm text-yt-light hover:text-profit-green flex items-center gap-1 transition disabled:opacity-50"
                         >
                           {findingId === issue.id ? (
                             <>
@@ -1420,7 +1420,7 @@ export function FixCenterClient({
                           )}
                         </button>
                       ) : (
-                        <span className="text-xs text-slate-500">-</span>
+                        <span className="text-xs text-yt-light/50">-</span>
                       )}
                     </td>
 
@@ -1429,13 +1429,13 @@ export function FixCenterClient({
                       {issue.suggestedLink ? (
                         <ConfidenceBadge score={issue.confidenceScore} />
                       ) : (
-                        <span className="text-xs text-slate-500">-</span>
+                        <span className="text-xs text-yt-light/50">-</span>
                       )}
                     </td>
 
                     {/* Revenue at Risk */}
                     <td className="px-4 py-4 text-right">
-                      <span className="text-sm font-semibold text-red-400">
+                      <span className="text-sm font-semibold text-emergency-red">
                         {formatCurrency(issue.estimatedLoss)}
                       </span>
                     </td>
@@ -1450,8 +1450,8 @@ export function FixCenterClient({
                                 onClick={() => copyAndOpenStudio(issue.suggestedLink!, `action-${issue.id}`, issue.youtubeVideoId)}
                                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition ${
                                   copiedId === `action-${issue.id}`
-                                    ? "bg-emerald-600 text-white"
-                                    : "bg-slate-700 hover:bg-slate-600 text-white"
+                                    ? "bg-profit-green text-black"
+                                    : "bg-yt-gray hover:bg-white/10 border border-white/20 text-white"
                                 }`}
                                 title="Copy replacement link and open YouTube Studio (use Ctrl+F to find broken link)"
                               >
@@ -1472,7 +1472,7 @@ export function FixCenterClient({
                             <button
                               onClick={() => handleMarkFixed(issue.id)}
                               disabled={markingFixedId === issue.id}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-600 text-white transition"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-profit-green hover:brightness-110 disabled:bg-yt-gray text-black transition shadow-[0_0_15px_rgba(0,255,0,0.15)]"
                             >
                               {markingFixedId === issue.id ? (
                                 "Marking..."
@@ -1487,7 +1487,7 @@ export function FixCenterClient({
                             <button
                               onClick={() => handleDismissLink(issue.id)}
                               disabled={dismissingLinkId === issue.id}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-700 hover:bg-red-950/50 hover:text-red-400 text-slate-400 transition disabled:opacity-50"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-yt-gray hover:bg-emergency-red/20 hover:text-emergency-red text-yt-light transition disabled:opacity-50"
                               title="Dismiss this link (can't be fixed)"
                             >
                               {dismissingLinkId === issue.id ? (
@@ -1499,7 +1499,7 @@ export function FixCenterClient({
                           </div>
                         ) : (
                           <div className="flex flex-col items-center gap-2">
-                            <span className="text-xs text-slate-500 italic">
+                            <span className="text-xs text-yt-light/50 italic">
                               Find replacement first
                             </span>
                             <div className="flex items-center gap-2">
@@ -1507,7 +1507,7 @@ export function FixCenterClient({
                                 href={`https://studio.youtube.com/video/${issue.youtubeVideoId}/edit`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-yt-gray hover:bg-white/10 border border-white/20 text-white transition"
                                 title="Edit in YouTube Studio"
                               >
                                 <Pencil className="w-3 h-3" />
@@ -1517,7 +1517,7 @@ export function FixCenterClient({
                               <button
                                 onClick={() => handleDismissLink(issue.id)}
                                 disabled={dismissingLinkId === issue.id}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-700 hover:bg-red-950/50 hover:text-red-400 text-slate-400 transition disabled:opacity-50"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-yt-gray hover:bg-emergency-red/20 hover:text-emergency-red text-yt-light transition disabled:opacity-50"
                                 title="Dismiss this link (can't be fixed)"
                               >
                                 {dismissingLinkId === issue.id ? (
@@ -1541,9 +1541,9 @@ export function FixCenterClient({
 
       {/* Copy Toast */}
       {copiedId && (
-        <div className="fixed bottom-6 right-6 px-4 py-3 bg-emerald-600 text-white rounded-lg shadow-lg flex items-center gap-2 animate-in slide-in-from-bottom-2 z-50">
+        <div className="fixed bottom-6 right-6 px-4 py-3 bg-profit-green text-black rounded-xl shadow-lg flex items-center gap-2 animate-in slide-in-from-bottom-2 z-50">
           <Check className="w-4 h-4" />
-          <span className="text-sm font-medium">Copied! Ready to paste into YouTube.</span>
+          <span className="text-sm font-bold">Copied! Ready to paste into YouTube.</span>
         </div>
       )}
     </div>

@@ -4,6 +4,7 @@
   --background: #0F0F0F;
   --foreground: #FFFFFF;
   --yt-black: #0F0F0F;
+  --yt-dark: #0A0A0A;
   --yt-gray: #272727;
   --yt-light: #AAAAAA;
   --emergency-red: #FF0000;
@@ -14,6 +15,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-yt-black: var(--yt-black);
+  --color-yt-dark: var(--yt-dark);
   --color-yt-gray: var(--yt-gray);
   --color-yt-light: var(--yt-light);
   --color-emergency-red: var(--emergency-red);

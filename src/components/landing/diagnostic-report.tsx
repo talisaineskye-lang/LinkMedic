@@ -82,25 +82,25 @@ export function DiagnosticReport() {
             </div>
           </motion.div>
 
-          {/* Card 3: Compliance */}
+          {/* Card 3: Tag Expired */}
           <motion.div
             className="bg-[#272727]/70 backdrop-blur-sm rounded-xl p-6 border border-white/10 relative overflow-hidden"
             whileHover={{ scale: 1.02, borderColor: 'rgba(255,255,0,0.3)' }}
             transition={{ duration: 0.2 }}
           >
-            {/* Warning icon */}
+            {/* Tag icon */}
             <div className="mb-4">
               <motion.div
                 className="text-4xl"
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 1, repeat: Infinity }}
+                animate={{ opacity: [1, 0.3, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
               >
-                ⚠️
+                🏷️
               </motion.div>
             </div>
-            <h3 className="font-display text-2xl text-white mb-2">COMPLIANCE DRIFT</h3>
+            <h3 className="font-display text-2xl text-white mb-2">TAG EXPIRED</h3>
             <p className="text-[#AAAAAA] text-sm">
-              FTC rules change. Amazon updates requirements. Your old disclosures become non-compliant.
+              Affiliate tags expire or get stripped during redirects. You send the click, someone else gets the commission.
             </p>
             <div className="mt-4 font-mono text-xs text-yellow-400">
               STATUS: AT RISK

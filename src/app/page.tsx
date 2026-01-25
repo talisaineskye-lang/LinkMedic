@@ -73,7 +73,7 @@ export default async function Home() {
               </div>
               <h3 className="font-display text-xl text-white mb-2">CONNECT</h3>
               <p className="text-[#AAAAAA] text-sm">
-                One click via YouTube. We never see your password.
+                One click via YouTube. We scan your video descriptions for broken links.
               </p>
             </div>
 
@@ -81,9 +81,9 @@ export default async function Home() {
               <div className="w-16 h-16 rounded-full bg-[#00FF00] text-black flex items-center justify-center font-display text-3xl mx-auto mb-4 shadow-[0_0_30px_rgba(0,255,0,0.3)]">
                 2
               </div>
-              <h3 className="font-display text-xl text-white mb-2">SCAN</h3>
+              <h3 className="font-display text-xl text-white mb-2">DETECT</h3>
               <p className="text-[#AAAAAA] text-sm">
-                We check every video for dead links, expired tags, and out-of-stock products.
+                We find 404s, expired tags, and out-of-stock products across your entire channel.
               </p>
             </div>
 
@@ -93,7 +93,7 @@ export default async function Home() {
               </div>
               <h3 className="font-display text-xl text-white mb-2">FIX</h3>
               <p className="text-[#AAAAAA] text-sm">
-                Get a prioritized list. Bulk export. Plug the leaks in minutes.
+                Get AI-powered suggestions. Fix in the dashboard or export for bulk editing.
               </p>
             </div>
 
@@ -137,7 +137,7 @@ export default async function Home() {
             {/* Free */}
             <div className="bg-[#272727]/70 backdrop-blur-sm rounded-xl p-8 border border-white/10">
               <h3 className="font-display text-2xl text-white mb-1">FREE SCAN</h3>
-              <p className="text-[#AAAAAA] text-sm mb-6">See your leaks</p>
+              <p className="text-[#AAAAAA] text-sm mb-6">See what&apos;s broken</p>
               <p className="font-display text-5xl text-white mb-8">$0</p>
               <ul className="space-y-3 text-sm text-[#AAAAAA] mb-8">
                 <li className="flex items-center gap-2">
@@ -161,7 +161,7 @@ export default async function Home() {
                 BEST VALUE
               </div>
               <h3 className="font-display text-2xl text-white mb-1">SPECIALIST</h3>
-              <p className="text-[#AAAAAA] text-sm mb-6">Full leak protection</p>
+              <p className="text-[#AAAAAA] text-sm mb-6">Full protection for one channel</p>
               <p className="font-display text-5xl text-white mb-8">$19<span className="text-[#AAAAAA] text-xl">/mo</span></p>
               <ul className="space-y-3 text-sm text-[#AAAAAA] mb-8">
                 <li className="flex items-center gap-2">
@@ -174,7 +174,10 @@ export default async function Home() {
                   <span className="text-[#00FF00]">✓</span> Weekly monitoring
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="text-[#00FF00]">✓</span> Bulk export
+                  <span className="text-[#00FF00]">✓</span> Export fix list
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-[#00FF00]">✓</span> Fix in dashboard
                 </li>
               </ul>
               <Link href="/login" className="block text-center rounded-lg bg-[#00FF00] text-black px-6 py-3 font-bold hover:brightness-110 transition shadow-[0_0_20px_rgba(0,255,0,0.2)]">
@@ -182,25 +185,28 @@ export default async function Home() {
               </Link>
             </div>
 
-            {/* Agency */}
+            {/* Operator */}
             <div className="bg-[#272727]/70 backdrop-blur-sm rounded-xl p-8 border border-white/10">
-              <h3 className="font-display text-2xl text-white mb-1">AGENCY</h3>
-              <p className="text-[#AAAAAA] text-sm mb-6">Multiple channels</p>
-              <p className="font-display text-5xl text-white mb-8">$49<span className="text-[#AAAAAA] text-xl">/mo</span></p>
+              <h3 className="font-display text-2xl text-white mb-1">OPERATOR</h3>
+              <p className="text-[#AAAAAA] text-sm mb-6">For creators with multiple channels</p>
+              <p className="font-display text-5xl text-white mb-8">$29<span className="text-[#AAAAAA] text-xl">/mo</span></p>
               <ul className="space-y-3 text-sm text-[#AAAAAA] mb-8">
                 <li className="flex items-center gap-2">
-                  <span className="text-[#00FF00]">✓</span> Up to 10 channels
+                  <span className="text-[#00FF00]">✓</span> Up to 5 channels
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="text-[#00FF00]">✓</span> Team access
+                  <span className="text-[#00FF00]">✓</span> Everything in Specialist
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="text-[#00FF00]">✓</span> Aggregate reports
+                  <span className="text-[#00FF00]">✓</span> Unified dashboard
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-[#00FF00]">✓</span> Priority support
                 </li>
               </ul>
-              <span className="block text-center rounded-lg border border-white/10 text-[#AAAAAA]/50 px-6 py-3 font-bold cursor-not-allowed">
-                COMING SOON
-              </span>
+              <Link href="/login" className="block text-center rounded-lg bg-[#00FF00] text-black px-6 py-3 font-bold hover:brightness-110 transition shadow-[0_0_20px_rgba(0,255,0,0.2)]">
+                START FREE TRIAL
+              </Link>
             </div>
 
           </div>
@@ -218,8 +224,16 @@ export default async function Home() {
           <div className="space-y-4">
             {[
               {
+                q: "How do I fix the broken links?",
+                a: "You have options. Fix links one-by-one directly in your LinkMedic dashboard — click a link, see the AI suggestion, copy the fix. For larger channels, export your fix list and update descriptions in bulk using YouTube Studio or your preferred tool."
+              },
+              {
+                q: "How often do you scan?",
+                a: "Free users get a one-time scan. Paid users get automatic weekly scans — we catch new issues before they start costing you money."
+              },
+              {
                 q: "How do you access my channel?",
-                a: "Official YouTube API. We read your public descriptions. We never see your password and can't change anything without your action."
+                a: "We use the official YouTube API to read your public video descriptions. We never see your password and can't change anything without your action."
               },
               {
                 q: "Will this affect my YouTube SEO?",
@@ -230,8 +244,8 @@ export default async function Home() {
                 a: "Yes. We scan your entire back catalog in under 2 minutes, prioritizing your most-viewed videos first."
               },
               {
-                q: "How often do you scan?",
-                a: "Free users get a one-time scan. Paid users get automatic weekly scans with alerts when something breaks."
+                q: "Does this work for non-Amazon links?",
+                a: "We flag 404s and broken redirects for any affiliate link. Amazon links get extra checks for stock status and tag validation."
               },
             ].map((item, i) => (
               <details key={i} className="group bg-[#272727]/70 backdrop-blur-sm rounded-xl border border-white/10">
@@ -250,8 +264,8 @@ export default async function Home() {
 
       {/* Final CTA */}
       <section className="bg-[#0F0F0F] py-24 relative overflow-hidden">
-        {/* Animated background pulse */}
-        <div className="absolute inset-0 bg-gradient-radial from-[#FF0000]/10 via-transparent to-transparent animate-pulse" />
+        {/* Subtle background glow */}
+        <div className="absolute inset-0 bg-gradient-radial from-[#FF0000]/10 via-transparent to-transparent" />
 
         <div className="max-w-3xl mx-auto px-6 text-center relative z-10">
           <h2 className="font-display text-4xl md:text-6xl text-white tracking-wide mb-4">
@@ -264,7 +278,7 @@ export default async function Home() {
 
           <Link
             href="/audit"
-            className="inline-block rounded-lg bg-[#00FF00] text-black px-12 py-6 font-bold text-xl hover:brightness-110 transition shadow-[0_0_50px_rgba(0,255,0,0.4)] animate-pulse"
+            className="inline-block rounded-lg bg-[#00FF00] text-black px-12 py-6 font-bold text-xl hover:brightness-110 transition shadow-[0_0_50px_rgba(0,255,0,0.4)]"
           >
             SCAN MY CHANNEL — FREE
           </Link>

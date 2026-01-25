@@ -34,57 +34,57 @@ export default async function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-3xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white">Settings</h1>
-        <p className="text-slate-300">Manage your account and preferences</p>
+        <h1 className="font-display text-3xl tracking-wide mb-1">SETTINGS</h1>
+        <p className="text-yt-light">Manage your account and preferences</p>
       </div>
 
       {/* Account Info */}
-      <div className="bg-slate-800/40 border border-slate-700/50 rounded-lg p-6 backdrop-blur">
-        <h2 className="text-lg font-semibold text-white mb-4">Account</h2>
+      <div className="bg-yt-gray/70 backdrop-blur-sm border border-white/10 rounded-xl p-6">
+        <h2 className="font-display text-xl tracking-wide mb-6">PROFILE</h2>
         <dl className="space-y-4">
           <div>
-            <dt className="text-sm text-slate-400">Email</dt>
+            <dt className="text-sm text-yt-light mb-1">Email</dt>
             <dd className="text-white">{user.email}</dd>
           </div>
           <div>
-            <dt className="text-sm text-slate-400">Name</dt>
+            <dt className="text-sm text-yt-light mb-1">Name</dt>
             <dd className="text-white">{user.name || "-"}</dd>
           </div>
           <div>
-            <dt className="text-sm text-slate-400">YouTube Channel</dt>
+            <dt className="text-sm text-yt-light mb-1">YouTube Channel</dt>
             <dd className="text-white">
               {user.youtubeChannelId ? (
                 <a
                   href={`https://youtube.com/channel/${user.youtubeChannelId}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-emerald-400 hover:underline"
+                  className="text-profit-green hover:underline"
                 >
                   {user.youtubeChannelId}
                 </a>
               ) : (
-                <span className="text-slate-500">Not connected</span>
+                <span className="text-yt-light/50">Not connected</span>
               )}
             </dd>
           </div>
           <div>
-            <dt className="text-sm text-slate-400">Subscription Status</dt>
+            <dt className="text-sm text-yt-light mb-1">Subscription Status</dt>
             <dd>
               <span
-                className={`inline-flex px-2 py-1 text-xs font-medium rounded-full border ${
+                className={`inline-flex px-2 py-1 text-xs font-bold rounded border ${
                   user.subscriptionStatus === "active"
-                    ? "bg-emerald-950/30 border-emerald-700/50 text-emerald-400"
+                    ? "bg-profit-green/20 border-profit-green/50 text-profit-green"
                     : user.subscriptionStatus === "trial"
-                    ? "bg-blue-950/30 border-blue-700/50 text-blue-400"
-                    : "bg-red-950/30 border-red-700/50 text-red-400"
+                    ? "bg-orange-500/20 border-orange-500/50 text-orange-400"
+                    : "bg-emergency-red/20 border-emergency-red/50 text-emergency-red"
                 }`}
               >
                 {user.subscriptionStatus === "trial"
                   ? `Trial (ends ${user.trialEndsAt ? new Date(user.trialEndsAt).toLocaleDateString() : "N/A"})`
-                  : user.subscriptionStatus}
+                  : user.subscriptionStatus?.toUpperCase()}
               </span>
             </dd>
           </div>
@@ -98,9 +98,9 @@ export default async function SettingsPage() {
       />
 
       {/* Revenue Assumptions */}
-      <div className="bg-slate-800/40 border border-slate-700/50 rounded-lg p-6 backdrop-blur">
-        <h2 className="text-lg font-semibold text-white mb-2">Revenue Assumptions</h2>
-        <p className="text-sm text-slate-400 mb-6">
+      <div className="bg-yt-gray/70 backdrop-blur-sm border border-white/10 rounded-xl p-6">
+        <h2 className="font-display text-xl tracking-wide mb-2">REVENUE ASSUMPTIONS</h2>
+        <p className="text-sm text-yt-light mb-6">
           Customize the assumptions used to estimate revenue loss from broken links.
         </p>
         <SettingsForm
@@ -114,13 +114,13 @@ export default async function SettingsPage() {
       </div>
 
       {/* Danger Zone */}
-      <div className="bg-red-950/20 border border-red-700/50 rounded-lg p-6">
-        <h2 className="text-lg font-semibold text-red-400 mb-2">Danger Zone</h2>
-        <p className="text-sm text-slate-400 mb-4">
+      <div className="bg-emergency-red/10 border border-emergency-red/30 rounded-xl p-6">
+        <h2 className="font-display text-xl tracking-wide text-emergency-red mb-2">DANGER ZONE</h2>
+        <p className="text-sm text-yt-light mb-4">
           These actions are irreversible. Please proceed with caution.
         </p>
         <button
-          className="px-4 py-2 text-sm font-medium text-red-400 bg-red-950/30 border border-red-700/50 rounded-lg hover:bg-red-950/50 disabled:opacity-50 transition"
+          className="px-4 py-2 text-sm font-semibold text-emergency-red border border-emergency-red/50 rounded-lg hover:bg-emergency-red/10 disabled:opacity-50 transition"
           disabled
         >
           Delete Account (Coming Soon)

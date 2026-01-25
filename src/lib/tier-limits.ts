@@ -21,14 +21,17 @@ export const TIER_FEATURES = {
     fullHistory: true,
     emailAlerts: true,
   },
+  // OPERATOR tier (stored as PORTFOLIO in DB for backwards compatibility)
   PORTFOLIO: {
     maxVideos: 500,
+    maxChannels: 5,
     aiSuggestions: true,
     csvExport: true,
     monitoring: true,
     resync: true,
     fullHistory: true,
     emailAlerts: true,
+    prioritySupport: true,
   },
 } as const;
 
@@ -177,7 +180,7 @@ export function getUpgradeMessage(feature: FeatureKey): string {
     maxVideos: "Upgrade to scan more videos and unlock full channel monitoring",
     aiSuggestions: "Upgrade to get AI-powered replacement suggestions for broken links",
     csvExport: "Upgrade to export your correction sheet as CSV",
-    monitoring: "Upgrade to enable Link Guard monitoring for your links",
+    monitoring: "Upgrade to enable weekly scans for your links",
     resync: "Upgrade to rescan your channel for new videos",
     fullHistory: "Upgrade to access your complete fix history",
     emailAlerts: "Upgrade to receive weekly revenue alerts via email",

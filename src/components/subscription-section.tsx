@@ -72,10 +72,10 @@ export function SubscriptionSection({
     }
   };
 
-  const isPaid = tier === "SPECIALIST" || tier === "PORTFOLIO";
+  const isPaid = tier === "SPECIALIST" || tier === "OPERATOR";
 
   return (
-    <div className="bg-slate-800/40 border border-slate-700/50 rounded-lg p-6 backdrop-blur">
+    <div className="bg-yt-gray/70 backdrop-blur-sm border border-white/10 rounded-xl p-6">
       <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
         <CreditCard className="w-5 h-5" />
         Subscription
@@ -85,22 +85,22 @@ export function SubscriptionSection({
         {/* Current Plan */}
         <div className="flex items-center justify-between">
           <div>
-            <dt className="text-sm text-slate-400">Current Plan</dt>
+            <dt className="text-sm text-yt-light">Current Plan</dt>
             <dd className="flex items-center gap-2 mt-1">
               <span
-                className={`inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium rounded-full border ${
-                  tier === "PORTFOLIO"
-                    ? "bg-purple-950/30 border-purple-700/50 text-purple-400"
+                className={`inline-flex items-center gap-1.5 px-3 py-1 text-sm font-bold rounded border ${
+                  tier === "OPERATOR"
+                    ? "bg-profit-green/20 border-profit-green/50 text-profit-green"
                     : tier === "SPECIALIST"
-                    ? "bg-emerald-950/30 border-emerald-700/50 text-emerald-400"
-                    : "bg-slate-700/30 border-slate-600/50 text-slate-400"
+                    ? "bg-profit-green/20 border-profit-green/50 text-profit-green"
+                    : "bg-yt-gray border-white/20 text-yt-light"
                 }`}
               >
-                {tier === "PORTFOLIO" && <Crown className="w-3.5 h-3.5" />}
+                {tier === "OPERATOR" && <Crown className="w-3.5 h-3.5" />}
                 {tier === "SPECIALIST" && <Sparkles className="w-3.5 h-3.5" />}
                 {tier === "FREE" && "Free"}
                 {tier === "SPECIALIST" && "Specialist"}
-                {tier === "PORTFOLIO" && "Portfolio Manager"}
+                {tier === "OPERATOR" && "Operator"}
               </span>
             </dd>
           </div>
@@ -110,14 +110,14 @@ export function SubscriptionSection({
               <button
                 onClick={handleManageSubscription}
                 disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-white bg-slate-700 hover:bg-slate-600 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-sm font-medium text-white bg-yt-gray hover:bg-white/10 border border-white/20 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? "Loading..." : "Manage Subscription"}
               </button>
               <button
                 onClick={handleManageSubscription}
                 disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-sm font-medium text-emergency-red hover:bg-emergency-red/10 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
@@ -127,41 +127,37 @@ export function SubscriptionSection({
 
         {/* Feature comparison for FREE users */}
         {tier === "FREE" && (
-          <div className="mt-6 pt-6 border-t border-slate-700/50">
+          <div className="mt-6 pt-6 border-t border-white/10">
             <h3 className="text-sm font-medium text-white mb-4">
               Upgrade to Specialist - $19/month
             </h3>
-            <ul className="space-y-2 text-sm text-slate-400 mb-6">
+            <ul className="space-y-2 text-sm text-yt-light mb-6">
               <li className="flex items-center gap-2">
-                <span className="text-emerald-400">✓</span>
-                Scan up to 100 videos (vs 15 on Free)
+                <span className="text-profit-green">✓</span>
+                Full channel scan (unlimited videos)
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-emerald-400">✓</span>
-                AI-powered replacement suggestions
+                <span className="text-profit-green">✓</span>
+                AI fix suggestions
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-emerald-400">✓</span>
-                Export to CSV & Fix Scripts
+                <span className="text-profit-green">✓</span>
+                Weekly monitoring
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-emerald-400">✓</span>
-                Link Guard monitoring
+                <span className="text-profit-green">✓</span>
+                Export fix list
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-emerald-400">✓</span>
-                Resync anytime
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-emerald-400">✓</span>
-                Email alerts for broken links
+                <span className="text-profit-green">✓</span>
+                Fix in dashboard
               </li>
             </ul>
 
             <button
               onClick={handleUpgrade}
               disabled={loading}
-              className="px-4 py-3 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-4 py-3 text-sm font-bold text-black bg-profit-green hover:brightness-110 rounded-lg transition shadow-[0_0_20px_rgba(0,255,0,0.2)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {loading ? (
                 "Loading..."
@@ -177,13 +173,13 @@ export function SubscriptionSection({
 
         {/* Current benefits for paid users */}
         {isPaid && (
-          <div className="mt-4 pt-4 border-t border-slate-700/50">
-            <p className="text-sm text-slate-400">
-              You have access to all {tier === "PORTFOLIO" ? "Portfolio Manager" : "Specialist"} features
-              including AI suggestions, exports, and Link Guard monitoring.
+          <div className="mt-4 pt-4 border-t border-white/10">
+            <p className="text-sm text-yt-light">
+              You have access to all {tier === "OPERATOR" ? "Operator" : "Specialist"} features
+              including AI suggestions, exports, and weekly monitoring.
             </p>
             {hasStripeCustomer && (
-              <p className="text-xs text-slate-500 mt-3">
+              <p className="text-xs text-yt-light/50 mt-3">
                 Manage your payment method, view invoices, or cancel your subscription through Stripe&apos;s secure portal.
               </p>
             )}
@@ -191,7 +187,7 @@ export function SubscriptionSection({
         )}
 
         {error && (
-          <p className="text-sm text-red-400 mt-4">{error}</p>
+          <p className="text-sm text-emergency-red mt-4">{error}</p>
         )}
       </div>
     </div>

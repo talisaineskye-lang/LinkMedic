@@ -45,7 +45,8 @@ export function Hero() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.6 }}
           >
-            Broken affiliate links in your back catalog are costing you money every single day. Most creators never notice.
+            Broken affiliate links in your back catalog are costing you commission every day.
+            We detect them, suggest fixes, and keep scanning so it doesn&apos;t happen again.
           </motion.p>
 
           <motion.div
@@ -55,7 +56,7 @@ export function Hero() {
           >
             <Link
               href="/audit"
-              className="inline-block rounded-lg bg-[#00FF00] text-black px-10 py-5 font-bold text-lg hover:brightness-110 transition shadow-[0_0_40px_rgba(0,255,0,0.3)] animate-pulse"
+              className="inline-block rounded-lg bg-[#00FF00] text-black px-10 py-5 font-bold text-lg hover:brightness-110 transition shadow-[0_0_40px_rgba(0,255,0,0.3)]"
             >
               SCAN MY CHANNEL FOR LEAKS — FREE
             </Link>
@@ -139,7 +140,7 @@ function ProfitPipe() {
             ))}
           </div>
 
-          <p className="text-[#FF0000] text-xs font-mono text-center mt-2 animate-pulse">
+          <p className="text-[#FF0000] text-xs font-mono text-center mt-2">
             ⚠ LEAK DETECTED
           </p>
         </motion.div>
