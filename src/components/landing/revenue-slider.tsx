@@ -38,7 +38,7 @@ export function RevenueSlider() {
 
         <div className="bg-zinc-900/60 rounded-2xl p-8">
           <p className="text-zinc-500 text-sm mb-2">Estimated annual loss</p>
-          <p className="text-5xl font-semibold text-zinc-100 mb-2">
+          <p className="text-5xl md:text-7xl font-bold text-red-400 mb-3">
             ${annualLoss.toLocaleString()}
           </p>
           <p className="text-zinc-600 text-sm">
