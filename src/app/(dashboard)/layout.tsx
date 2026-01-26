@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import Link from "next/link";
+import Image from "next/image";
 import { UserMenu } from "@/components/user-menu";
 import { OnboardingModal } from "@/components/onboarding-modal";
 import { LinkStatus } from "@prisma/client";
@@ -71,9 +72,8 @@ export default async function DashboardLayout({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-8">
-              <Link href="/dashboard" className="flex items-center gap-2">
-                <span className="text-emergency-red text-xl">+</span>
-                <span className="font-display text-xl tracking-wide">LINKMEDIC</span>
+              <Link href="/dashboard" className="flex items-center">
+                <Image src="/logo.png" alt="LinkMedic" width={120} height={28} className="h-7 w-auto" />
               </Link>
               <nav className="hidden md:flex gap-6">
                 <Link

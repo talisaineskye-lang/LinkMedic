@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { Link as LinkIcon, ArrowLeft, ArrowRight } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -14,9 +15,8 @@ export default function WhyAffiliateLinksBreak() {
       {/* Header */}
       <header className="border-b border-white/10 bg-yt-dark/95 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-emergency-red text-xl">+</span>
-            <span className="font-display text-xl tracking-wide text-white">LINKMEDIC</span>
+          <Link href="/" className="flex items-center">
+            <Image src="/logo.png" alt="LinkMedic" width={120} height={28} className="h-7 w-auto" />
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-sm text-yt-light">
             <Link href="/" className="hover:text-white transition">Home</Link>
@@ -171,9 +171,8 @@ export default function WhyAffiliateLinksBreak() {
       {/* Footer */}
       <footer className="border-t border-white/10 py-12 bg-yt-dark">
         <div className="max-w-5xl mx-auto px-6 text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <span className="text-emergency-red text-lg">+</span>
-            <span className="font-display text-xl tracking-wide text-white">LINKMEDIC</span>
+          <div className="flex items-center justify-center mb-4">
+            <Image src="/logo.png" alt="LinkMedic" width={120} height={28} className="h-7 w-auto" />
           </div>
           <p className="text-yt-light/50 text-sm mb-4">
             Detect broken links. Suggest fixes. Scan weekly.

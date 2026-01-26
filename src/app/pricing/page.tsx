@@ -2,6 +2,7 @@
 
 import { Check, Zap, TrendingUp, Bell, Users, FileText, Sparkles, CheckCircle2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Pricing() {
   return (
@@ -9,9 +10,8 @@ export default function Pricing() {
       {/* Header */}
       <header className="border-b border-white/10 bg-yt-dark/95 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-emergency-red text-xl">+</span>
-            <span className="font-display text-xl tracking-wide text-white">LINKMEDIC</span>
+          <Link href="/" className="flex items-center">
+            <Image src="/logo.png" alt="LinkMedic" width={120} height={28} className="h-7 w-auto" />
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-sm text-yt-light">
             <Link href="/" className="hover:text-white transition">Home</Link>
@@ -368,9 +368,8 @@ export default function Pricing() {
       <footer className="border-t border-white/10 py-8 bg-yt-dark">
         <div className="max-w-5xl mx-auto px-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-emergency-red text-lg">+</span>
-              <span className="font-display text-xl tracking-wide text-white">LINKMEDIC</span>
+            <div className="flex items-center">
+              <Image src="/logo.png" alt="LinkMedic" width={120} height={28} className="h-7 w-auto" />
             </div>
             <div className="flex items-center gap-6 text-sm text-yt-light">
               <Link href="/" className="hover:text-white transition">Home</Link>

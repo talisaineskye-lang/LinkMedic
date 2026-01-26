@@ -4,6 +4,7 @@ import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 function LoginContent() {
   const searchParams = useSearchParams();
@@ -15,9 +16,8 @@ function LoginContent() {
       {/* Header */}
       <header className="border-b border-white/10 bg-yt-dark/95 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-emergency-red text-xl">+</span>
-            <span className="font-display text-xl tracking-wide text-white">LINKMEDIC</span>
+          <Link href="/" className="flex items-center">
+            <Image src="/logo.png" alt="LinkMedic" width={120} height={28} className="h-7 w-auto" />
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-sm text-yt-light">
             <Link href="/" className="hover:text-white transition">Home</Link>
@@ -32,9 +32,8 @@ function LoginContent() {
       <div className="flex-1 flex flex-col items-center justify-center p-8">
         <div className="max-w-sm w-full">
           {/* Logo */}
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <span className="text-emergency-red text-3xl">+</span>
-            <span className="font-display text-3xl tracking-wide text-white">LINKMEDIC</span>
+          <div className="flex items-center justify-center mb-3">
+            <Image src="/logo.png" alt="LinkMedic" width={180} height={42} className="h-10 w-auto" />
           </div>
           <p className="text-yt-light text-center mb-8">Sign in to protect your affiliate revenue</p>
 
@@ -97,9 +96,8 @@ function LoginContent() {
       {/* Footer */}
       <footer className="border-t border-white/10 py-6 bg-yt-dark">
         <div className="max-w-5xl mx-auto px-6 text-center text-sm text-yt-light">
-          <div className="flex items-center justify-center gap-2 mb-1">
-            <span className="text-emergency-red">+</span>
-            <span className="font-display tracking-wide text-white">LINKMEDIC</span>
+          <div className="flex items-center justify-center mb-1">
+            <Image src="/logo.png" alt="LinkMedic" width={100} height={24} className="h-6 w-auto" />
           </div>
           <p className="mb-3 text-yt-light/50">Affiliate link health monitoring for YouTube creators.</p>
           <div className="flex items-center justify-center gap-6">

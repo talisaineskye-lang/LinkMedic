@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
@@ -20,9 +21,8 @@ export default async function Home() {
       {/* Fixed Navigation */}
       <nav className="fixed top-0 w-full bg-[#0F0F0F]/90 backdrop-blur-md border-b border-white/10 z-50">
         <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-[#FF0000] text-xl">+</span>
-            <span className="font-display text-2xl text-white tracking-wide">LINKMEDIC</span>
+          <Link href="/" className="flex items-center">
+            <Image src="/logo.png" alt="LinkMedic" width={140} height={32} className="h-8 w-auto" />
           </Link>
 
           <div className="hidden md:flex items-center gap-8 text-sm text-[#AAAAAA]">
@@ -292,9 +292,8 @@ export default async function Home() {
       {/* Footer */}
       <footer className="bg-[#0A0A0A] border-t border-white/10 py-12 px-6">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2">
-            <span className="text-[#FF0000] text-lg">+</span>
-            <span className="font-display text-xl text-white tracking-wide">LINKMEDIC</span>
+          <div className="flex items-center">
+            <Image src="/logo.png" alt="LinkMedic" width={120} height={28} className="h-7 w-auto" />
           </div>
 
           <div className="flex gap-6 text-sm text-[#AAAAAA]">
