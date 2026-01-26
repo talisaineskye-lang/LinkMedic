@@ -42,6 +42,7 @@ export const authOptions: NextAuthOptions = {
           where: { id: user.id },
           select: {
             youtubeChannelId: true,
+            activeChannelId: true,
             tier: true,
             trialEndsAt: true,
           },
@@ -49,6 +50,7 @@ export const authOptions: NextAuthOptions = {
 
         if (dbUser) {
           session.user.youtubeChannelId = dbUser.youtubeChannelId;
+          session.user.activeChannelId = dbUser.activeChannelId;
           session.user.tier = dbUser.tier;
           session.user.trialEndsAt = dbUser.trialEndsAt;
         }

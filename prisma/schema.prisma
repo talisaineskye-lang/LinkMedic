@@ -11,7 +11,8 @@ model User {
   email              String    @unique
   name               String?
   image              String?
-  youtubeChannelId   String?
+  youtubeChannelId   String?   // DEPRECATED: Keep for backward compatibility
+  activeChannelId    String?   // Currently selected channel for viewing
   accessToken        String?
   refreshToken       String?
   tokenExpiry        DateTime?
@@ -49,13 +50,39 @@ model User {
   accounts           Account[]
   sessions           Session[]
   videos             Video[]
+  channels           Channel[]  // User's connected YouTube channels
 }
 
 enum UserTier {
   TRIAL       // Brand new users who haven't scanned yet
   AUDITOR     // Completed free scan OR cancelled paid plan (free tier)
   SPECIALIST  // Paid tier - $19/mo single channel
-  OPERATOR    // Paid tier - $29/mo (future)
+  OPERATOR    // Paid tier - $39/mo up to 3 channels
+}
+
+// ============================================
+// CHANNEL (Multi-channel support)
+// ============================================
+// Stores connected YouTube channels for each user
+// Operator tier can have up to 3 channels
+model Channel {
+  id                String    @id @default(cuid())
+  youtubeChannelId  String    // The actual YouTube channel ID
+  title             String    // Channel name
+  thumbnailUrl      String?   // Channel thumbnail
+  subscriberCount   Int       @default(0)
+  videoCount        Int       @default(0)
+
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  videos            Video[]
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([userId, youtubeChannelId])
+  @@index([userId])
 }
 
 model Account {
@@ -102,6 +129,7 @@ model Video {
   viewCount      Int             @default(0)
   publishedAt    DateTime
   userId         String
+  channelId      String?         // Which channel this video belongs to (nullable for backward compat)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 
@@ -115,6 +143,9 @@ model Video {
 
   affiliateLinks AffiliateLink[]
   user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel        Channel?        @relation(fields: [channelId], references: [id], onDelete: SetNull)
+
+  @@index([channelId])
 }
 
 enum DisclosureStatus {

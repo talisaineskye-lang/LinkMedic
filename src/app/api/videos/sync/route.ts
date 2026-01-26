@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { syncUserVideos } from "@/lib/youtube";
 import { extractLinksForUser } from "@/lib/scanner";
-import { checkTierLimits, getUpgradeMessage } from "@/lib/tier-limits";
+import { checkTierLimits, getUpgradeMessage, getMaxChannels } from "@/lib/tier-limits";
 import { sendScanCompleteEmail } from "@/lib/email";
 import { calculateRevenueImpact, DEFAULT_SETTINGS } from "@/lib/revenue-estimator";
 import { LinkStatus } from "@prisma/client";
@@ -18,12 +18,53 @@ const PROBLEM_STATUSES: LinkStatus[] = [
   LinkStatus.MISSING_TAG,
 ];
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Parse optional channelId from request body
+    let channelId: string | undefined;
+    try {
+      const body = await request.json();
+      channelId = body.channelId;
+    } catch {
+      // No body or invalid JSON is fine - we'll use active channel
+    }
+
+    // If a specific channel is requested, check if it's within the user's tier limit
+    if (channelId) {
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { tier: true },
+      });
+
+      if (user) {
+        const channelLimit = getMaxChannels(user.tier);
+
+        // Get all user's channels ordered by creation date
+        const userChannels = await (prisma as any).channel.findMany({
+          where: { userId: session.user.id },
+          orderBy: { createdAt: "asc" },
+          select: { id: true },
+        });
+
+        // Find the position of the requested channel
+        const channelIndex = userChannels.findIndex((c: { id: string }) => c.id === channelId);
+
+        // If the channel is beyond the limit, block the sync
+        if (channelIndex >= channelLimit) {
+          return NextResponse.json({
+            error: "Channel over limit",
+            message: "This channel exceeds your plan's limit. Upgrade to Operator to sync additional channels.",
+            upgradeRequired: true,
+            currentTier: user.tier,
+          }, { status: 403 });
+        }
+      }
     }
 
     // Check if user has ever synced before
@@ -45,8 +86,11 @@ export async function POST() {
       }
     }
 
-    // Sync videos from YouTube
-    const { synced, total } = await syncUserVideos(session.user.id);
+    // Sync videos from YouTube (optionally for a specific channel)
+    const { synced, total, channelId: syncedChannelId } = await syncUserVideos(
+      session.user.id,
+      channelId
+    );
 
     // Extract affiliate links from video descriptions and analyze disclosures
     // Also auto-detects and saves affiliate tag if user doesn't have one
@@ -129,6 +173,8 @@ export async function POST() {
       disclosureIssues,
       // Let frontend know if we auto-detected their affiliate tag
       detectedAffiliateTag,
+      // Channel that was synced (if using multi-channel)
+      channelId: syncedChannelId,
     });
   } catch (error) {
     console.error("Error syncing videos:", error);

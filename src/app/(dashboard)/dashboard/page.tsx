@@ -29,7 +29,7 @@ export default async function DashboardPage() {
     return null;
   }
 
-  // Get user settings for revenue estimation + tier info
+  // Get user settings for revenue estimation + tier info + active channel
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
@@ -38,8 +38,14 @@ export default async function DashboardPage() {
       avgOrderValue: true,
       tier: true,
       videoScanLimit: true,
+      activeChannelId: true,
     },
   });
+
+  // Build channel filter for queries
+  const channelFilter = user?.activeChannelId
+    ? { channelId: user.activeChannelId }
+    : {};
 
   const revenueSettings = {
     ctrPercent: user?.ctrPercent ?? DEFAULT_SETTINGS.ctrPercent,
@@ -47,9 +53,9 @@ export default async function DashboardPage() {
     avgOrderValue: user?.avgOrderValue ?? DEFAULT_SETTINGS.avgOrderValue,
   };
 
-  // Get all links with video data
+  // Get all links with video data (filtered by active channel if set)
   const rawLinks = await prisma.affiliateLink.findMany({
-    where: { video: { userId: session.user.id } },
+    where: { video: { userId: session.user.id, ...channelFilter } },
     select: {
       id: true,
       originalUrl: true,
@@ -101,10 +107,10 @@ export default async function DashboardPage() {
     return link.lastCheckedAt > latest ? link.lastCheckedAt : latest;
   }, null);
 
-  // Get fixed links for revenue recovery tracking
+  // Get fixed links for revenue recovery tracking (filtered by active channel)
   const fixedLinks = await prisma.affiliateLink.findMany({
     where: {
-      video: { userId: session.user.id },
+      video: { userId: session.user.id, ...channelFilter },
       isFixed: true,
     },
     select: {
@@ -133,15 +139,16 @@ export default async function DashboardPage() {
     );
   }, 0));
 
-  // Get video count for tier limit tracking
+  // Get video count for tier limit tracking (filtered by active channel)
   const videoCount = await prisma.video.count({
-    where: { userId: session.user.id },
+    where: { userId: session.user.id, ...channelFilter },
   });
 
   // Get disclosure issues count (videos with affiliate links but missing/weak disclosure)
   const disclosureIssues = await prisma.video.count({
     where: {
       userId: session.user.id,
+      ...channelFilter,
       hasAffiliateLinks: true,
       disclosureStatus: {
         in: [DisclosureStatus.MISSING, DisclosureStatus.WEAK],

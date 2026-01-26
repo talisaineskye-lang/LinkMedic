@@ -197,10 +197,10 @@ export default async function Home() {
             <div className="bg-[#272727]/70 backdrop-blur-sm rounded-xl p-8 border border-white/10">
               <h3 className="font-display text-2xl text-white mb-1">OPERATOR</h3>
               <p className="text-[#AAAAAA] text-sm mb-6">For creators with multiple channels</p>
-              <p className="font-display text-5xl text-white mb-8">$29<span className="text-[#AAAAAA] text-xl">/mo</span></p>
+              <p className="font-display text-5xl text-white mb-8">$39<span className="text-[#AAAAAA] text-xl">/mo</span></p>
               <ul className="space-y-3 text-sm text-[#AAAAAA] mb-8">
                 <li className="flex items-center gap-2">
-                  <span className="text-[#00FF00]">✓</span> Up to 5 channels
+                  <span className="text-[#00FF00]">✓</span> Up to 3 channels
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-[#00FF00]">✓</span> Everything in Specialist

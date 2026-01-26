@@ -50,6 +50,7 @@ export const TIER_FEATURES = {
   // TRIAL: Brand new users who haven't scanned yet
   TRIAL: {
     maxVideos: 15,
+    maxChannels: 1,
     aiSuggestions: false,
     csvExport: false,
     monitoring: false,
@@ -60,6 +61,7 @@ export const TIER_FEATURES = {
   // AUDITOR: Completed free scan OR cancelled paid plan
   AUDITOR: {
     maxVideos: 15,
+    maxChannels: 1,
     aiSuggestions: false,
     csvExport: false,
     monitoring: false,
@@ -70,6 +72,7 @@ export const TIER_FEATURES = {
   // SPECIALIST: Paying $19/mo
   SPECIALIST: {
     maxVideos: 100,
+    maxChannels: 1,
     aiSuggestions: true,
     csvExport: true,
     monitoring: true,
@@ -77,10 +80,10 @@ export const TIER_FEATURES = {
     fullHistory: true,
     emailAlerts: true,
   },
-  // OPERATOR: Paying $29/mo (future)
+  // OPERATOR: Paying $39/mo
   OPERATOR: {
     maxVideos: 500,
-    maxChannels: 5,
+    maxChannels: 3,
     aiSuggestions: true,
     csvExport: true,
     monitoring: true,
@@ -176,9 +179,6 @@ export async function getUserTierFeatures(userId: string) {
       videoScanLimit: true,
       monitoringEnabled: true,
       alertsEnabled: true,
-      _count: {
-        select: { videos: true },
-      },
     },
   });
 
@@ -186,13 +186,23 @@ export async function getUserTierFeatures(userId: string) {
     return null;
   }
 
-  const tierFeatures = TIER_FEATURES[user.tier];
+  // Count videos and channels separately
+  // Note: Using 'as any' temporarily until TypeScript picks up regenerated Prisma types
+  const [videoCount, channelCount] = await Promise.all([
+    prisma.video.count({ where: { userId } }),
+    (prisma as any).channel.count({ where: { userId } }) as Promise<number>,
+  ]);
+
+  const tierStr = String(user.tier) as keyof typeof TIER_FEATURES;
+  const tierFeatures = TIER_FEATURES[tierStr] || TIER_FEATURES.TRIAL;
 
   return {
     tier: user.tier,
     features: tierFeatures,
-    videoCount: user._count.videos,
+    videoCount,
     videoLimit: user.videoScanLimit || tierFeatures.maxVideos,
+    channelCount,
+    channelLimit: tierFeatures.maxChannels || 1,
     monitoringEnabled: user.monitoringEnabled,
     alertsEnabled: user.alertsEnabled,
   };
@@ -203,6 +213,55 @@ export async function getUserTierFeatures(userId: string) {
  */
 export async function canScanMoreVideos(userId: string): Promise<TierCheckResult> {
   return checkTierLimits(userId, "maxVideos");
+}
+
+/**
+ * Check if user can add more channels based on their tier
+ */
+export async function checkChannelLimit(userId: string): Promise<TierCheckResult> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      tier: true,
+    },
+  });
+
+  if (!user) {
+    return {
+      allowed: false,
+      reason: "User not found",
+    };
+  }
+
+  // Count channels separately (using 'as any' until TypeScript picks up regenerated types)
+  const currentChannels = await (prisma as any).channel.count({
+    where: { userId },
+  }) as number;
+
+  const tierStr = String(user.tier) as keyof typeof TIER_FEATURES;
+  const tierFeatures = TIER_FEATURES[tierStr] || TIER_FEATURES.TRIAL;
+  const maxChannels = tierFeatures.maxChannels || 1;
+
+  return {
+    allowed: currentChannels < maxChannels,
+    reason:
+      currentChannels >= maxChannels
+        ? `Channel limit reached (${currentChannels}/${maxChannels})`
+        : undefined,
+    upgradeRequired: currentChannels >= maxChannels,
+    currentTier: user.tier,
+    limit: maxChannels,
+    current: currentChannels,
+  };
+}
+
+/**
+ * Get the max channels allowed for a tier
+ */
+export function getMaxChannels(tier: UserTier | string): number {
+  const tierStr = String(tier) as keyof typeof TIER_FEATURES;
+  const features = TIER_FEATURES[tierStr] || TIER_FEATURES.TRIAL;
+  return features.maxChannels || 1;
 }
 
 /**
@@ -234,6 +293,7 @@ export async function isPaidUser(userId: string): Promise<boolean> {
 export function getUpgradeMessage(feature: FeatureKey): string {
   const messages: Record<FeatureKey, string> = {
     maxVideos: "Upgrade to scan more videos and unlock full channel monitoring",
+    maxChannels: "Upgrade to Operator to connect multiple YouTube channels",
     aiSuggestions: "Upgrade to get AI-powered replacement suggestions for broken links",
     csvExport: "Upgrade to export your correction sheet as CSV",
     monitoring: "Upgrade to enable weekly scans for your links",

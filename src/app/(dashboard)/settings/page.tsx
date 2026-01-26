@@ -78,14 +78,25 @@ export default async function SettingsPage() {
           </div>
           <div>
             <dt className="text-sm text-yt-light mb-1">Plan</dt>
-            <dd>
+            <dd className="flex flex-col gap-2">
               <span
-                className={`inline-flex px-2 py-1 text-xs font-bold rounded border ${getTierBadgeColors(user.tier)}`}
+                className={`inline-flex px-2 py-1 text-xs font-bold rounded border ${
+                  user.subscriptionCancelAt
+                    ? "bg-yellow-500/20 border-yellow-500/50 text-yellow-400"
+                    : getTierBadgeColors(user.tier)
+                }`}
               >
                 {user.tier === "TRIAL"
                   ? `Trial (ends ${user.trialEndsAt ? new Date(user.trialEndsAt).toLocaleDateString() : "N/A"})`
+                  : user.subscriptionCancelAt
+                  ? `${getTierDisplayName(user.tier)} (Canceling)`
                   : getTierDisplayName(user.tier)}
               </span>
+              {user.subscriptionCancelAt && (
+                <span className="text-sm text-yellow-400/80">
+                  Full access until {new Date(user.subscriptionCancelAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                </span>
+              )}
             </dd>
           </div>
         </dl>

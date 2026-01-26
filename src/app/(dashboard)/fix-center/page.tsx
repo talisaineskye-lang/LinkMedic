@@ -23,7 +23,7 @@ export default async function FixCenterPage() {
     return null;
   }
 
-  // Get user settings for revenue estimation and affiliate tags
+  // Get user settings for revenue estimation, affiliate tags, and active channel
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
@@ -35,12 +35,18 @@ export default async function FixCenterPage() {
       affiliateTagUK: true,
       affiliateTagCA: true,
       affiliateTagDE: true,
+      activeChannelId: true,
     },
   });
 
   // Check tier for AI suggestions
   const tier = user?.tier ?? UserTier.AUDITOR;
   const canUseAI = TIER_FEATURES[tier].aiSuggestions;
+
+  // Build channel filter for queries
+  const channelFilter = user?.activeChannelId
+    ? { channelId: user.activeChannelId }
+    : {};
 
   const revenueSettings = {
     ctrPercent: user?.ctrPercent ?? DEFAULT_SETTINGS.ctrPercent,
@@ -49,9 +55,10 @@ export default async function FixCenterPage() {
   };
 
   // Get all broken/problematic links (both fixed and unfixed, excluding dismissed)
+  // Filtered by active channel if set
   const allBrokenLinks = await prisma.affiliateLink.findMany({
     where: {
-      video: { userId: session.user.id },
+      video: { userId: session.user.id, ...channelFilter },
       status: { in: PROBLEM_STATUSES },
       isDismissed: false, // Exclude dismissed links
     },
@@ -200,10 +207,11 @@ export default async function FixCenterPage() {
     .sort((a, b) => b.totalRevenueAtRisk - a.totalRevenueAtRisk);
 
   // Get videos with disclosure issues (missing or weak disclosure with affiliate links)
-  // Exclude dismissed disclosure issues
+  // Exclude dismissed disclosure issues, filtered by active channel if set
   const videosWithDisclosureIssues = await prisma.video.findMany({
     where: {
       userId: session.user.id,
+      ...channelFilter,
       hasAffiliateLinks: true,
       disclosureStatus: {
         in: [DisclosureStatus.MISSING, DisclosureStatus.WEAK],

@@ -3,6 +3,45 @@ import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import Stripe from "stripe";
 
+// Tier type (matches Prisma UserTier enum)
+type Tier = "TRIAL" | "AUDITOR" | "SPECIALIST" | "OPERATOR";
+
+// Map price IDs to tiers
+// Uses env vars: STRIPE_PRICE_ID_SPECIALIST, STRIPE_PRICE_ID_OPERATOR
+// Falls back to STRIPE_PRICE_ID for backward compatibility (maps to SPECIALIST)
+function getTierFromPriceId(priceId: string): Tier {
+  const operatorPriceId = process.env.STRIPE_PRICE_ID_OPERATOR;
+  const specialistPriceId = process.env.STRIPE_PRICE_ID_SPECIALIST || process.env.STRIPE_PRICE_ID;
+
+  if (operatorPriceId && priceId === operatorPriceId) {
+    return "OPERATOR";
+  }
+  if (specialistPriceId && priceId === specialistPriceId) {
+    return "SPECIALIST";
+  }
+
+  // Default to SPECIALIST for unknown price IDs (backward compatibility)
+  console.log(`[Stripe] Unknown price ID ${priceId}, defaulting to SPECIALIST`);
+  return "SPECIALIST";
+}
+
+// Get tier settings (video limit, etc.)
+function getTierSettings(tier: Tier) {
+  if (tier === "OPERATOR") {
+    return {
+      videoScanLimit: 500,
+      monitoringEnabled: true,
+      alertsEnabled: true,
+    };
+  }
+  // SPECIALIST or fallback
+  return {
+    videoScanLimit: 100,
+    monitoringEnabled: true,
+    alertsEnabled: true,
+  };
+}
+
 export async function POST(request: NextRequest) {
   const body = await request.text();
   const signature = request.headers.get("stripe-signature");
@@ -29,20 +68,32 @@ export async function POST(request: NextRequest) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = session.metadata?.userId;
+        const metadataTier = session.metadata?.tier as Tier | undefined;
 
-        if (userId) {
+        if (userId && session.subscription) {
+          // Fetch the subscription to get the price ID
+          const subscription = await stripe.subscriptions.retrieve(
+            session.subscription as string
+          );
+
+          // Determine tier from price ID or metadata
+          const priceId = subscription.items.data[0]?.price?.id;
+          const tier: Tier = priceId
+            ? getTierFromPriceId(priceId)
+            : metadataTier || "SPECIALIST";
+
+          const tierSettings = getTierSettings(tier);
+
           await prisma.user.update({
             where: { id: userId },
             data: {
-              tier: "SPECIALIST",
+              tier: tier as any, // Cast to bypass TypeScript caching issue
               stripeSubscriptionId: session.subscription as string,
-              subscriptionCancelAt: null, // Clear any pending cancellation
-              videoScanLimit: 100,
-              monitoringEnabled: true,
-              alertsEnabled: true,
+              subscriptionCancelAt: null,
+              ...tierSettings,
             },
           });
-          console.log(`[Stripe] User ${userId} upgraded to SPECIALIST`);
+          console.log(`[Stripe] User ${userId} upgraded to ${tier}`);
         }
         break;
       }
@@ -73,19 +124,41 @@ export async function POST(request: NextRequest) {
               subscription.status === "active" ||
               subscription.status === "past_due";
 
-            await prisma.user.update({
-              where: { id: user.id },
-              data: {
-                tier: isActive ? "SPECIALIST" : "AUDITOR",
-                subscriptionCancelAt: null, // Clear cancellation if reactivated
-                videoScanLimit: isActive ? 100 : 15,
-                monitoringEnabled: isActive,
-                alertsEnabled: isActive,
-              },
-            });
-            console.log(
-              `[Stripe] Subscription updated for user ${user.id}: ${subscription.status}, cancel_at cleared`
-            );
+            if (isActive) {
+              // Determine tier from current price ID
+              const priceId = subscription.items.data[0]?.price?.id;
+              const tier: Tier = priceId
+                ? getTierFromPriceId(priceId)
+                : (user.tier as Tier);
+              const tierSettings = getTierSettings(tier);
+
+              await prisma.user.update({
+                where: { id: user.id },
+                data: {
+                  tier: tier as any, // Cast to bypass TypeScript caching issue
+                  subscriptionCancelAt: null,
+                  ...tierSettings,
+                },
+              });
+              console.log(
+                `[Stripe] Subscription updated for user ${user.id}: ${subscription.status}, tier: ${tier}`
+              );
+            } else {
+              // Subscription not active - downgrade
+              await prisma.user.update({
+                where: { id: user.id },
+                data: {
+                  tier: "AUDITOR" as const,
+                  subscriptionCancelAt: null,
+                  videoScanLimit: 15,
+                  monitoringEnabled: false,
+                  alertsEnabled: false,
+                },
+              });
+              console.log(
+                `[Stripe] Subscription inactive for user ${user.id}: ${subscription.status}, downgraded to AUDITOR`
+              );
+            }
           }
         }
         break;
@@ -102,9 +175,9 @@ export async function POST(request: NextRequest) {
           await prisma.user.update({
             where: { id: user.id },
             data: {
-              tier: "AUDITOR",  // They've used the product, so they're an AUDITOR not TRIAL
+              tier: "AUDITOR" as const,
               stripeSubscriptionId: null,
-              subscriptionCancelAt: null, // Clear cancellation date
+              subscriptionCancelAt: null,
               videoScanLimit: 15,
               monitoringEnabled: false,
               alertsEnabled: false,

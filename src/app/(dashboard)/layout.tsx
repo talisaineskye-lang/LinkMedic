@@ -6,7 +6,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { UserMenu } from "@/components/user-menu";
 import { OnboardingModal } from "@/components/onboarding-modal";
+import { ChannelSwitcher } from "@/components/channel-switcher";
 import { LinkStatus } from "@prisma/client";
+import { getMaxChannels } from "@/lib/tier-limits";
 
 // All statuses that indicate a broken/problematic link
 const PROBLEM_STATUSES: LinkStatus[] = [
@@ -35,6 +37,9 @@ export default async function DashboardLayout({
       youtubeChannelId: true,
       affiliateTag: true,
       hasCompletedFirstScan: true,
+      subscriptionCancelAt: true,
+      tier: true,
+      activeChannelId: true,
     },
   });
 
@@ -42,13 +47,47 @@ export default async function DashboardLayout({
     redirect("/onboarding/select-channel");
   }
 
+  // Fetch user's connected channels for the channel switcher
+  const channels = await (prisma as any).channel.findMany({
+    where: { userId: session.user.id },
+    orderBy: { createdAt: "asc" },
+    select: {
+      id: true,
+      youtubeChannelId: true,
+      title: true,
+      thumbnailUrl: true,
+      subscriberCount: true,
+      videoCount: true,
+    },
+  });
+
+  const channelLimit = getMaxChannels(user.tier);
+
+  // Auto-set activeChannelId if null but channels exist (handles edge case after migration or channel deletion)
+  let effectiveActiveChannelId = user.activeChannelId;
+  if (!effectiveActiveChannelId && channels.length > 0) {
+    effectiveActiveChannelId = channels[0].id;
+    // Update in background (fire-and-forget) to persist the fix
+    prisma.user.update({
+      where: { id: session.user.id },
+      data: { activeChannelId: channels[0].id },
+    }).catch(() => {
+      // Ignore errors - this is a background optimization
+    });
+  }
+
+  // Build channel filter for queries
+  const channelFilter = effectiveActiveChannelId
+    ? { channelId: effectiveActiveChannelId }
+    : {};
+
   // Show onboarding modal if user hasn't set up affiliate tag or completed first scan
   const showOnboardingModal = !user.affiliateTag || !user.hasCompletedFirstScan;
 
-  // Get count of broken links for badge
+  // Get count of broken links for badge (filtered by active channel)
   const brokenCount = await prisma.affiliateLink.count({
     where: {
-      video: { userId: session.user.id },
+      video: { userId: session.user.id, ...channelFilter },
       status: { in: PROBLEM_STATUSES },
       isFixed: false,
       isDismissed: false,
@@ -101,7 +140,18 @@ export default async function DashboardLayout({
                 </Link>
               </nav>
             </div>
-            <UserMenu user={session.user} />
+            <div className="flex items-center gap-4">
+              {/* Channel Switcher - only show for Operator tier or if user has channels */}
+              {channels.length > 0 && (
+                <ChannelSwitcher
+                  channels={channels}
+                  activeChannelId={effectiveActiveChannelId}
+                  channelLimit={channelLimit}
+                  tier={user.tier}
+                />
+              )}
+              <UserMenu user={session.user} />
+            </div>
           </div>
         </div>
       </header>
@@ -118,6 +168,24 @@ export default async function DashboardLayout({
                   Trial ends {new Date(trialEndsAt).toLocaleDateString()}. Subscribe for $19/month to continue.
                 </>
               )}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Subscription Canceling Banner */}
+      {user.subscriptionCancelAt && isSubscribed && (
+        <div className="bg-yellow-500/10 border-b border-yellow-500/30">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+            <p className="text-sm text-yellow-400 text-center">
+              Your subscription is canceling. You have full access until{" "}
+              <span className="font-semibold">
+                {new Date(user.subscriptionCancelAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+              </span>
+              .{" "}
+              <Link href="/settings" className="underline hover:text-yellow-300">
+                Reactivate in Settings →
+              </Link>
             </p>
           </div>
         </div>

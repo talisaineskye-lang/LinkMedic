@@ -141,7 +141,7 @@ export default function Pricing() {
               <h3 className="font-display text-2xl text-white mb-1">OPERATOR</h3>
               <p className="text-yt-light text-sm mb-6">For creators with multiple channels</p>
               <div className="flex items-baseline gap-2 mb-2">
-                <span className="font-display text-5xl text-white">$29</span>
+                <span className="font-display text-5xl text-white">$39</span>
                 <span className="text-yt-light">/month</span>
               </div>
             </div>
@@ -149,7 +149,7 @@ export default function Pricing() {
             <ul className="space-y-3 mb-8">
               <li className="flex items-start gap-3">
                 <Users className="w-5 h-5 text-profit-green flex-shrink-0 mt-0.5" />
-                <span className="text-yt-light">Up to 5 channels</span>
+                <span className="text-yt-light">Up to 3 channels</span>
               </li>
               <li className="flex items-start gap-3">
                 <Check className="w-5 h-5 text-profit-green flex-shrink-0 mt-0.5" />

@@ -240,20 +240,70 @@ export async function fetchChannelVideos(
  * Syncs all videos from a user's selected channel to the database
  * Handles pagination and respects the 500 video limit
  * Requires user to have selected a channel first (youtubeChannelId must be set)
+ * @param userId - The user ID
+ * @param internalChannelId - Optional: specific channel ID from our database to sync
  */
-export async function syncUserVideos(userId: string): Promise<{ synced: number; total: number }> {
+export async function syncUserVideos(
+  userId: string,
+  internalChannelId?: string
+): Promise<{ synced: number; total: number; channelId?: string }> {
   // Get valid tokens (refreshes if expired)
   const { accessToken, refreshToken } = await getValidAccessToken(userId);
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      youtubeChannelId: true,
-    },
-  });
+  let youtubeChannelId: string | undefined;
+  let dbChannelId: string | undefined;
 
-  const channelId = user?.youtubeChannelId;
-  if (!channelId) {
+  if (internalChannelId) {
+    // Sync specific channel
+    const channel = await (prisma as any).channel.findFirst({
+      where: {
+        id: internalChannelId,
+        userId,
+      },
+      select: {
+        id: true,
+        youtubeChannelId: true,
+      },
+    });
+
+    if (!channel) {
+      throw new Error("Channel not found or doesn't belong to user");
+    }
+
+    youtubeChannelId = channel.youtubeChannelId;
+    dbChannelId = channel.id;
+  } else {
+    // Get user's active channel or fallback to youtubeChannelId
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        youtubeChannelId: true,
+        activeChannelId: true,
+      },
+    });
+
+    if (user?.activeChannelId) {
+      const channel = await (prisma as any).channel.findUnique({
+        where: { id: user.activeChannelId },
+        select: {
+          id: true,
+          youtubeChannelId: true,
+        },
+      });
+
+      if (channel) {
+        youtubeChannelId = channel.youtubeChannelId;
+        dbChannelId = channel.id;
+      }
+    }
+
+    // Fallback to legacy youtubeChannelId
+    if (!youtubeChannelId) {
+      youtubeChannelId = user?.youtubeChannelId ?? undefined;
+    }
+  }
+
+  if (!youtubeChannelId) {
     throw new Error("No YouTube channel selected. Please select a channel first.");
   }
 
@@ -265,7 +315,7 @@ export async function syncUserVideos(userId: string): Promise<{ synced: number; 
     const { videos, nextPageToken } = await fetchChannelVideos(
       accessToken,
       refreshToken,
-      channelId,
+      youtubeChannelId,
       pageToken,
       Math.min(50, MAX_VIDEOS - synced)
     );
@@ -284,6 +334,7 @@ export async function syncUserVideos(userId: string): Promise<{ synced: number; 
           viewCount: video.viewCount,
           publishedAt: video.publishedAt,
           userId,
+          channelId: dbChannelId || null,
         },
         update: {
           title: video.title,
@@ -293,6 +344,7 @@ export async function syncUserVideos(userId: string): Promise<{ synced: number; 
           // IMPORTANT: Update userId to ensure video belongs to current user
           // This fixes the case where a video was previously synced by another account
           userId,
+          channelId: dbChannelId || null,
         },
       });
       synced++;
@@ -305,8 +357,10 @@ export async function syncUserVideos(userId: string): Promise<{ synced: number; 
     await new Promise(resolve => setTimeout(resolve, 100));
   }
 
-  // Get total count
-  const total = await prisma.video.count({ where: { userId } });
+  // Get total count (for this channel if specified, otherwise all user videos)
+  const total = await prisma.video.count({
+    where: dbChannelId ? { userId, channelId: dbChannelId } : { userId },
+  });
 
-  return { synced, total };
+  return { synced, total, channelId: dbChannelId };
 }
