@@ -12,41 +12,27 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
 
   // Initialize PostHog on mount
   useEffect(() => {
-    try {
-      initPostHog();
-    } catch (error) {
-      console.warn("[PostHog] Failed to initialize:", error);
-    }
+    initPostHog();
   }, []);
 
   // Track page views
   useEffect(() => {
-    try {
-      if (typeof window === "undefined" || !pathname || !POSTHOG_KEY) {
-        return;
-      }
+    if (pathname && POSTHOG_KEY) {
       let url = window.origin + pathname;
-      const searchString = searchParams?.toString?.();
-      if (searchString) {
-        url = url + `?${searchString}`;
+      if (searchParams?.toString()) {
+        url = url + `?${searchParams.toString()}`;
       }
       posthog.capture("$pageview", { $current_url: url });
-    } catch (error) {
-      console.warn("[PostHog] Failed to track pageview:", error);
     }
   }, [pathname, searchParams]);
 
   // Identify user when session is available
   useEffect(() => {
-    try {
-      if (status === "authenticated" && session?.user?.id) {
-        identifyUser(session.user.id, {
-          email: session.user.email,
-          name: session.user.name,
-        });
-      }
-    } catch (error) {
-      console.warn("[PostHog] Failed to identify user:", error);
+    if (status === "authenticated" && session?.user?.id) {
+      identifyUser(session.user.id, {
+        email: session.user.email,
+        name: session.user.name,
+      });
     }
   }, [session, status]);
 

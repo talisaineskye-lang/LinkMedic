@@ -22,89 +22,45 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account }) {
-      try {
-        console.log("[NextAuth] signIn callback", {
-          email: user?.email,
-          provider: account?.provider,
-          accountId: account?.providerAccountId
-        });
-        return true;
-      } catch (error) {
-        console.error("[NextAuth] Error in signIn callback:", error);
-        return true; // Still allow sign in even if logging fails
-      }
+      console.log("[NextAuth] signIn callback", {
+        email: user?.email,
+        provider: account?.provider,
+        accountId: account?.providerAccountId
+      });
+      return true;
     },
     async session({ session, user }) {
       console.log("[NextAuth] session callback", {
         userId: user?.id,
         userEmail: user?.email
       });
-
-      // Defensive check for user
-      if (!user?.id) {
-        console.warn("[NextAuth] session callback: user or user.id is undefined");
-        return session;
-      }
-
       if (session.user) {
         session.user.id = user.id;
 
-        try {
-          // Fetch additional user data for session
-          const dbUser = await prisma.user.findUnique({
-            where: { id: user.id },
-            select: {
-              youtubeChannelId: true,
-              activeChannelId: true,
-              tier: true,
-              trialEndsAt: true,
-            },
-          });
+        // Fetch additional user data for session
+        const dbUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: {
+            youtubeChannelId: true,
+            activeChannelId: true,
+            tier: true,
+            trialEndsAt: true,
+          },
+        });
 
-          if (dbUser) {
-            session.user.youtubeChannelId = dbUser.youtubeChannelId;
-            session.user.activeChannelId = dbUser.activeChannelId;
-            session.user.tier = dbUser.tier;
-            session.user.trialEndsAt = dbUser.trialEndsAt;
-          }
-        } catch (error) {
-          console.error("[NextAuth] Error fetching user data in session callback:", error);
+        if (dbUser) {
+          session.user.youtubeChannelId = dbUser.youtubeChannelId;
+          session.user.activeChannelId = dbUser.activeChannelId;
+          session.user.tier = dbUser.tier;
+          session.user.trialEndsAt = dbUser.trialEndsAt;
         }
       }
       return session;
     },
     async redirect({ url, baseUrl }) {
       console.log("[NextAuth] redirect callback", { url, baseUrl });
-
-      // Defensive checks for undefined values
-      if (!baseUrl) {
-        console.warn("[NextAuth] baseUrl is undefined, using fallback");
-        return "/dashboard";
-      }
-
-      if (!url) {
-        console.warn("[NextAuth] url is undefined, redirecting to dashboard");
-        return `${baseUrl}/dashboard`;
-      }
-
-      // Handle relative URLs
-      if (url.startsWith("/")) {
-        return `${baseUrl}${url}`;
-      }
-
-      // Allow callbacks to same origin
-      try {
-        const urlObj = new URL(url);
-        const baseUrlObj = new URL(baseUrl);
-        if (urlObj.origin === baseUrlObj.origin) {
-          return url;
-        }
-      } catch {
-        // Invalid URL, fall through to default
-        console.warn("[NextAuth] Invalid URL in redirect:", url);
-      }
-
-      // Default: redirect to dashboard
+      // Redirect to dashboard after signin
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
       return `${baseUrl}/dashboard`;
     },
   },
