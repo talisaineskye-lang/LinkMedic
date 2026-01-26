@@ -89,16 +89,16 @@ export function LiveTicker() {
           </span>
         </div>
 
-        <div className="font-mono text-sm space-y-2">
+        <div className="font-mono text-sm h-[140px] overflow-hidden">
           <AnimatePresence mode="popLayout">
             {items.map((item) => (
               <motion.div
                 key={item.id}
-                initial={{ opacity: 0, x: -20, height: 0 }}
-                animate={{ opacity: 1, x: 0, height: 'auto' }}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.3 }}
-                className="flex items-center gap-3 text-[#AAAAAA]"
+                className="flex items-center gap-3 text-[#AAAAAA] py-1"
               >
                 <span className="text-[#AAAAAA]/50">CHECKING:</span>
                 <span className="text-white">&quot;{item.video}&quot;</span>
