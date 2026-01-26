@@ -48,18 +48,32 @@ export default async function DashboardLayout({
   }
 
   // Fetch user's connected channels for the channel switcher
-  const channels = await (prisma as any).channel.findMany({
-    where: { userId: session.user.id },
-    orderBy: { createdAt: "asc" },
-    select: {
-      id: true,
-      youtubeChannelId: true,
-      title: true,
-      thumbnailUrl: true,
-      subscriberCount: true,
-      videoCount: true,
-    },
-  });
+  // Wrapped in try-catch in case Channel table doesn't exist in production yet
+  let channels: Array<{
+    id: string;
+    youtubeChannelId: string;
+    title: string;
+    thumbnailUrl: string | null;
+    subscriberCount: number;
+    videoCount: number;
+  }> = [];
+  try {
+    channels = await (prisma as any).channel.findMany({
+      where: { userId: session.user.id },
+      orderBy: { createdAt: "asc" },
+      select: {
+        id: true,
+        youtubeChannelId: true,
+        title: true,
+        thumbnailUrl: true,
+        subscriberCount: true,
+        videoCount: true,
+      },
+    }) || [];
+  } catch (error) {
+    console.error("[Dashboard] Failed to fetch channels:", error);
+    // Continue with empty channels array
+  }
 
   const channelLimit = getMaxChannels(user.tier);
 
