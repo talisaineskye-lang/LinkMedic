@@ -6,9 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { UserMenu } from "@/components/user-menu";
 import { OnboardingModal } from "@/components/onboarding-modal";
-import { ChannelSwitcher } from "@/components/channel-switcher";
 import { LinkStatus } from "@prisma/client";
-import { getMaxChannels } from "@/lib/tier-limits";
 
 // All statuses that indicate a broken/problematic link
 const PROBLEM_STATUSES: LinkStatus[] = [
@@ -39,7 +37,6 @@ export default async function DashboardLayout({
       hasCompletedFirstScan: true,
       subscriptionCancelAt: true,
       tier: true,
-      activeChannelId: true,
     },
   });
 
@@ -47,61 +44,13 @@ export default async function DashboardLayout({
     redirect("/onboarding/select-channel");
   }
 
-  // Fetch user's connected channels for the channel switcher
-  // Wrapped in try-catch in case Channel table doesn't exist in production yet
-  let channels: Array<{
-    id: string;
-    youtubeChannelId: string;
-    title: string;
-    thumbnailUrl: string | null;
-    subscriberCount: number;
-    videoCount: number;
-  }> = [];
-  try {
-    channels = await (prisma as any).channel.findMany({
-      where: { userId: session.user.id },
-      orderBy: { createdAt: "asc" },
-      select: {
-        id: true,
-        youtubeChannelId: true,
-        title: true,
-        thumbnailUrl: true,
-        subscriberCount: true,
-        videoCount: true,
-      },
-    }) || [];
-  } catch (error) {
-    console.error("[Dashboard] Failed to fetch channels:", error);
-    // Continue with empty channels array
-  }
-
-  const channelLimit = getMaxChannels(user.tier);
-
-  // Auto-set activeChannelId if null but channels exist (handles edge case after migration or channel deletion)
-  let effectiveActiveChannelId = user.activeChannelId;
-  if (!effectiveActiveChannelId && channels.length > 0) {
-    effectiveActiveChannelId = channels[0].id;
-    // Update in background (fire-and-forget) to persist the fix
-    prisma.user.update({
-      where: { id: session.user.id },
-      data: { activeChannelId: channels[0].id },
-    }).catch(() => {
-      // Ignore errors - this is a background optimization
-    });
-  }
-
-  // Build channel filter for queries
-  const channelFilter = effectiveActiveChannelId
-    ? { channelId: effectiveActiveChannelId }
-    : {};
-
   // Show onboarding modal if user hasn't set up affiliate tag or completed first scan
   const showOnboardingModal = !user.affiliateTag || !user.hasCompletedFirstScan;
 
-  // Get count of broken links for badge (filtered by active channel)
+  // Get count of broken links for badge
   const brokenCount = await prisma.affiliateLink.count({
     where: {
-      video: { userId: session.user.id, ...channelFilter },
+      video: { userId: session.user.id },
       status: { in: PROBLEM_STATUSES },
       isFixed: false,
       isDismissed: false,
@@ -112,11 +61,6 @@ export default async function DashboardLayout({
   const trialEndsAt = session.user.trialEndsAt;
   const isTrialExpired = trialEndsAt && new Date(trialEndsAt) < new Date();
   const isSubscribed = session.user.tier === "SPECIALIST" || session.user.tier === "OPERATOR";
-
-  if (isTrialExpired && !isSubscribed) {
-    // For MVP, we'll show a message but still allow access
-    // In production, this would redirect to a payment page
-  }
 
   return (
     <div className="min-h-screen bg-yt-black text-white">
@@ -155,15 +99,6 @@ export default async function DashboardLayout({
               </nav>
             </div>
             <div className="flex items-center gap-4">
-              {/* Channel Switcher - only show for Operator tier or if user has channels */}
-              {channels.length > 0 && (
-                <ChannelSwitcher
-                  channels={channels}
-                  activeChannelId={effectiveActiveChannelId}
-                  channelLimit={channelLimit}
-                  tier={user.tier}
-                />
-              )}
               <UserMenu user={session.user} />
             </div>
           </div>
