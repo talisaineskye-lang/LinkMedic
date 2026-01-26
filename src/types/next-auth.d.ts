@@ -8,7 +8,7 @@ declare module "next-auth" {
       email?: string | null;
       image?: string | null;
       youtubeChannelId?: string | null;
-      subscriptionStatus?: string;
+      tier?: "TRIAL" | "AUDITOR" | "SPECIALIST" | "OPERATOR";
       trialEndsAt?: Date | null;
     };
   }
@@ -16,7 +16,7 @@ declare module "next-auth" {
   interface User {
     id: string;
     youtubeChannelId?: string | null;
-    subscriptionStatus?: string;
+    tier?: "TRIAL" | "AUDITOR" | "SPECIALIST" | "OPERATOR";
     trialEndsAt?: Date | null;
   }
 }

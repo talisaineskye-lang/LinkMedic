@@ -58,7 +58,7 @@ export default async function DashboardLayout({
   // Check if trial has expired
   const trialEndsAt = session.user.trialEndsAt;
   const isTrialExpired = trialEndsAt && new Date(trialEndsAt) < new Date();
-  const isSubscribed = session.user.subscriptionStatus === "active";
+  const isSubscribed = session.user.tier === "SPECIALIST" || session.user.tier === "OPERATOR";
 
   if (isTrialExpired && !isSubscribed) {
     // For MVP, we'll show a message but still allow access

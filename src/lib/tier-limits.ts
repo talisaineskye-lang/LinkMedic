@@ -1,6 +1,50 @@
 import { prisma } from "./db";
 import { UserTier } from "@prisma/client";
 
+/**
+ * Get display name for a tier
+ */
+export function getTierDisplayName(tier: UserTier | string): string {
+  const tierStr = String(tier);
+  switch (tierStr) {
+    case "TRIAL":
+      return "Trial";
+    case "AUDITOR":
+      return "Free";
+    case "SPECIALIST":
+      return "Specialist";
+    case "OPERATOR":
+      return "Operator";
+    default:
+      return tierStr;
+  }
+}
+
+/**
+ * Check if tier is a paid tier
+ */
+export function isPaidTier(tier: UserTier | string): boolean {
+  const tierStr = String(tier);
+  return tierStr === "SPECIALIST" || tierStr === "OPERATOR";
+}
+
+/**
+ * Get tier badge color classes
+ */
+export function getTierBadgeColors(tier: UserTier | string): string {
+  const tierStr = String(tier);
+  switch (tierStr) {
+    case "SPECIALIST":
+    case "OPERATOR":
+      return "bg-profit-green/20 border-profit-green/50 text-profit-green";
+    case "TRIAL":
+      return "bg-orange-500/20 border-orange-500/50 text-orange-400";
+    case "AUDITOR":
+    default:
+      return "bg-yt-light/20 border-yt-light/50 text-yt-light";
+  }
+}
+
 // Feature flags for each tier
 export const TIER_FEATURES = {
   // TRIAL: Brand new users who haven't scanned yet

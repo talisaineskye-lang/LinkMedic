@@ -20,13 +20,13 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Get all active users (trial or active subscription)
+    // Get all active users (paid tiers or active trial)
     const users = await prisma.user.findMany({
       where: {
         OR: [
-          { subscriptionStatus: "active" },
+          { tier: { in: ["SPECIALIST", "OPERATOR"] } },
           {
-            subscriptionStatus: "trial",
+            tier: "TRIAL",
             trialEndsAt: { gt: new Date() },
           },
         ],

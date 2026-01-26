@@ -36,6 +36,22 @@ export const authOptions: NextAuthOptions = {
       });
       if (session.user) {
         session.user.id = user.id;
+
+        // Fetch additional user data for session
+        const dbUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: {
+            youtubeChannelId: true,
+            tier: true,
+            trialEndsAt: true,
+          },
+        });
+
+        if (dbUser) {
+          session.user.youtubeChannelId = dbUser.youtubeChannelId;
+          session.user.tier = dbUser.tier;
+          session.user.trialEndsAt = dbUser.trialEndsAt;
+        }
       }
       return session;
     },

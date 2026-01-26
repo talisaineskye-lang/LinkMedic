@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { SettingsForm } from "@/components/settings-form";
 import { SubscriptionSection } from "@/components/subscription-section";
 import { AffiliateTagsSection } from "@/components/affiliate-tags-section";
+import { getTierDisplayName, getTierBadgeColors } from "@/lib/tier-limits";
 
 export default async function SettingsPage() {
   const session = await getServerSession(authOptions);
@@ -27,7 +28,6 @@ export default async function SettingsPage() {
       affiliateTagUK: true,
       affiliateTagCA: true,
       affiliateTagDE: true,
-      subscriptionStatus: true,
       trialEndsAt: true,
       tier: true,
       stripeCustomerId: true,
@@ -77,20 +77,14 @@ export default async function SettingsPage() {
             </dd>
           </div>
           <div>
-            <dt className="text-sm text-yt-light mb-1">Subscription Status</dt>
+            <dt className="text-sm text-yt-light mb-1">Plan</dt>
             <dd>
               <span
-                className={`inline-flex px-2 py-1 text-xs font-bold rounded border ${
-                  user.subscriptionStatus === "active"
-                    ? "bg-profit-green/20 border-profit-green/50 text-profit-green"
-                    : user.subscriptionStatus === "trial"
-                    ? "bg-orange-500/20 border-orange-500/50 text-orange-400"
-                    : "bg-emergency-red/20 border-emergency-red/50 text-emergency-red"
-                }`}
+                className={`inline-flex px-2 py-1 text-xs font-bold rounded border ${getTierBadgeColors(user.tier)}`}
               >
-                {user.subscriptionStatus === "trial"
+                {user.tier === "TRIAL"
                   ? `Trial (ends ${user.trialEndsAt ? new Date(user.trialEndsAt).toLocaleDateString() : "N/A"})`
-                  : user.subscriptionStatus?.toUpperCase()}
+                  : getTierDisplayName(user.tier)}
               </span>
             </dd>
           </div>
