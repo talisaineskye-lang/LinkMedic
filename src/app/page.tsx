@@ -30,12 +30,20 @@ export default async function Home() {
             <a href="#pricing" className="hover:text-white transition">Pricing</a>
           </div>
 
-          <Link
-            href="/audit"
-            className="rounded bg-[#00FF00] text-black px-4 py-2 text-sm font-bold hover:brightness-110 transition shadow-[0_0_20px_rgba(0,255,0,0.2)]"
-          >
-            SCAN MY CHANNEL
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/login"
+              className="text-sm text-[#AAAAAA] hover:text-white transition"
+            >
+              Sign In
+            </Link>
+            <Link
+              href="/audit"
+              className="rounded bg-[#00FF00] text-black px-4 py-2 text-sm font-bold hover:brightness-110 transition shadow-[0_0_20px_rgba(0,255,0,0.2)]"
+            >
+              SCAN MY CHANNEL
+            </Link>
+          </div>
         </div>
       </nav>
 
