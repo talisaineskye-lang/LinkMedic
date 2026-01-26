@@ -41,7 +41,8 @@ export default function SelectChannelPage() {
           throw new Error(data.error || "Failed to fetch channels");
         }
 
-        setChannels(data.channels);
+        // API returns availableChannels (YouTube channels user can select)
+        setChannels(data.availableChannels || []);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : "Unknown error";
         setError(errorMessage);
