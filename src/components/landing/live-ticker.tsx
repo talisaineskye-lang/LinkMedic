@@ -84,11 +84,7 @@ export function LiveTicker() {
 
         <div className="flex items-center gap-4 mb-3">
           <span className="flex items-center gap-2">
-            <motion.span
-              className="w-2 h-2 bg-[#FF0000] rounded-full"
-              animate={{ opacity: [1, 0.3, 1] }}
-              transition={{ duration: 1, repeat: Infinity }}
-            />
+            <span className="w-2 h-2 bg-[#FF0000] rounded-full" />
             <span className="text-xs font-mono text-[#AAAAAA] uppercase tracking-wider">Live Scan Feed</span>
           </span>
         </div>
