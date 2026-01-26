@@ -23,7 +23,7 @@ export default async function FixCenterPage() {
     return null;
   }
 
-  // Get user settings for revenue estimation
+  // Get user settings for revenue estimation and affiliate tags
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
@@ -31,11 +31,15 @@ export default async function FixCenterPage() {
       conversionPercent: true,
       avgOrderValue: true,
       tier: true,
+      affiliateTagUS: true,
+      affiliateTagUK: true,
+      affiliateTagCA: true,
+      affiliateTagDE: true,
     },
   });
 
   // Check tier for AI suggestions
-  const tier = user?.tier ?? UserTier.FREE;
+  const tier = user?.tier ?? UserTier.AUDITOR;
   const canUseAI = TIER_FEATURES[tier].aiSuggestions;
 
   const revenueSettings = {
@@ -56,6 +60,7 @@ export default async function FixCenterPage() {
       originalUrl: true,
       status: true,
       merchant: true,
+      amazonRegion: true,
       suggestedLink: true,
       suggestedTitle: true,
       suggestedAsin: true,
@@ -96,6 +101,7 @@ export default async function FixCenterPage() {
       url: link.originalUrl,
       status: link.status,
       merchant: link.merchant,
+      amazonRegion: link.amazonRegion,
       estimatedLoss: calculateRevenueImpact(
         link.video.viewCount,
         link.status,
@@ -143,6 +149,7 @@ export default async function FixCenterPage() {
     confidenceScore: number | null;
     status: string;
     merchant: string;
+    amazonRegion: string | null;
   }>();
 
   for (const link of needsFixLinks) {
@@ -184,6 +191,7 @@ export default async function FixCenterPage() {
         confidenceScore: link.confidenceScore,
         status: link.status,
         merchant: link.merchant,
+        amazonRegion: link.amazonRegion,
       });
     }
   }
@@ -234,7 +242,15 @@ export default async function FixCenterPage() {
   }));
 
   // Check if user can see disclosure details (paid tier only)
-  const canViewDisclosureDetails = tier !== UserTier.FREE;
+  const canViewDisclosureDetails = tier !== UserTier.TRIAL && tier !== UserTier.AUDITOR;
+
+  // Prepare user affiliate tags for FindReplacement component
+  const userTags = {
+    US: user?.affiliateTagUS ?? null,
+    UK: user?.affiliateTagUK ?? null,
+    CA: user?.affiliateTagCA ?? null,
+    DE: user?.affiliateTagDE ?? null,
+  };
 
   return (
     <FixCenterClient
@@ -245,6 +261,7 @@ export default async function FixCenterPage() {
       canUseAI={canUseAI}
       canViewDisclosureDetails={canViewDisclosureDetails}
       tier={tier}
+      userTags={userTags}
     />
   );
 }

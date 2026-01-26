@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     const usersWithMonitoring = await prisma.user.findMany({
       where: {
         monitoringEnabled: true,
-        tier: { in: ["SPECIALIST", "PORTFOLIO"] },
+        tier: { in: ["SPECIALIST", "OPERATOR"] },
       },
       select: {
         id: true,

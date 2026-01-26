@@ -609,7 +609,7 @@ export async function GET(request: NextRequest) {
       select: { tier: true, name: true },
     });
 
-    if (!user || user.tier === "FREE") {
+    if (!user || user.tier === "TRIAL" || user.tier === "AUDITOR") {
       return NextResponse.json(
         { error: "Fix Script export is available for paid tiers only" },
         { status: 403 }

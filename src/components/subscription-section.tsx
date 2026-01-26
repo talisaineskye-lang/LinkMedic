@@ -1,19 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { CreditCard, Sparkles, Crown } from "lucide-react";
+import { CreditCard, Sparkles, Crown, AlertTriangle } from "lucide-react";
 
 interface SubscriptionSectionProps {
   tier: string;
   hasStripeCustomer: boolean;
+  subscriptionCancelAt?: string | null; // ISO string from API
 }
 
 export function SubscriptionSection({
   tier,
   hasStripeCustomer,
+  subscriptionCancelAt,
 }: SubscriptionSectionProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isPaid = tier === "SPECIALIST" || tier === "OPERATOR";
+  const isCanceling = isPaid && subscriptionCancelAt;
 
   const handleUpgrade = async () => {
     console.log("[Upgrade] Starting checkout...");
@@ -72,7 +77,15 @@ export function SubscriptionSection({
     }
   };
 
-  const isPaid = tier === "SPECIALIST" || tier === "OPERATOR";
+  // Format cancel date for display
+  const formatCancelDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
 
   return (
     <div className="bg-yt-gray/70 backdrop-blur-sm border border-white/10 rounded-xl p-6">
@@ -98,14 +111,14 @@ export function SubscriptionSection({
               >
                 {tier === "OPERATOR" && <Crown className="w-3.5 h-3.5" />}
                 {tier === "SPECIALIST" && <Sparkles className="w-3.5 h-3.5" />}
-                {tier === "FREE" && "Free"}
+                {(tier === "TRIAL" || tier === "AUDITOR") && "Free"}
                 {tier === "SPECIALIST" && "Specialist"}
                 {tier === "OPERATOR" && "Operator"}
               </span>
             </dd>
           </div>
 
-          {isPaid && hasStripeCustomer && (
+          {isPaid && hasStripeCustomer && !isCanceling && (
             <div className="flex items-center gap-2">
               <button
                 onClick={handleManageSubscription}
@@ -125,8 +138,34 @@ export function SubscriptionSection({
           )}
         </div>
 
-        {/* Feature comparison for FREE users */}
-        {tier === "FREE" && (
+        {/* Cancellation Warning */}
+        {isCanceling && subscriptionCancelAt && (
+          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-yellow-400 font-medium">Subscription Ending</p>
+                <p className="text-yellow-400/80 text-sm mt-1">
+                  Your subscription will end on{" "}
+                  <span className="font-semibold">
+                    {formatCancelDate(subscriptionCancelAt)}
+                  </span>
+                  . You&apos;ll keep full access until then.
+                </p>
+                <button
+                  onClick={handleManageSubscription}
+                  disabled={loading}
+                  className="mt-3 text-sm text-yellow-400 hover:text-yellow-300 underline disabled:opacity-50"
+                >
+                  {loading ? "Loading..." : "Reactivate subscription →"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Feature comparison for free tier users */}
+        {(tier === "TRIAL" || tier === "AUDITOR") && (
           <div className="mt-6 pt-6 border-t border-white/10">
             <h3 className="text-sm font-medium text-white mb-4">
               Upgrade to Specialist - $19/month

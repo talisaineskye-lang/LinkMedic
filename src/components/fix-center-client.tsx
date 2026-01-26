@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { Copy, Check, CheckCircle2, ExternalLink, RefreshCw, FileWarning, Lock, Eye, Pencil, ChevronDown, ChevronRight, Layers, List, X, FileDown, Trash2, Undo2 } from "lucide-react";
+import { Copy, Check, CheckCircle2, ExternalLink, RefreshCw, FileWarning, Lock, Eye, Pencil, ChevronDown, ChevronRight, Layers, List, X, FileDown, Trash2, Undo2, Search } from "lucide-react";
 import { formatCurrency, formatNumber } from "@/lib/revenue-estimator";
 import { DISCLOSURE_TEMPLATES } from "@/lib/disclosure-detector";
 import { FindReplacementsButton } from "./find-replacements-button";
+import { FindReplacement } from "./find-replacement";
 import Link from "next/link";
 
 interface Issue {
@@ -19,6 +20,7 @@ interface Issue {
   url: string;
   status: string;
   merchant: string;
+  amazonRegion?: string | null;
   estimatedLoss: number;
   suggestedLink: string | null;
   suggestedTitle: string | null;
@@ -63,6 +65,14 @@ interface GroupedIssue {
   confidenceScore: number | null;
   status: string;
   merchant: string;
+  amazonRegion?: string | null;
+}
+
+interface UserTags {
+  US: string | null;
+  UK: string | null;
+  CA: string | null;
+  DE: string | null;
 }
 
 interface FixCenterClientProps {
@@ -73,6 +83,7 @@ interface FixCenterClientProps {
   canUseAI?: boolean;
   canViewDisclosureDetails?: boolean;
   tier?: string;
+  userTags?: UserTags;
 }
 
 function ConfidenceBadge({ score }: { score: number | null }) {
@@ -125,7 +136,8 @@ export function FixCenterClient({
   disclosureIssues = [],
   canUseAI = true,
   canViewDisclosureDetails = false,
-  tier = "FREE",
+  tier = "AUDITOR",
+  userTags = { US: null, UK: null, CA: null, DE: null },
 }: FixCenterClientProps) {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab") === "disclosure" ? "disclosure" : "needs-fix";
@@ -146,6 +158,7 @@ export function FixCenterClient({
   const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
   const [undoingLinkId, setUndoingLinkId] = useState<string | null>(null);
   const [showDisclosureMenu, setShowDisclosureMenu] = useState<string | null>(null);
+  const [showReplacementFor, setShowReplacementFor] = useState<string | null>(null);
   const router = useRouter();
 
   // Group fixed links by date
@@ -468,7 +481,7 @@ export function FixCenterClient({
         </div>
         <div className="flex items-center gap-3">
           {/* Export dropdown - paid tier only - REQUIRED, DO NOT REMOVE */}
-          {tier !== "FREE" && needsFixIssues.length > 0 && (
+          {tier !== "TRIAL" && tier !== "AUDITOR" && needsFixIssues.length > 0 && (
             <div className="relative export-dropdown">
               <button
                 onClick={() => setShowExportMenu(!showExportMenu)}
@@ -1001,7 +1014,8 @@ export function FixCenterClient({
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {groupedIssues.map((group) => (
-                    <tr key={group.originalUrl} className="hover:bg-white/5 transition">
+                    <React.Fragment key={group.originalUrl}>
+                    <tr className="hover:bg-white/5 transition">
                       {/* Broken Link */}
                       <td className="px-4 py-4">
                         <a
@@ -1226,12 +1240,38 @@ export function FixCenterClient({
                                 </>
                               )}
                             </button>
+                            {/* Manual Search Toggle */}
+                            <button
+                              onClick={() => setShowReplacementFor(
+                                showReplacementFor === group.originalUrl ? null : group.originalUrl
+                              )}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition ${
+                                showReplacementFor === group.originalUrl
+                                  ? "bg-white/10 text-white border border-white/30"
+                                  : "bg-yt-gray hover:bg-white/10 border border-white/20 text-yt-light hover:text-white"
+                              }`}
+                              title="Search Amazon manually for a replacement"
+                            >
+                              <Search className="w-3 h-3" />
+                              {showReplacementFor === group.originalUrl ? "Hide" : "Search"}
+                            </button>
                           </div>
                         ) : (
                           <div className="flex flex-col items-center gap-2">
-                            <span className="text-xs text-yt-light/50 italic">
-                              Find replacement first
-                            </span>
+                            {/* Manual Search Toggle Button */}
+                            <button
+                              onClick={() => setShowReplacementFor(
+                                showReplacementFor === group.originalUrl ? null : group.originalUrl
+                              )}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition ${
+                                showReplacementFor === group.originalUrl
+                                  ? "bg-white/10 text-white border border-white/30"
+                                  : "bg-yt-gray hover:bg-white/10 border border-white/20 text-yt-light hover:text-white"
+                              }`}
+                            >
+                              <Search className="w-3 h-3" />
+                              {showReplacementFor === group.originalUrl ? "Hide Search" : "Manual Search"}
+                            </button>
                             <div className="flex items-center gap-2">
                               {group.videos.length === 1 && (
                                 <a
@@ -1266,6 +1306,24 @@ export function FixCenterClient({
                         )}
                       </td>
                     </tr>
+                    {/* Manual Find Replacement Row - Expandable */}
+                    {showReplacementFor === group.originalUrl && (
+                      <tr>
+                        <td colSpan={7} className="px-4 py-0 bg-yt-dark/30">
+                          <FindReplacement
+                            link={{
+                              id: group.linkIds[0],
+                              originalUrl: group.originalUrl,
+                              amazonRegion: group.amazonRegion,
+                            }}
+                            videoTitle={group.videos[0]?.title || "Unknown Video"}
+                            userTags={userTags}
+                            defaultRegion={(group.amazonRegion as "US" | "UK" | "CA" | "DE") || "US"}
+                          />
+                        </td>
+                      </tr>
+                    )}
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>

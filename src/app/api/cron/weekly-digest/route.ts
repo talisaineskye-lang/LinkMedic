@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     // Get all paid users with alerts enabled
     const paidUsers = await prisma.user.findMany({
       where: {
-        tier: { in: ["SPECIALIST", "PORTFOLIO"] },
+        tier: { in: ["SPECIALIST", "OPERATOR"] },
         alertsEnabled: true,
       },
       select: {

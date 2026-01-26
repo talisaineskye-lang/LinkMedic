@@ -25,19 +25,26 @@ model User {
   emailVerified      DateTime?
 
   // Tier system
-  tier               UserTier  @default(FREE)
+  tier               UserTier  @default(TRIAL)
   videoScanLimit     Int       @default(15)    // Free tier: 15 videos max
   lastScanDate       DateTime?                 // For one-time scan restriction
   monitoringEnabled  Boolean   @default(false) // Link Guard feature
   alertsEnabled      Boolean   @default(false) // Email alerts for status changes
 
   // Affiliate settings
-  affiliateTag          String?                   // User's Amazon affiliate tag (e.g., "mychannel-20")
+  affiliateTag          String?                   // Legacy: User's default Amazon affiliate tag
   hasCompletedFirstScan Boolean   @default(false) // Track if user has done their first scan
 
+  // Per-region affiliate tags (auto-detected from links, editable in settings)
+  affiliateTagUS        String?   // amazon.com
+  affiliateTagUK        String?   // amazon.co.uk
+  affiliateTagCA        String?   // amazon.ca
+  affiliateTagDE        String?   // amazon.de
+
   // Stripe subscription fields
-  stripeCustomerId     String?   @unique
-  stripeSubscriptionId String?   @unique
+  stripeCustomerId      String?   @unique
+  stripeSubscriptionId  String?   @unique
+  subscriptionCancelAt  DateTime?           // When subscription will end (if canceling)
 
   accounts           Account[]
   sessions           Session[]
@@ -45,9 +52,10 @@ model User {
 }
 
 enum UserTier {
-  FREE        // The Auditor - limited features
-  SPECIALIST  // Paid tier - single channel
-  PORTFOLIO   // Paid tier - multiple channels
+  TRIAL       // Brand new users who haven't scanned yet
+  AUDITOR     // Completed free scan OR cancelled paid plan (free tier)
+  SPECIALIST  // Paid tier - $19/mo single channel
+  OPERATOR    // Paid tier - $29/mo (future)
 }
 
 model Account {
@@ -124,6 +132,7 @@ model AffiliateLink {
   previousStatus LinkStatus?  // For Link Guard: track status changes
   lastCheckedAt DateTime?
   videoId       String
+  amazonRegion  String?      // Detected Amazon region: US, UK, CA, DE, etc.
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
   // Fix tracking fields

@@ -3,7 +3,8 @@ import { UserTier } from "@prisma/client";
 
 // Feature flags for each tier
 export const TIER_FEATURES = {
-  FREE: {
+  // TRIAL: Brand new users who haven't scanned yet
+  TRIAL: {
     maxVideos: 15,
     aiSuggestions: false,
     csvExport: false,
@@ -12,6 +13,17 @@ export const TIER_FEATURES = {
     fullHistory: false,
     emailAlerts: false,
   },
+  // AUDITOR: Completed free scan OR cancelled paid plan
+  AUDITOR: {
+    maxVideos: 15,
+    aiSuggestions: false,
+    csvExport: false,
+    monitoring: false,
+    resync: false,
+    fullHistory: false,
+    emailAlerts: false,
+  },
+  // SPECIALIST: Paying $19/mo
   SPECIALIST: {
     maxVideos: 100,
     aiSuggestions: true,
@@ -21,8 +33,8 @@ export const TIER_FEATURES = {
     fullHistory: true,
     emailAlerts: true,
   },
-  // OPERATOR tier (stored as PORTFOLIO in DB for backwards compatibility)
-  PORTFOLIO: {
+  // OPERATOR: Paying $29/mo (future)
+  OPERATOR: {
     maxVideos: 500,
     maxChannels: 5,
     aiSuggestions: true,
@@ -35,7 +47,7 @@ export const TIER_FEATURES = {
   },
 } as const;
 
-export type FeatureKey = keyof typeof TIER_FEATURES.FREE;
+export type FeatureKey = keyof typeof TIER_FEATURES.TRIAL;
 
 export interface TierCheckResult {
   allowed: boolean;
@@ -169,7 +181,7 @@ export async function isPaidUser(userId: string): Promise<boolean> {
     select: { tier: true },
   });
 
-  return user?.tier !== "FREE";
+  return user?.tier !== "TRIAL" && user?.tier !== "AUDITOR";
 }
 
 /**

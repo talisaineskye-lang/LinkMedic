@@ -52,13 +52,13 @@ export async function POST() {
     // Also auto-detects and saves affiliate tag if user doesn't have one
     const { links, disclosureIssues, detectedAffiliateTag } = await extractLinksForUser(session.user.id);
 
-    // Send scan complete email for first-time scans
+    // Handle first-time scans: send email and upgrade TRIAL → AUDITOR
     if (isFirstScan) {
       try {
         // Get user info and broken links for email
         const user = await prisma.user.findUnique({
           where: { id: session.user.id },
-          select: { email: true, name: true, tier: true },
+          select: { email: true, name: true, tier: true, hasCompletedFirstScan: true },
         });
 
         // Get all links with video data for revenue calculation
@@ -101,6 +101,19 @@ export async function POST() {
             user.tier
           );
           console.log(`[Scan] Results email sent to ${user.email}`);
+        }
+
+        // Mark first scan complete AND upgrade tier if they're on TRIAL
+        if (!user?.hasCompletedFirstScan) {
+          await prisma.user.update({
+            where: { id: session.user.id },
+            data: {
+              hasCompletedFirstScan: true,
+              // Only upgrade if they're on TRIAL (don't downgrade paid users)
+              ...(user?.tier === "TRIAL" && { tier: "AUDITOR" }),
+            },
+          });
+          console.log(`[Scan] First scan complete for user ${session.user.id}, tier: ${user?.tier} → AUDITOR`);
         }
       } catch (emailError) {
         // Log but don't fail the scan

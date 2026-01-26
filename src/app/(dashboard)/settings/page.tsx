@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { SettingsForm } from "@/components/settings-form";
 import { SubscriptionSection } from "@/components/subscription-section";
+import { AffiliateTagsSection } from "@/components/affiliate-tags-section";
 
 export default async function SettingsPage() {
   const session = await getServerSession(authOptions);
@@ -22,10 +23,15 @@ export default async function SettingsPage() {
       conversionPercent: true,
       avgOrderValue: true,
       affiliateTag: true,
+      affiliateTagUS: true,
+      affiliateTagUK: true,
+      affiliateTagCA: true,
+      affiliateTagDE: true,
       subscriptionStatus: true,
       trialEndsAt: true,
       tier: true,
       stripeCustomerId: true,
+      subscriptionCancelAt: true,
     },
   });
 
@@ -95,6 +101,17 @@ export default async function SettingsPage() {
       <SubscriptionSection
         tier={user.tier}
         hasStripeCustomer={!!user.stripeCustomerId}
+        subscriptionCancelAt={user.subscriptionCancelAt?.toISOString() ?? null}
+      />
+
+      {/* Affiliate Tags */}
+      <AffiliateTagsSection
+        initialTags={{
+          affiliateTagUS: user.affiliateTagUS,
+          affiliateTagUK: user.affiliateTagUK,
+          affiliateTagCA: user.affiliateTagCA,
+          affiliateTagDE: user.affiliateTagDE,
+        }}
       />
 
       {/* Revenue Assumptions */}

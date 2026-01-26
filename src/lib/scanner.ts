@@ -3,6 +3,7 @@ import { extractLinksFromDescription, filterAffiliateLinks } from "./link-parser
 import { auditLinks, AuditResult, extractAffiliateTag } from "./link-audit-engine";
 import { LinkStatus, DisclosureStatus } from "@prisma/client";
 import { analyzeDisclosure } from "./disclosure-detector";
+import { detectAmazonRegion, extractAffiliateTag as extractRegionAffiliateTag, AmazonRegion } from "./amazon-regions";
 
 /**
  * Extracts and stores affiliate links from a video's description
@@ -43,13 +44,19 @@ export async function extractAndStoreLinks(videoId: string): Promise<number> {
 
 /**
  * Extracts links from all videos for a user and analyzes disclosures
- * Also auto-detects affiliate tag from existing Amazon links if user doesn't have one saved
+ * Also auto-detects affiliate tags from existing Amazon links (per region)
  */
 export async function extractLinksForUser(userId: string): Promise<{ videos: number; links: number; disclosureIssues: number; detectedAffiliateTag: string | null }> {
-  // Check if user already has an affiliate tag saved
+  // Check if user already has affiliate tags saved
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { affiliateTag: true },
+    select: {
+      affiliateTag: true,
+      affiliateTagUS: true,
+      affiliateTagUK: true,
+      affiliateTagCA: true,
+      affiliateTagDE: true,
+    },
   });
 
   const videos = await prisma.video.findMany({
@@ -60,6 +67,9 @@ export async function extractLinksForUser(userId: string): Promise<{ videos: num
   let totalLinks = 0;
   let disclosureIssues = 0;
   let detectedAffiliateTag: string | null = null;
+
+  // Track detected tags per region
+  const detectedTags: Partial<Record<AmazonRegion, string>> = {};
 
   for (const video of videos) {
     if (!video.description) continue;
@@ -91,12 +101,23 @@ export async function extractLinksForUser(userId: string): Promise<{ videos: num
     }
 
     for (const link of affiliateLinks) {
-      // Auto-detect affiliate tag from Amazon links if user doesn't have one saved
-      if (!user?.affiliateTag && !detectedAffiliateTag && link.merchant === "amazon") {
-        const tag = extractAffiliateTag(link.url);
-        if (tag) {
-          detectedAffiliateTag = tag;
-          console.log(`[Scanner] Auto-detected affiliate tag: ${tag}`);
+      // Detect Amazon region for this link
+      const amazonRegion = link.merchant === "amazon" ? detectAmazonRegion(link.url) : null;
+
+      // Auto-detect affiliate tags per region from Amazon links
+      if (link.merchant === "amazon" && amazonRegion) {
+        // Only detect if we haven't already detected for this region
+        if (!detectedTags[amazonRegion]) {
+          const tag = extractRegionAffiliateTag(link.url);
+          if (tag) {
+            detectedTags[amazonRegion] = tag;
+            console.log(`[Scanner] Auto-detected affiliate tag for ${amazonRegion}: ${tag}`);
+
+            // Keep track of first detected tag for backward compatibility
+            if (!detectedAffiliateTag) {
+              detectedAffiliateTag = tag;
+            }
+          }
         }
       }
 
@@ -114,20 +135,48 @@ export async function extractLinksForUser(userId: string): Promise<{ videos: num
             videoId: video.id,
             originalUrl: link.url,
             merchant: link.merchant,
+            amazonRegion: amazonRegion || null,
           },
         });
         totalLinks++;
+      } else if (amazonRegion && !existing.amazonRegion) {
+        // Update existing link with region if not set
+        await prisma.affiliateLink.update({
+          where: { id: existing.id },
+          data: { amazonRegion },
+        });
       }
     }
   }
 
-  // Auto-save detected affiliate tag if user doesn't have one
+  // Build tag updates (only update tags that aren't already set)
+  const tagUpdates: Record<string, string> = {};
+
+  if (detectedTags.US && !user?.affiliateTagUS) {
+    tagUpdates.affiliateTagUS = detectedTags.US;
+  }
+  if (detectedTags.UK && !user?.affiliateTagUK) {
+    tagUpdates.affiliateTagUK = detectedTags.UK;
+  }
+  if (detectedTags.CA && !user?.affiliateTagCA) {
+    tagUpdates.affiliateTagCA = detectedTags.CA;
+  }
+  if (detectedTags.DE && !user?.affiliateTagDE) {
+    tagUpdates.affiliateTagDE = detectedTags.DE;
+  }
+
+  // Also update legacy affiliateTag if not set
   if (!user?.affiliateTag && detectedAffiliateTag) {
+    tagUpdates.affiliateTag = detectedAffiliateTag;
+  }
+
+  // Save detected tags
+  if (Object.keys(tagUpdates).length > 0) {
     await prisma.user.update({
       where: { id: userId },
-      data: { affiliateTag: detectedAffiliateTag },
+      data: tagUpdates,
     });
-    console.log(`[Scanner] Auto-saved affiliate tag for user ${userId}: ${detectedAffiliateTag}`);
+    console.log(`[Scanner] Auto-saved affiliate tags for user ${userId}:`, tagUpdates);
   }
 
   return { videos: videos.length, links: totalLinks, disclosureIssues, detectedAffiliateTag };

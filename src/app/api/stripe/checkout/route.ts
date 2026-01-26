@@ -44,7 +44,7 @@ export async function POST() {
     console.log("[Checkout] User tier:", user.tier);
 
     // Check if user is already on a paid tier
-    if (user.tier !== "FREE") {
+    if (user.tier !== "TRIAL" && user.tier !== "AUDITOR") {
       return NextResponse.json(
         { error: "You already have an active subscription" },
         { status: 400 }

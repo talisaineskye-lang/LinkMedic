@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
             data: {
               tier: "SPECIALIST",
               stripeSubscriptionId: session.subscription as string,
+              subscriptionCancelAt: null, // Clear any pending cancellation
               videoScanLimit: 100,
               monitoringEnabled: true,
               alertsEnabled: true,
@@ -54,23 +55,38 @@ export async function POST(request: NextRequest) {
         });
 
         if (user) {
-          // Check if subscription is active or past_due (still give access)
-          const isActive =
-            subscription.status === "active" ||
-            subscription.status === "past_due";
+          // Check if subscription is scheduled to cancel at period end
+          if (subscription.cancel_at_period_end && subscription.cancel_at) {
+            // Subscription scheduled to cancel - keep access but track cancel date
+            await prisma.user.update({
+              where: { id: user.id },
+              data: {
+                subscriptionCancelAt: new Date(subscription.cancel_at * 1000),
+              },
+            });
+            console.log(
+              `[Stripe] Subscription scheduled to cancel on ${new Date(subscription.cancel_at * 1000).toISOString()} for user ${user.id}`
+            );
+          } else {
+            // Subscription reactivated (user un-cancelled) or status changed
+            const isActive =
+              subscription.status === "active" ||
+              subscription.status === "past_due";
 
-          await prisma.user.update({
-            where: { id: user.id },
-            data: {
-              tier: isActive ? "SPECIALIST" : "FREE",
-              videoScanLimit: isActive ? 100 : 15,
-              monitoringEnabled: isActive,
-              alertsEnabled: isActive,
-            },
-          });
-          console.log(
-            `[Stripe] Subscription updated for user ${user.id}: ${subscription.status}`
-          );
+            await prisma.user.update({
+              where: { id: user.id },
+              data: {
+                tier: isActive ? "SPECIALIST" : "AUDITOR",
+                subscriptionCancelAt: null, // Clear cancellation if reactivated
+                videoScanLimit: isActive ? 100 : 15,
+                monitoringEnabled: isActive,
+                alertsEnabled: isActive,
+              },
+            });
+            console.log(
+              `[Stripe] Subscription updated for user ${user.id}: ${subscription.status}, cancel_at cleared`
+            );
+          }
         }
         break;
       }
@@ -86,14 +102,15 @@ export async function POST(request: NextRequest) {
           await prisma.user.update({
             where: { id: user.id },
             data: {
-              tier: "FREE",
+              tier: "AUDITOR",  // They've used the product, so they're an AUDITOR not TRIAL
               stripeSubscriptionId: null,
+              subscriptionCancelAt: null, // Clear cancellation date
               videoScanLimit: 15,
               monitoringEnabled: false,
               alertsEnabled: false,
             },
           });
-          console.log(`[Stripe] User ${user.id} downgraded to FREE`);
+          console.log(`[Stripe] Subscription ended for user ${user.id}, reverted to AUDITOR`);
         }
         break;
       }

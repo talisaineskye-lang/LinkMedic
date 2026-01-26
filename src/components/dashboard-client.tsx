@@ -65,7 +65,7 @@ export function DashboardClient({
   const [isExporting, setIsExporting] = useState(false);
   const router = useRouter();
 
-  const isFreeUser = tierInfo.tier === "FREE";
+  const isFreeUser = tierInfo.tier === "TRIAL" || tierInfo.tier === "AUDITOR";
 
   // Track dashboard view on mount
   useEffect(() => {

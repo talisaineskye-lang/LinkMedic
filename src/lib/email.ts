@@ -243,14 +243,14 @@ export async function sendScanCompleteEmail(
     brokenLinks: number;
     monthlyRecovery: number;
   },
-  tier: "FREE" | "SPECIALIST" | "PORTFOLIO" = "FREE"
+  tier: "TRIAL" | "AUDITOR" | "SPECIALIST" | "OPERATOR" = "AUDITOR"
 ): Promise<{ success: boolean; error?: unknown; data?: unknown }> {
   if (!resend) {
     console.warn("[Email] Not configured - skipping scan complete email");
     return { success: false, error: "Email not configured" };
   }
 
-  const showUpgradeButton = tier === "FREE";
+  const showUpgradeButton = tier === "TRIAL" || tier === "AUDITOR";
 
   const upgradeSection = showUpgradeButton ? `
     <div style="background: linear-gradient(135deg, #065f46 0%, #047857 100%); padding: 24px; border-radius: 8px; margin: 24px 0; text-align: center;">

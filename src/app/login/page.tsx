@@ -40,10 +40,17 @@ function LoginContent() {
 
           {error && (
             <div className="mb-4 p-4 bg-emergency-red/10 border border-emergency-red/30 rounded-xl text-emergency-red text-sm">
-              {error === "OAuthSignin" && "Error starting sign in process."}
-              {error === "OAuthCallback" && "Error during authentication."}
-              {error === "OAuthCreateAccount" && "Error creating account."}
+              {error === "OAuthSignin" && "Error starting sign in process. Please try again."}
+              {error === "OAuthCallback" && "Error during authentication callback."}
+              {error === "OAuthCreateAccount" && "Error creating your account."}
+              {error === "OAuthAccountNotLinked" && "This email is already linked to another account. Please sign in with the original provider."}
+              {error === "Callback" && "Error during callback. Please try again."}
+              {error === "AccessDenied" && "Access was denied. You may have cancelled the sign in."}
+              {error === "Verification" && "Token verification failed."}
               {error === "Default" && "An error occurred during sign in."}
+              {!["OAuthSignin", "OAuthCallback", "OAuthCreateAccount", "OAuthAccountNotLinked", "Callback", "AccessDenied", "Verification", "Default"].includes(error) && (
+                <>Error: {error}</>
+              )}
             </div>
           )}
 

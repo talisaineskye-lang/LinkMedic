@@ -166,7 +166,7 @@ export default async function DashboardPage() {
   );
 
   // Tier info
-  const tier = user?.tier ?? UserTier.FREE;
+  const tier = user?.tier ?? UserTier.AUDITOR;
   const tierFeatures = TIER_FEATURES[tier];
   const videoLimit = user?.videoScanLimit ?? tierFeatures.maxVideos;
 
