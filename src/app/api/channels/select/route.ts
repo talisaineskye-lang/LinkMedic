@@ -54,57 +54,19 @@ export async function POST(request: Request) {
 
     // If youtubeChannelId is provided, this is initial onboarding selection
     if (youtubeChannelId) {
-      // Check if channel already exists for this user
-      let channel = await (prisma as any).channel.findUnique({
-        where: {
-          userId_youtubeChannelId: {
-            userId: session.user.id,
-            youtubeChannelId,
-          },
-        },
-      });
-
-      if (!channel) {
-        // Check tier limits before creating new channel
-        const limitCheck = await checkChannelLimit(session.user.id);
-
-        if (!limitCheck.allowed) {
-          return NextResponse.json(
-            {
-              error: limitCheck.reason || "Channel limit reached",
-              upgradeRequired: limitCheck.upgradeRequired,
-            },
-            { status: 403 }
-          );
-        }
-
-        // Create the channel
-        channel = await (prisma as any).channel.create({
-          data: {
-            youtubeChannelId,
-            title: channelTitle || "YouTube Channel",
-            thumbnailUrl: thumbnailUrl || null,
-            userId: session.user.id,
-          },
-        });
-      }
-
-      // Set as active channel
+      // For now, just update the user's youtubeChannelId directly
+      // Channel table operations will be re-enabled with multi-channel support
       await prisma.user.update({
         where: { id: session.user.id },
         data: {
-          activeChannelId: channel.id,
-          youtubeChannelId, // Keep for backward compatibility
+          youtubeChannelId,
         },
       });
 
       return NextResponse.json({
         success: true,
-        channel: {
-          id: channel.id,
-          youtubeChannelId: channel.youtubeChannelId,
-          title: channel.title,
-        },
+        youtubeChannelId,
+        title: channelTitle,
       });
     }
 

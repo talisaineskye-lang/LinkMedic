@@ -62,8 +62,9 @@ export default function SelectChannelPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          channelId: channel.id,
+          youtubeChannelId: channel.id,
           channelTitle: channel.title,
+          thumbnailUrl: channel.thumbnailUrl,
         }),
       });
 
