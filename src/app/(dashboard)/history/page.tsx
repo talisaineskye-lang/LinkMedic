@@ -11,16 +11,8 @@ export default async function HistoryPage() {
     return null;
   }
 
-  // Get user's active channel for filtering
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { activeChannelId: true },
-  });
-
-  // Build channel filter for queries
-  const channelFilter = user?.activeChannelId
-    ? { channelId: user.activeChannelId }
-    : {};
+  // No channel filter for now - will be re-added with multi-channel support
+  const channelFilter = {};
 
   // Get all fixed links with video data (filtered by active channel)
   const fixedLinks = await prisma.affiliateLink.findMany({

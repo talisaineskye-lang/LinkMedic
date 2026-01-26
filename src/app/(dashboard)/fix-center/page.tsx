@@ -23,7 +23,7 @@ export default async function FixCenterPage() {
     return null;
   }
 
-  // Get user settings for revenue estimation, affiliate tags, and active channel
+  // Get user settings for revenue estimation and affiliate tags
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
@@ -35,7 +35,6 @@ export default async function FixCenterPage() {
       affiliateTagUK: true,
       affiliateTagCA: true,
       affiliateTagDE: true,
-      activeChannelId: true,
     },
   });
 
@@ -43,10 +42,8 @@ export default async function FixCenterPage() {
   const tier = user?.tier ?? UserTier.AUDITOR;
   const canUseAI = TIER_FEATURES[tier].aiSuggestions;
 
-  // Build channel filter for queries
-  const channelFilter = user?.activeChannelId
-    ? { channelId: user.activeChannelId }
-    : {};
+  // No channel filter for now - will be re-added with multi-channel support
+  const channelFilter = {};
 
   const revenueSettings = {
     ctrPercent: user?.ctrPercent ?? DEFAULT_SETTINGS.ctrPercent,

@@ -29,7 +29,7 @@ export default async function DashboardPage() {
     return null;
   }
 
-  // Get user settings for revenue estimation + tier info + active channel
+  // Get user settings for revenue estimation + tier info
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
@@ -38,14 +38,11 @@ export default async function DashboardPage() {
       avgOrderValue: true,
       tier: true,
       videoScanLimit: true,
-      activeChannelId: true,
     },
   });
 
-  // Build channel filter for queries
-  const channelFilter = user?.activeChannelId
-    ? { channelId: user.activeChannelId }
-    : {};
+  // No channel filter for now - will be re-added with multi-channel support
+  const channelFilter = {};
 
   const revenueSettings = {
     ctrPercent: user?.ctrPercent ?? DEFAULT_SETTINGS.ctrPercent,
