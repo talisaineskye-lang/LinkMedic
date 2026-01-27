@@ -45,12 +45,23 @@ interface RecoveryStats {
   annualRecovered: number;
 }
 
+interface ScanEligibility {
+  isFirstScan: boolean;
+  quickScanAvailable: boolean;
+  fullScanAvailable: boolean;
+  quickScanCooldownEnds: string | null;
+  fullScanCooldownEnds: string | null;
+  lastQuickScan: string | null;
+  lastFullScan: string | null;
+}
+
 interface DashboardClientProps {
   stats: DashboardStats;
   lastScanDate: Date | null;
   tierInfo: TierInfo;
   recoveryStats: RecoveryStats;
   isInactiveChannel: boolean;
+  scanEligibility: ScanEligibility;
 }
 
 export function DashboardClient({
@@ -59,13 +70,36 @@ export function DashboardClient({
   tierInfo,
   recoveryStats,
   isInactiveChannel,
+  scanEligibility,
 }: DashboardClientProps) {
   const [isSyncing, setIsSyncing] = useState(false);
+  const [activeScanType, setActiveScanType] = useState<"quick" | "full" | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const router = useRouter();
 
   const isFreeUser = tierInfo.tier === "TRIAL" || tierInfo.tier === "AUDITOR";
+
+  // Helper to format cooldown time remaining
+  const formatCooldown = (isoString: string | null): string => {
+    if (!isoString) return "";
+    const ends = new Date(isoString);
+    const now = new Date();
+    const diff = ends.getTime() - now.getTime();
+
+    if (diff <= 0) return "Available now";
+
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(hours / 24);
+
+    if (days > 0) {
+      return `${days}d ${hours % 24}h`;
+    }
+    if (hours > 0) {
+      return `${hours}h ${Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))}m`;
+    }
+    return `${Math.floor(diff / (1000 * 60))}m`;
+  };
 
   // Track dashboard view on mount
   useEffect(() => {
@@ -77,16 +111,33 @@ export function DashboardClient({
 
   const hasData = stats.totalLinks > 0;
 
-  const handleSync = async () => {
-    if (!tierInfo.canResync) {
+  const handleSync = async (scanType: "quick" | "full" = "full") => {
+    if (!tierInfo.canResync && !scanEligibility.isFirstScan) {
       alert("Upgrade to a paid plan to resync your videos");
       return;
     }
+
+    // Check cooldown eligibility
+    if (!scanEligibility.isFirstScan) {
+      if (scanType === "quick" && !scanEligibility.quickScanAvailable) {
+        alert(`Quick scan is on cooldown. Available in ${formatCooldown(scanEligibility.quickScanCooldownEnds)}`);
+        return;
+      }
+      if (scanType === "full" && !scanEligibility.fullScanAvailable) {
+        alert(`Full scan is on cooldown. Available in ${formatCooldown(scanEligibility.fullScanCooldownEnds)}`);
+        return;
+      }
+    }
+
     setIsSyncing(true);
-    track(ANALYTICS_EVENTS.SYNC_VIDEOS_CLICKED);
+    setActiveScanType(scanType);
+    track(ANALYTICS_EVENTS.SYNC_VIDEOS_CLICKED, { scanType });
+
     try {
       const response = await fetch("/api/videos/sync", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scanType }),
       });
 
       if (!response.ok) {
@@ -95,13 +146,18 @@ export function DashboardClient({
           alert(error.message || "Upgrade required for this feature");
           return;
         }
+        if (response.status === 429) {
+          alert(error.message || "Scan is on cooldown");
+          return;
+        }
         alert(error.error || "Failed to sync videos");
         return;
       }
 
       const data = await response.json();
+      const scanLabel = scanType === "quick" ? "Quick scan" : "Full scan";
       alert(
-        `Synced ${data.synced} videos and extracted ${data.linksExtracted} links`
+        `${scanLabel} complete! Synced ${data.synced} videos and extracted ${data.linksExtracted} links`
       );
       router.refresh();
     } catch (error) {
@@ -109,6 +165,7 @@ export function DashboardClient({
       alert("Failed to sync videos");
     } finally {
       setIsSyncing(false);
+      setActiveScanType(null);
     }
   };
 
@@ -184,7 +241,7 @@ export function DashboardClient({
             <p className="text-yt-light">Monitor your affiliate link health</p>
           </div>
           <button
-            onClick={handleSync}
+            onClick={() => handleSync("full")}
             disabled={isSyncing}
             className="flex items-center gap-2 px-6 py-3 bg-profit-green text-black hover:brightness-110 disabled:bg-yt-gray disabled:text-yt-light rounded-lg font-bold transition shadow-[0_0_20px_rgba(0,255,0,0.2)]"
           >
@@ -206,7 +263,7 @@ export function DashboardClient({
           </p>
 
           <button
-            onClick={handleSync}
+            onClick={() => handleSync("full")}
             disabled={isSyncing}
             className="inline-block px-10 py-4 bg-profit-green text-black hover:brightness-110 disabled:bg-yt-gray disabled:text-yt-light rounded-lg font-bold text-lg transition shadow-[0_0_30px_rgba(0,255,0,0.3)]"
           >
@@ -274,22 +331,73 @@ export function DashboardClient({
             <Search className={`w-4 h-4 ${isScanning ? "animate-pulse" : ""}`} />
             {isScanning ? "Scanning..." : "Scan Links"}
           </button>
+
+          {/* Quick Scan Button */}
           <button
-            onClick={handleSync}
-            disabled={isSyncing || isScanning || !tierInfo.canResync}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition border ${
-              tierInfo.canResync
+            onClick={() => handleSync("quick")}
+            disabled={isSyncing || isScanning || !tierInfo.canResync || !scanEligibility.quickScanAvailable}
+            className={`flex flex-col items-center px-4 py-2 rounded-lg font-semibold transition border ${
+              tierInfo.canResync && scanEligibility.quickScanAvailable
                 ? "bg-yt-gray hover:bg-white/5 border-white/20"
                 : "bg-yt-gray/50 border-white/10 cursor-not-allowed"
             }`}
-            title={!tierInfo.canResync ? "Upgrade to resync videos" : undefined}
+            title={
+              !tierInfo.canResync
+                ? "Upgrade to resync videos"
+                : !scanEligibility.quickScanAvailable
+                ? `Available in ${formatCooldown(scanEligibility.quickScanCooldownEnds)}`
+                : "Sync videos from last 30 days + top 20 by views"
+            }
           >
-            {!tierInfo.canResync ? (
-              <Lock className="w-4 h-4 text-yt-light/50" />
-            ) : (
-              <RotateCw className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
+            <div className="flex items-center gap-2">
+              {!tierInfo.canResync ? (
+                <Lock className="w-4 h-4 text-yt-light/50" />
+              ) : (
+                <RotateCw className={`w-4 h-4 ${isSyncing && activeScanType === "quick" ? "animate-spin" : ""}`} />
+              )}
+              <span className="text-sm">
+                {isSyncing && activeScanType === "quick" ? "Quick..." : "Quick Scan"}
+              </span>
+            </div>
+            {!scanEligibility.quickScanAvailable && tierInfo.canResync && (
+              <span className="text-[10px] text-yt-light/50 mt-0.5">
+                {formatCooldown(scanEligibility.quickScanCooldownEnds)}
+              </span>
             )}
-            {isSyncing ? "Syncing..." : tierInfo.videoCount === 0 ? "Sync" : "Resync"}
+          </button>
+
+          {/* Full Scan Button */}
+          <button
+            onClick={() => handleSync("full")}
+            disabled={isSyncing || isScanning || !tierInfo.canResync || !scanEligibility.fullScanAvailable}
+            className={`flex flex-col items-center px-4 py-2 rounded-lg font-semibold transition border ${
+              tierInfo.canResync && scanEligibility.fullScanAvailable
+                ? "bg-yt-gray hover:bg-white/5 border-white/20"
+                : "bg-yt-gray/50 border-white/10 cursor-not-allowed"
+            }`}
+            title={
+              !tierInfo.canResync
+                ? "Upgrade to resync videos"
+                : !scanEligibility.fullScanAvailable
+                ? `Available in ${formatCooldown(scanEligibility.fullScanCooldownEnds)}`
+                : "Full sync of all videos (up to 500)"
+            }
+          >
+            <div className="flex items-center gap-2">
+              {!tierInfo.canResync ? (
+                <Lock className="w-4 h-4 text-yt-light/50" />
+              ) : (
+                <RotateCw className={`w-4 h-4 ${isSyncing && activeScanType === "full" ? "animate-spin" : ""}`} />
+              )}
+              <span className="text-sm">
+                {isSyncing && activeScanType === "full" ? "Full..." : "Full Scan"}
+              </span>
+            </div>
+            {!scanEligibility.fullScanAvailable && tierInfo.canResync && (
+              <span className="text-[10px] text-yt-light/50 mt-0.5">
+                {formatCooldown(scanEligibility.fullScanCooldownEnds)}
+              </span>
+            )}
           </button>
           <button
             onClick={handleExportCSV}

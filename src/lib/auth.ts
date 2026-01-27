@@ -65,26 +65,38 @@ export const authOptions: NextAuthOptions = {
   events: {
     async signIn({ user, account, isNewUser }) {
       console.log("[NextAuth] EVENT signIn", { userId: user?.id, provider: account?.provider, isNewUser });
-      // Track sign in (returning user)
-      if (user?.id && !isNewUser) {
-        await trackServerEvent(user.id, SERVER_ANALYTICS_EVENTS.USER_SIGNED_IN, {
-          provider: account?.provider,
-          email: user.email,
-        });
+      // Track sign in (returning user) - wrapped in try-catch to not break auth flow
+      try {
+        if (user?.id && !isNewUser) {
+          await trackServerEvent(user.id, SERVER_ANALYTICS_EVENTS.USER_SIGNED_IN, {
+            provider: account?.provider,
+            email: user.email,
+          });
+        }
+      } catch (error) {
+        console.error("[NextAuth] Failed to track sign in event:", error);
       }
     },
     async createUser({ user }) {
       console.log("[NextAuth] EVENT createUser", { userId: user?.id, email: user?.email });
-      // Track new user signup
-      if (user?.id) {
-        await trackServerEvent(user.id, SERVER_ANALYTICS_EVENTS.USER_SIGNED_UP, {
-          email: user.email,
-          name: user.name,
-        });
+      // Track new user signup - wrapped in try-catch to not break auth flow
+      try {
+        if (user?.id) {
+          await trackServerEvent(user.id, SERVER_ANALYTICS_EVENTS.USER_SIGNED_UP, {
+            email: user.email,
+            name: user.name,
+          });
+        }
+      } catch (error) {
+        console.error("[NextAuth] Failed to track signup event:", error);
       }
-      // Send welcome email to new users
-      if (user?.email) {
-        await sendWelcomeEmail(user.email, user.name || undefined);
+      // Send welcome email to new users - wrapped in try-catch to not break auth flow
+      try {
+        if (user?.email) {
+          await sendWelcomeEmail(user.email, user.name || undefined);
+        }
+      } catch (error) {
+        console.error("[NextAuth] Failed to send welcome email:", error);
       }
     },
     async linkAccount({ user, account }) {

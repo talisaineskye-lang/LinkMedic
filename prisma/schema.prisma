@@ -29,6 +29,8 @@ model User {
   tier               UserTier  @default(TRIAL)
   videoScanLimit     Int       @default(15)    // Free tier: 15 videos max
   lastScanDate       DateTime?                 // For one-time scan restriction
+  lastQuickScan      DateTime?                 // Last quick scan timestamp (24h cooldown)
+  lastFullScan       DateTime?                 // Last full scan timestamp (30 day cooldown)
   monitoringEnabled  Boolean   @default(false) // Link Guard feature
   alertsEnabled      Boolean   @default(false) // Email alerts for status changes
 

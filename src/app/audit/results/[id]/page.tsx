@@ -108,6 +108,7 @@ export default async function AuditResultsPage({ params }: PageProps) {
             <Link href="/" className="hover:text-profit-green transition">Home</Link>
             <Link href="/pricing" className="hover:text-profit-green transition">Pricing</Link>
             <Link href="/resources" className="hover:text-profit-green transition">Resources</Link>
+            <Link href="/intel" className="hover:text-profit-green transition">Intel Blog</Link>
             <Link href="/privacy" className="hover:text-profit-green transition">Privacy</Link>
             <Link href="/terms" className="hover:text-profit-green transition">Terms</Link>
           </div>

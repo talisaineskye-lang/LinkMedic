@@ -29,18 +29,21 @@ export default async function DashboardPage() {
     return null;
   }
 
-  // Get user settings for revenue estimation + tier info
+  // Get user settings for revenue estimation + tier info + scan timestamps
+  // Note: Using type assertion for new scan timestamp fields until prisma db push
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: {
-      ctrPercent: true,
-      conversionPercent: true,
-      avgOrderValue: true,
-      tier: true,
-      videoScanLimit: true,
-      activeChannelId: true,
-    },
-  });
+  }) as {
+    ctrPercent: number;
+    conversionPercent: number;
+    avgOrderValue: number;
+    tier: UserTier;
+    videoScanLimit: number;
+    activeChannelId: string | null;
+    hasCompletedFirstScan: boolean;
+    lastQuickScan: Date | null;
+    lastFullScan: Date | null;
+  } | null;
 
   // Filter by active channel if set (multi-channel support)
   const channelFilter = user?.activeChannelId
@@ -189,6 +192,32 @@ export default async function DashboardPage() {
 
   const isFirstScan = videoCount === 0;
 
+  // Calculate scan eligibility
+  const QUICK_SCAN_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 hours
+  const FULL_SCAN_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+  const now = Date.now();
+
+  const quickCooldownEnds = user?.lastQuickScan
+    ? new Date(user.lastQuickScan.getTime() + QUICK_SCAN_COOLDOWN_MS)
+    : null;
+  const fullCooldownEnds = user?.lastFullScan
+    ? new Date(user.lastFullScan.getTime() + FULL_SCAN_COOLDOWN_MS)
+    : null;
+
+  const scanEligibility = {
+    isFirstScan: !user?.hasCompletedFirstScan,
+    quickScanAvailable: !quickCooldownEnds || quickCooldownEnds.getTime() <= now,
+    fullScanAvailable: !fullCooldownEnds || fullCooldownEnds.getTime() <= now,
+    quickScanCooldownEnds: quickCooldownEnds && quickCooldownEnds.getTime() > now
+      ? quickCooldownEnds.toISOString()
+      : null,
+    fullScanCooldownEnds: fullCooldownEnds && fullCooldownEnds.getTime() > now
+      ? fullCooldownEnds.toISOString()
+      : null,
+    lastQuickScan: user?.lastQuickScan?.toISOString() || null,
+    lastFullScan: user?.lastFullScan?.toISOString() || null,
+  };
+
   const tierInfo = {
     tier,
     videoCount,
@@ -211,6 +240,7 @@ export default async function DashboardPage() {
       tierInfo={tierInfo}
       recoveryStats={recoveryStats}
       isInactiveChannel={isInactiveChannel}
+      scanEligibility={scanEligibility}
     />
   );
 }

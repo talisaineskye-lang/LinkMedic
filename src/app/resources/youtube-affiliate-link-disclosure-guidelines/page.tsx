@@ -356,6 +356,7 @@ export default function YouTubeAffiliateDisclosureGuidelines() {
               <span className="text-profit-green">Medic</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-slate-500">
+              <Link href="/intel" className="hover:text-profit-green transition">Intel Blog</Link>
               <Link href="/privacy" className="hover:text-profit-green transition">Privacy</Link>
               <Link href="/terms" className="hover:text-profit-green transition">Terms</Link>
               <Link href="/cookies" className="hover:text-profit-green transition">Cookies</Link>

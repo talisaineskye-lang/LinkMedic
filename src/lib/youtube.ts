@@ -236,17 +236,25 @@ export async function fetchChannelVideos(
   }
 }
 
+export type ScanType = "quick" | "full";
+
 /**
- * Syncs all videos from a user's selected channel to the database
- * Handles pagination and respects the 500 video limit
- * Requires user to have selected a channel first (youtubeChannelId must be set)
+ * Syncs videos from a user's selected channel to the database
+ * Handles pagination and respects scan type limits
+ *
+ * Scan types:
+ * - quick: Videos from last 30 days + top 20 by views (24h cooldown)
+ * - full: All videos up to 500 (30 day cooldown)
+ *
  * @param userId - The user ID
  * @param internalChannelId - Optional: specific channel ID from our database to sync
+ * @param scanType - Type of scan: 'quick' or 'full' (default: 'full')
  */
 export async function syncUserVideos(
   userId: string,
-  internalChannelId?: string
-): Promise<{ synced: number; total: number; channelId?: string }> {
+  internalChannelId?: string,
+  scanType: ScanType = "full"
+): Promise<{ synced: number; total: number; channelId?: string; scanType: ScanType }> {
   // Get valid tokens (refreshes if expired)
   const { accessToken, refreshToken } = await getValidAccessToken(userId);
 
@@ -307,11 +315,16 @@ export async function syncUserVideos(
     throw new Error("No YouTube channel selected. Please select a channel first.");
   }
 
-  const MAX_VIDEOS = 500; // Limit per plan
+  // Scan type limits
+  const MAX_VIDEOS = scanType === "full" ? 500 : 200; // Quick scan fetches up to 200 (should cover 30 days for most channels)
+  const THIRTY_DAYS_AGO = new Date();
+  THIRTY_DAYS_AGO.setDate(THIRTY_DAYS_AGO.getDate() - 30);
+
   let synced = 0;
   let pageToken: string | undefined;
+  let hitOldVideo = false;
 
-  while (synced < MAX_VIDEOS) {
+  while (synced < MAX_VIDEOS && !hitOldVideo) {
     const { videos, nextPageToken } = await fetchChannelVideos(
       accessToken,
       refreshToken,
@@ -324,6 +337,12 @@ export async function syncUserVideos(
 
     // Upsert videos into database
     for (const video of videos) {
+      // For quick scan, stop when we hit videos older than 30 days
+      if (scanType === "quick" && video.publishedAt < THIRTY_DAYS_AGO) {
+        hitOldVideo = true;
+        break;
+      }
+
       await prisma.video.upsert({
         where: { youtubeVideoId: video.id },
         create: {
@@ -350,11 +369,52 @@ export async function syncUserVideos(
       synced++;
     }
 
-    if (!nextPageToken || synced >= MAX_VIDEOS) break;
+    if (!nextPageToken || synced >= MAX_VIDEOS || hitOldVideo) break;
     pageToken = nextPageToken;
 
     // Rate limiting: wait 100ms between requests
     await new Promise(resolve => setTimeout(resolve, 100));
+  }
+
+  // For quick scan, also refresh the top 20 videos by views (they may have updated descriptions)
+  if (scanType === "quick") {
+    const topVideoWhere = dbChannelId
+      ? { userId, channelId: dbChannelId }
+      : { userId };
+    const topVideos = await prisma.video.findMany({
+      where: topVideoWhere,
+      orderBy: { viewCount: "desc" },
+      take: 20,
+      select: { youtubeVideoId: true },
+    });
+
+    if (topVideos.length > 0) {
+      const auth = createOAuth2Client(accessToken, refreshToken);
+      const topVideoIds = topVideos.map(v => v.youtubeVideoId);
+
+      try {
+        const videosResponse = await youtube.videos.list({
+          auth,
+          part: ["snippet", "statistics"],
+          id: topVideoIds,
+        });
+
+        for (const video of videosResponse.data.items || []) {
+          if (!video.id) continue;
+          await prisma.video.update({
+            where: { youtubeVideoId: video.id },
+            data: {
+              title: video.snippet?.title || "Untitled",
+              description: video.snippet?.description || "",
+              viewCount: parseInt(video.statistics?.viewCount || "0", 10),
+            },
+          });
+        }
+      } catch (error) {
+        console.error("[YouTube] Error refreshing top videos:", error);
+        // Don't fail the entire sync if top video refresh fails
+      }
+    }
   }
 
   // Get total count (for this channel if specified, otherwise all user videos)
@@ -362,5 +422,5 @@ export async function syncUserVideos(
     where: dbChannelId ? { userId, channelId: dbChannelId } : { userId },
   });
 
-  return { synced, total, channelId: dbChannelId };
+  return { synced, total, channelId: dbChannelId, scanType };
 }

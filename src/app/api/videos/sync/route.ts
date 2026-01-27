@@ -2,12 +2,45 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { syncUserVideos } from "@/lib/youtube";
+import { syncUserVideos, ScanType } from "@/lib/youtube";
 import { extractLinksForUser } from "@/lib/scanner";
 import { checkTierLimits, getUpgradeMessage, getMaxChannels } from "@/lib/tier-limits";
 import { sendScanCompleteEmail } from "@/lib/email";
 import { calculateRevenueImpact, DEFAULT_SETTINGS } from "@/lib/revenue-estimator";
 import { LinkStatus } from "@prisma/client";
+
+// Cooldown periods in milliseconds
+const QUICK_SCAN_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 hours
+const FULL_SCAN_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+/**
+ * Check if a scan type is available based on cooldown periods
+ */
+function getScanEligibility(
+  lastQuickScan: Date | null,
+  lastFullScan: Date | null
+): {
+  quickScanAvailable: boolean;
+  fullScanAvailable: boolean;
+  quickScanCooldownEnds: Date | null;
+  fullScanCooldownEnds: Date | null;
+} {
+  const now = Date.now();
+
+  const quickCooldownEnds = lastQuickScan
+    ? new Date(lastQuickScan.getTime() + QUICK_SCAN_COOLDOWN_MS)
+    : null;
+  const fullCooldownEnds = lastFullScan
+    ? new Date(lastFullScan.getTime() + FULL_SCAN_COOLDOWN_MS)
+    : null;
+
+  return {
+    quickScanAvailable: !quickCooldownEnds || quickCooldownEnds.getTime() <= now,
+    fullScanAvailable: !fullCooldownEnds || fullCooldownEnds.getTime() <= now,
+    quickScanCooldownEnds: quickCooldownEnds && quickCooldownEnds.getTime() > now ? quickCooldownEnds : null,
+    fullScanCooldownEnds: fullCooldownEnds && fullCooldownEnds.getTime() > now ? fullCooldownEnds : null,
+  };
+}
 
 // Statuses that indicate a broken/problematic link
 const PROBLEM_STATUSES: LinkStatus[] = [
@@ -26,13 +59,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Parse optional channelId from request body
+    // Parse request body for channelId and scanType
     let channelId: string | undefined;
+    let scanType: ScanType = "full"; // Default to full scan
     try {
       const body = await request.json();
       channelId = body.channelId;
+      if (body.scanType === "quick" || body.scanType === "full") {
+        scanType = body.scanType;
+      }
     } catch {
-      // No body or invalid JSON is fine - we'll use active channel
+      // No body or invalid JSON is fine - we'll use defaults
     }
 
     // If a specific channel is requested, check if it's within the user's tier limit
@@ -73,6 +110,38 @@ export async function POST(request: Request) {
     });
     const isFirstScan = existingVideos === 0;
 
+    // Get user data for eligibility check
+    // Note: Using type assertion for new fields until prisma db push regenerates types
+    const userData = await prisma.user.findUnique({
+      where: { id: session.user.id },
+    }) as { tier: string; lastQuickScan: Date | null; lastFullScan: Date | null } | null;
+
+    // Check scan eligibility based on cooldowns (skip for first scan)
+    if (!isFirstScan && userData) {
+      const eligibility = getScanEligibility(
+        userData.lastQuickScan,
+        userData.lastFullScan
+      );
+
+      if (scanType === "quick" && !eligibility.quickScanAvailable) {
+        return NextResponse.json({
+          error: "Quick scan on cooldown",
+          message: `Quick scan is available again ${eligibility.quickScanCooldownEnds?.toLocaleDateString()} at ${eligibility.quickScanCooldownEnds?.toLocaleTimeString()}`,
+          cooldownEnds: eligibility.quickScanCooldownEnds?.toISOString(),
+          scanType: "quick",
+        }, { status: 429 });
+      }
+
+      if (scanType === "full" && !eligibility.fullScanAvailable) {
+        return NextResponse.json({
+          error: "Full scan on cooldown",
+          message: `Full scan is available again on ${eligibility.fullScanCooldownEnds?.toLocaleDateString()}`,
+          cooldownEnds: eligibility.fullScanCooldownEnds?.toISOString(),
+          scanType: "full",
+        }, { status: 429 });
+      }
+    }
+
     // Only check tier limits for RE-syncs, not first scans
     if (!isFirstScan) {
       const tierCheck = await checkTierLimits(session.user.id, "resync");
@@ -89,8 +158,19 @@ export async function POST(request: Request) {
     // Sync videos from YouTube (optionally for a specific channel)
     const { synced, total, channelId: syncedChannelId } = await syncUserVideos(
       session.user.id,
-      channelId
+      channelId,
+      scanType
     );
+
+    // Update scan timestamps based on scan type
+    const timestampUpdate = scanType === "quick"
+      ? { lastQuickScan: new Date() }
+      : { lastFullScan: new Date() };
+
+    await (prisma.user.update as Function)({
+      where: { id: session.user.id },
+      data: timestampUpdate,
+    });
 
     // Extract affiliate links from video descriptions and analyze disclosures
     // Also auto-detects and saves affiliate tag if user doesn't have one
@@ -175,12 +255,69 @@ export async function POST(request: Request) {
       detectedAffiliateTag,
       // Channel that was synced (if using multi-channel)
       channelId: syncedChannelId,
+      // Scan type that was performed
+      scanType,
     });
   } catch (error) {
     console.error("Error syncing videos:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
       { error: `Failed to sync videos: ${errorMessage}` },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * GET /api/videos/sync - Check scan eligibility status
+ * Returns cooldown information for both quick and full scans
+ */
+export async function GET() {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Get user scan timestamps
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+    }) as { lastQuickScan: Date | null; lastFullScan: Date | null; hasCompletedFirstScan: boolean } | null;
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // First-time users can always scan
+    if (!user.hasCompletedFirstScan) {
+      return NextResponse.json({
+        isFirstScan: true,
+        quickScanAvailable: true,
+        fullScanAvailable: true,
+        quickScanCooldownEnds: null,
+        fullScanCooldownEnds: null,
+      });
+    }
+
+    const eligibility = getScanEligibility(
+      user.lastQuickScan,
+      user.lastFullScan
+    );
+
+    return NextResponse.json({
+      isFirstScan: false,
+      quickScanAvailable: eligibility.quickScanAvailable,
+      fullScanAvailable: eligibility.fullScanAvailable,
+      quickScanCooldownEnds: eligibility.quickScanCooldownEnds?.toISOString() || null,
+      fullScanCooldownEnds: eligibility.fullScanCooldownEnds?.toISOString() || null,
+      lastQuickScan: user.lastQuickScan?.toISOString() || null,
+      lastFullScan: user.lastFullScan?.toISOString() || null,
+    });
+  } catch (error) {
+    console.error("Error checking scan eligibility:", error);
+    return NextResponse.json(
+      { error: "Failed to check scan eligibility" },
       { status: 500 }
     );
   }

@@ -149,6 +149,7 @@ export default function Resources() {
             <div className="flex items-center gap-6 text-sm text-slate-500">
               <Link href="/" className="hover:text-profit-green transition">Home</Link>
               <Link href="/pricing" className="hover:text-profit-green transition">Pricing</Link>
+              <Link href="/intel" className="hover:text-profit-green transition">Intel Blog</Link>
               <Link href="/privacy" className="hover:text-profit-green transition">Privacy</Link>
               <Link href="/terms" className="hover:text-profit-green transition">Terms</Link>
             </div>

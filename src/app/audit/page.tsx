@@ -210,6 +210,7 @@ export default function AuditPage() {
             <Link href="/" className="hover:text-white transition">Home</Link>
             <Link href="/pricing" className="hover:text-white transition">Pricing</Link>
             <Link href="/resources" className="hover:text-white transition">Resources</Link>
+            <Link href="/intel" className="hover:text-white transition">Intel Blog</Link>
             <Link href="/login" className="hover:text-white transition">Sign In</Link>
             <Link href="/privacy" className="hover:text-white transition">Privacy</Link>
             <Link href="/terms" className="hover:text-white transition">Terms</Link>

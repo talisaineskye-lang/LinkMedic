@@ -307,6 +307,7 @@ export default async function Home() {
           <div className="flex gap-6 text-sm text-[#AAAAAA]">
             <Link href="/privacy" className="hover:text-white transition">Privacy</Link>
             <Link href="/terms" className="hover:text-white transition">Terms</Link>
+            <Link href="/intel" className="hover:text-white transition">Intel Blog</Link>
           </div>
 
           <div className="text-[#AAAAAA]/50 text-sm">
