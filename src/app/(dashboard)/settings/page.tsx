@@ -6,6 +6,9 @@ import { SubscriptionSection } from "@/components/subscription-section";
 import { AffiliateTagsSection } from "@/components/affiliate-tags-section";
 import { getTierDisplayName, getTierBadgeColors } from "@/lib/tier-limits";
 
+// Disable caching to ensure fresh data after returning from Stripe portal
+export const dynamic = "force-dynamic";
+
 export default async function SettingsPage() {
   const session = await getServerSession(authOptions);
 

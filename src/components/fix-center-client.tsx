@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { Copy, Check, CheckCircle2, ExternalLink, RefreshCw, FileWarning, Lock, Eye, Pencil, ChevronDown, ChevronRight, Layers, List, X, FileDown, Trash2, Undo2, Search } from "lucide-react";
+import { Copy, Check, CheckCircle2, ExternalLink, RefreshCw, FileWarning, Lock, Eye, Pencil, ChevronDown, ChevronRight, Layers, List, X, FileDown, Trash2, Undo2, Search, Info } from "lucide-react";
 import { formatCurrency, formatNumber } from "@/lib/revenue-estimator";
 import { DISCLOSURE_TEMPLATES } from "@/lib/disclosure-detector";
 import { NETWORK_DISPLAY_NAMES, AffiliateMerchant } from "@/lib/affiliate-networks";
@@ -618,7 +618,17 @@ export function FixCenterClient({
           }`}
         >
           <FileWarning className="w-3.5 h-3.5" />
-          Disclosure Issues ({disclosureIssues.length})
+          Disclosures ({disclosureIssues.length})
+          {/* Info tooltip */}
+          <span className="relative group/tooltip ml-0.5">
+            <Info className="w-3.5 h-3.5 text-yt-light/50 group-hover/tooltip:text-yt-light transition cursor-help" />
+            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-[264px] px-3 py-2 text-xs text-yt-light bg-yt-dark border border-white/10 rounded-lg shadow-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-opacity duration-200 z-50 pointer-events-none">
+              FYI: This shows whether or not your descriptions include proper affiliate disclosures. You&apos;re responsible for ensuring compliance with FTC guidelines or local regulations.
+              {/* Arrow */}
+              <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-white/10" />
+              <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-[1px] border-4 border-transparent border-t-yt-dark" />
+            </span>
+          </span>
         </button>
         <button
           onClick={() => setActiveTab("fixed")}

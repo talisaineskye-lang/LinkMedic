@@ -26,7 +26,8 @@ export async function POST() {
 
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: user.stripeCustomerId,
-      return_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings`,
+      // Add timestamp to bust Next.js router cache when returning from portal
+      return_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings?updated=${Date.now()}`,
     });
 
     return NextResponse.json({ url: portalSession.url });
