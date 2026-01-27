@@ -7,12 +7,27 @@
  * 3. Associates existing videos with the channel
  * 4. Sets the channel as the user's activeChannelId
  *
- * Run with: npx ts-node scripts/migrate-channels.ts
+ * Run with: npx tsx scripts/migrate-channels.ts
  */
 
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
+import * as dotenv from "dotenv";
 
-const prisma = new PrismaClient();
+// Load environment variables from .env.local
+dotenv.config({ path: ".env.local" });
+
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  throw new Error("DATABASE_URL environment variable is not set");
+}
+
+const pool = new Pool({ connectionString });
+const adapter = new PrismaPg(pool);
+
+const prisma = new PrismaClient({ adapter });
 
 async function migrateExistingChannels() {
   console.log("Starting channel migration...\n");
@@ -29,7 +44,7 @@ async function migrateExistingChannels() {
     },
   });
 
-  console.log(`Found ${usersWithChannels.length} users with channels to migrate.\n`);
+  console.log("Found " + usersWithChannels.length + " users with channels to migrate.\n");
 
   let migratedCount = 0;
   let skippedCount = 0;
@@ -48,7 +63,7 @@ async function migrateExistingChannels() {
       });
 
       if (existingChannel) {
-        console.log(`⏭️  User ${user.email}: Channel already migrated, skipping`);
+        console.log(">> User " + user.email + ": Channel already migrated, skipping");
         skippedCount++;
         continue;
       }
@@ -79,21 +94,19 @@ async function migrateExistingChannels() {
         data: { activeChannelId: channel.id },
       });
 
-      console.log(
-        `✅ User ${user.email}: Created channel, associated ${updateResult.count} videos`
-      );
+      console.log("OK User " + user.email + ": Created channel, associated " + updateResult.count + " videos");
       migratedCount++;
     } catch (error) {
-      console.error(`❌ User ${user.email}: Migration failed`, error);
+      console.error("ERR User " + user.email + ": Migration failed", error);
       errorCount++;
     }
   }
 
   console.log("\n========================================");
   console.log("Migration complete!");
-  console.log(`  ✅ Migrated: ${migratedCount}`);
-  console.log(`  ⏭️  Skipped: ${skippedCount}`);
-  console.log(`  ❌ Errors: ${errorCount}`);
+  console.log("  Migrated: " + migratedCount);
+  console.log("  Skipped: " + skippedCount);
+  console.log("  Errors: " + errorCount);
   console.log("========================================\n");
 }
 
@@ -105,4 +118,5 @@ migrateExistingChannels()
   })
   .finally(async () => {
     await prisma.$disconnect();
+    await pool.end();
   });

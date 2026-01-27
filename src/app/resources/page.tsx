@@ -44,8 +44,8 @@ export default function Resources() {
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-0.5 text-xl font-semibold">
             <span className="text-white">Link</span>
-            <LinkIcon className="w-5 h-5 text-emerald-500" />
-            <span className="text-emerald-500">Medic</span>
+            <LinkIcon className="w-5 h-5 text-profit-green" />
+            <span className="text-profit-green">Medic</span>
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-sm text-slate-400">
             <Link href="/" className="hover:text-white transition">Home</Link>
@@ -55,7 +55,7 @@ export default function Resources() {
           </nav>
           <Link
             href="/login"
-            className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            className="bg-profit-green hover:bg-profit-green/90 text-black px-4 py-2 rounded-lg text-sm font-medium transition-colors"
           >
             Start Free Trial
           </Link>
@@ -82,18 +82,18 @@ export default function Resources() {
                 <Link
                   key={resource.href}
                   href={resource.href}
-                  className={`block rounded-xl border transition-all hover:border-emerald-600/50 hover:bg-slate-800/30 ${
+                  className={`block rounded-xl border transition-all hover:border-profit-green/50 hover:bg-slate-800/30 ${
                     resource.featured
-                      ? "bg-emerald-900/10 border-emerald-700/30"
+                      ? "bg-profit-green/10 border-profit-green/30"
                       : "bg-slate-800/20 border-slate-700/50"
                   }`}
                 >
                   <div className="p-6 flex items-start gap-4">
                     <div className={`p-3 rounded-lg ${
-                      resource.featured ? "bg-emerald-600/20" : "bg-slate-700/50"
+                      resource.featured ? "bg-profit-green/20" : "bg-slate-700/50"
                     }`}>
                       <Icon className={`w-5 h-5 ${
-                        resource.featured ? "text-emerald-400" : "text-slate-400"
+                        resource.featured ? "text-profit-green" : "text-slate-400"
                       }`} />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -102,7 +102,7 @@ export default function Resources() {
                           {resource.title}
                         </h2>
                         {resource.featured && (
-                          <span className="px-2 py-0.5 text-xs font-medium bg-emerald-600/20 text-emerald-400 rounded">
+                          <span className="px-2 py-0.5 text-xs font-medium bg-profit-green/20 text-profit-green rounded">
                             Tool
                           </span>
                         )}
@@ -129,7 +129,7 @@ export default function Resources() {
           </p>
           <Link
             href="/audit"
-            className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-6 py-3 rounded-xl transition-all"
+            className="inline-flex items-center gap-2 bg-profit-green hover:bg-profit-green/90 text-black font-semibold px-6 py-3 rounded-xl transition-all"
           >
             Run Free Audit
             <ArrowRight className="w-4 h-4" />
@@ -143,14 +143,14 @@ export default function Resources() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-0.5">
               <span className="text-white">Link</span>
-              <LinkIcon className="w-4 h-4 text-emerald-500" />
-              <span className="text-emerald-500">Medic</span>
+              <LinkIcon className="w-4 h-4 text-profit-green" />
+              <span className="text-profit-green">Medic</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-slate-500">
-              <Link href="/" className="hover:text-emerald-400 transition">Home</Link>
-              <Link href="/pricing" className="hover:text-emerald-400 transition">Pricing</Link>
-              <Link href="/privacy" className="hover:text-emerald-400 transition">Privacy</Link>
-              <Link href="/terms" className="hover:text-emerald-400 transition">Terms</Link>
+              <Link href="/" className="hover:text-profit-green transition">Home</Link>
+              <Link href="/pricing" className="hover:text-profit-green transition">Pricing</Link>
+              <Link href="/privacy" className="hover:text-profit-green transition">Privacy</Link>
+              <Link href="/terms" className="hover:text-profit-green transition">Terms</Link>
             </div>
           </div>
           <p className="text-center text-sm text-slate-600 mt-4">

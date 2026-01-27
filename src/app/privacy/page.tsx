@@ -67,7 +67,7 @@ export default function PrivacyPolicy() {
         </ul>
         <p className="mt-4">
           See{" "}
-          <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline">
+          <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer" className="text-profit-green hover:underline">
             Stripe&apos;s Privacy Policy
           </a>
           {" "}for details on how they handle your payment data.
@@ -171,7 +171,7 @@ export default function PrivacyPolicy() {
         </ul>
         <p className="mt-4">
           To exercise these rights, contact us at{" "}
-          <a href="mailto:hello@linkmedic.pro" className="text-emerald-400 hover:underline">
+          <a href="mailto:hello@linkmedic.pro" className="text-profit-green hover:underline">
             hello@linkmedic.pro
           </a>
         </p>
@@ -209,7 +209,7 @@ export default function PrivacyPolicy() {
           LinkMedic is not intended for users under 18 years old. We do not knowingly collect personal information
           from children. If we become aware that a child has provided us with personal data, we will delete it
           immediately. If you believe a child has provided us with information, contact us at{" "}
-          <a href="mailto:hello@linkmedic.pro" className="text-emerald-400 hover:underline">
+          <a href="mailto:hello@linkmedic.pro" className="text-profit-green hover:underline">
             hello@linkmedic.pro
           </a>.
         </p>
@@ -246,7 +246,7 @@ export default function PrivacyPolicy() {
         <h2 className="text-2xl font-bold text-slate-50 mb-4">13. Contact Us</h2>
         <p>
           For questions about this Privacy Policy or our data practices, please contact us at{" "}
-          <a href="mailto:hello@linkmedic.pro" className="text-emerald-400 hover:underline">
+          <a href="mailto:hello@linkmedic.pro" className="text-profit-green hover:underline">
             hello@linkmedic.pro
           </a>
         </p>

@@ -31,6 +31,7 @@ export default async function FixCenterPage() {
       conversionPercent: true,
       avgOrderValue: true,
       tier: true,
+      activeChannelId: true,
       affiliateTagUS: true,
       affiliateTagUK: true,
       affiliateTagCA: true,
@@ -42,8 +43,10 @@ export default async function FixCenterPage() {
   const tier = user?.tier ?? UserTier.AUDITOR;
   const canUseAI = TIER_FEATURES[tier].aiSuggestions;
 
-  // No channel filter for now - will be re-added with multi-channel support
-  const channelFilter = {};
+  // Filter by active channel if set (multi-channel support)
+  const channelFilter = user?.activeChannelId
+    ? { channelId: user.activeChannelId }
+    : {};
 
   const revenueSettings = {
     ctrPercent: user?.ctrPercent ?? DEFAULT_SETTINGS.ctrPercent,

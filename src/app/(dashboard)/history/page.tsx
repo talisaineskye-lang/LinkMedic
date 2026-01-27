@@ -11,8 +11,16 @@ export default async function HistoryPage() {
     return null;
   }
 
-  // No channel filter for now - will be re-added with multi-channel support
-  const channelFilter = {};
+  // Get user's active channel for filtering
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { activeChannelId: true },
+  });
+
+  // Filter by active channel if set (multi-channel support)
+  const channelFilter = user?.activeChannelId
+    ? { channelId: user.activeChannelId }
+    : {};
 
   // Get all fixed links with video data (filtered by active channel)
   const fixedLinks = await prisma.affiliateLink.findMany({
@@ -128,7 +136,7 @@ export default async function HistoryPage() {
                             href={link.suggestedLink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-sm text-emerald-400 hover:underline truncate block max-w-[180px]"
+                            className="text-sm text-profit-green hover:underline truncate block max-w-[180px]"
                             title={link.suggestedTitle || link.suggestedLink}
                           >
                             {link.suggestedTitle

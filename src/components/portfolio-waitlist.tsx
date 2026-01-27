@@ -47,9 +47,9 @@ export function PortfolioWaitlist({ source = "pricing" }: PortfolioWaitlistProps
 
   if (isSuccess) {
     return (
-      <div className="bg-emerald-950/30 border border-emerald-700/50 rounded-xl p-6 text-center">
-        <div className="w-12 h-12 bg-emerald-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Check className="w-6 h-6 text-emerald-400" />
+      <div className="bg-profit-green/10/30 border border-profit-green/50 rounded-xl p-6 text-center">
+        <div className="w-12 h-12 bg-profit-green/20 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Check className="w-6 h-6 text-profit-green" />
         </div>
         <h3 className="text-lg font-bold text-white mb-2">You&apos;re on the list!</h3>
         <p className="text-slate-300 text-sm">

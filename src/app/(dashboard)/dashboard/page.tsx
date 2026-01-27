@@ -38,11 +38,14 @@ export default async function DashboardPage() {
       avgOrderValue: true,
       tier: true,
       videoScanLimit: true,
+      activeChannelId: true,
     },
   });
 
-  // No channel filter for now - will be re-added with multi-channel support
-  const channelFilter = {};
+  // Filter by active channel if set (multi-channel support)
+  const channelFilter = user?.activeChannelId
+    ? { channelId: user.activeChannelId }
+    : {};
 
   const revenueSettings = {
     ctrPercent: user?.ctrPercent ?? DEFAULT_SETTINGS.ctrPercent,

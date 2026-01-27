@@ -72,7 +72,7 @@ export function RevenueCalculator() {
           step="10000"
           value={monthlyViews}
           onChange={(e) => setMonthlyViews(Number(e.target.value))}
-          className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+          className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-profit-green"
         />
         <div className="flex justify-between text-sm text-slate-500 mt-2">
           <span>10K</span>

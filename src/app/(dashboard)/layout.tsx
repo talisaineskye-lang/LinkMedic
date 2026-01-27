@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { UserMenu } from "@/components/user-menu";
 import { OnboardingModal } from "@/components/onboarding-modal";
+import { ChannelSwitcher } from "@/components/channel-switcher";
 import { LinkStatus } from "@prisma/client";
 
 // All statuses that indicate a broken/problematic link
@@ -33,10 +34,19 @@ export default async function DashboardLayout({
     where: { id: session.user.id },
     select: {
       youtubeChannelId: true,
+      activeChannelId: true,
       affiliateTag: true,
       hasCompletedFirstScan: true,
       subscriptionCancelAt: true,
       tier: true,
+      channels: {
+        select: {
+          id: true,
+          title: true,
+          thumbnailUrl: true,
+        },
+        orderBy: { createdAt: "asc" },
+      },
     },
   });
 
@@ -99,6 +109,12 @@ export default async function DashboardLayout({
               </nav>
             </div>
             <div className="flex items-center gap-4">
+              {user.channels && user.channels.length > 1 && (
+                <ChannelSwitcher
+                  channels={user.channels}
+                  activeChannelId={user.activeChannelId}
+                />
+              )}
               <UserMenu user={session.user} />
             </div>
           </div>

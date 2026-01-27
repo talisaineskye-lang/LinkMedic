@@ -83,7 +83,7 @@ export function ExportDescriptionButton({
     <>
       <button
         onClick={handleOpen}
-        className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-slate-700/50 border border-slate-600/50 text-slate-300 hover:bg-emerald-950/50 hover:border-emerald-700/50 hover:text-emerald-400 transition"
+        className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-slate-700/50 border border-slate-600/50 text-slate-300 hover:bg-profit-green/10/50 hover:border-profit-green/50 hover:text-profit-green transition"
       >
         <FileText className="w-4 h-4" />
         Export Fixed Description
@@ -122,7 +122,7 @@ export function ExportDescriptionButton({
             <div className="flex-1 overflow-y-auto p-6">
               {loading ? (
                 <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500" />
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-profit-green" />
                 </div>
               ) : error ? (
                 <div className="text-center py-12">
@@ -138,8 +138,8 @@ export function ExportDescriptionButton({
                 <div className="space-y-6">
                   {/* Replacements Summary */}
                   {data.replacements.length > 0 ? (
-                    <div className="bg-emerald-950/30 border border-emerald-700/50 rounded-lg p-4">
-                      <h3 className="text-sm font-medium text-emerald-400 mb-3">
+                    <div className="bg-profit-green/10/30 border border-profit-green/50 rounded-lg p-4">
+                      <h3 className="text-sm font-medium text-profit-green mb-3">
                         {data.replacements.length} link(s) will be replaced:
                       </h3>
                       <ul className="space-y-2 text-sm">
@@ -148,7 +148,7 @@ export function ExportDescriptionButton({
                             <span className="text-red-400 line-through truncate">
                               {r.original}
                             </span>
-                            <span className="text-emerald-400 truncate">
+                            <span className="text-profit-green truncate">
                               → {r.suggested}
                             </span>
                           </li>
@@ -191,7 +191,7 @@ export function ExportDescriptionButton({
                 </button>
                 <button
                   onClick={handleCopy}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition"
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-profit-green text-black hover:bg-profit-green/90 transition"
                 >
                   {copied ? (
                     <>

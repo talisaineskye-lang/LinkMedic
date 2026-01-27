@@ -52,8 +52,8 @@ export default async function AuditResultsPage({ params }: PageProps) {
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-0.5 text-xl font-semibold">
             <span className="text-white">Link</span>
-            <LinkIcon className="w-5 h-5 text-emerald-500" />
-            <span className="text-emerald-500">Medic</span>
+            <LinkIcon className="w-5 h-5 text-profit-green" />
+            <span className="text-profit-green">Medic</span>
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-sm text-slate-400">
             <Link href="/" className="hover:text-white transition">Home</Link>
@@ -63,7 +63,7 @@ export default async function AuditResultsPage({ params }: PageProps) {
           </nav>
           <Link
             href="/login"
-            className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            className="bg-profit-green hover:bg-profit-green/90 text-black px-4 py-2 rounded-lg text-sm font-medium transition-colors"
           >
             Start Free Trial
           </Link>
@@ -86,7 +86,7 @@ export default async function AuditResultsPage({ params }: PageProps) {
           </p>
           <Link
             href="/audit"
-            className="inline-block px-8 py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold text-white transition"
+            className="inline-block px-8 py-4 bg-profit-green hover:bg-profit-green/90 rounded-xl font-semibold text-black transition"
           >
             Audit My Channel — Free
           </Link>
@@ -98,18 +98,18 @@ export default async function AuditResultsPage({ params }: PageProps) {
         <div className="max-w-5xl mx-auto px-6 text-center">
           <div className="flex items-center justify-center gap-0.5 text-lg font-semibold mb-2">
             <span className="text-white">Link</span>
-            <LinkIcon className="w-4 h-4 text-emerald-500" />
-            <span className="text-emerald-500">Medic</span>
+            <LinkIcon className="w-4 h-4 text-profit-green" />
+            <span className="text-profit-green">Medic</span>
           </div>
           <p className="text-slate-500 text-sm mb-4">
             Affiliate link health monitoring for YouTube creators.
           </p>
           <div className="flex items-center justify-center gap-6 text-sm text-slate-500">
-            <Link href="/" className="hover:text-emerald-400 transition">Home</Link>
-            <Link href="/pricing" className="hover:text-emerald-400 transition">Pricing</Link>
-            <Link href="/resources" className="hover:text-emerald-400 transition">Resources</Link>
-            <Link href="/privacy" className="hover:text-emerald-400 transition">Privacy</Link>
-            <Link href="/terms" className="hover:text-emerald-400 transition">Terms</Link>
+            <Link href="/" className="hover:text-profit-green transition">Home</Link>
+            <Link href="/pricing" className="hover:text-profit-green transition">Pricing</Link>
+            <Link href="/resources" className="hover:text-profit-green transition">Resources</Link>
+            <Link href="/privacy" className="hover:text-profit-green transition">Privacy</Link>
+            <Link href="/terms" className="hover:text-profit-green transition">Terms</Link>
           </div>
         </div>
       </footer>

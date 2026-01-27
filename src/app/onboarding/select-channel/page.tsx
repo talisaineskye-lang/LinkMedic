@@ -57,27 +57,35 @@ export default function SelectChannelPage() {
 
   const handleSelectChannel = async (channel: YouTubeChannel) => {
     setSelecting(channel.id);
+    setError(null);
+
     try {
-      const response = await fetch("/api/channels/select", {
+      const response = await fetch("/api/channels/add", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           youtubeChannelId: channel.id,
-          channelTitle: channel.title,
+          title: channel.title,
           thumbnailUrl: channel.thumbnailUrl,
+          subscriberCount: channel.subscriberCount,
+          videoCount: channel.videoCount,
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error("Failed to select channel");
+        // Show specific error from API
+        throw new Error(data.error || "Failed to add channel");
       }
 
       // Redirect to dashboard
       router.push("/dashboard");
     } catch (err) {
-      setError("Failed to select channel. Please try again.");
+      const message = err instanceof Error ? err.message : "Failed to add channel";
+      setError(message);
       setSelecting(null);
-      console.error(err);
+      console.error("Channel add error:", err);
     }
   };
 

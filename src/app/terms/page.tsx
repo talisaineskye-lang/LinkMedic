@@ -158,7 +158,7 @@ export default function TermsOfService() {
         <h2 className="text-2xl font-bold text-slate-50 mb-4">14. Contact Information</h2>
         <p>
           If you have any questions about these Terms of Service, please contact us at{" "}
-          <a href="mailto:hello@linkmedic.pro" className="text-emerald-400 hover:underline">
+          <a href="mailto:hello@linkmedic.pro" className="text-profit-green hover:underline">
             hello@linkmedic.pro
           </a>
         </p>

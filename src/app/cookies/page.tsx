@@ -57,7 +57,7 @@ export default function CookiePolicy() {
 
         <p className="mt-4 text-sm italic">
           You can request to opt out of PostHog analytics by contacting us at{" "}
-          <a href="mailto:hello@linkmedic.pro" className="text-emerald-400 hover:underline">
+          <a href="mailto:hello@linkmedic.pro" className="text-profit-green hover:underline">
             hello@linkmedic.pro
           </a>.
         </p>
@@ -85,7 +85,7 @@ export default function CookiePolicy() {
         <p>
           When you sign in with Google, Google may set cookies for authentication purposes.
           See{" "}
-          <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline">
+          <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-profit-green hover:underline">
             Google&apos;s Privacy Policy
           </a>.
         </p>
@@ -94,7 +94,7 @@ export default function CookiePolicy() {
         <p>
           Stripe may use cookies for fraud detection and payment processing.
           See{" "}
-          <a href="https://stripe.com/cookies-policy" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline">
+          <a href="https://stripe.com/cookies-policy" target="_blank" rel="noopener noreferrer" className="text-profit-green hover:underline">
             Stripe&apos;s Cookie Policy
           </a>.
         </p>
@@ -103,7 +103,7 @@ export default function CookiePolicy() {
         <p>
           If we embed YouTube videos on our site (for tutorials, etc.), YouTube may set cookies.
           See{" "}
-          <a href="https://www.youtube.com/t/privacy" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline">
+          <a href="https://www.youtube.com/t/privacy" target="_blank" rel="noopener noreferrer" className="text-profit-green hover:underline">
             YouTube&apos;s Privacy Policy
           </a>.
         </p>
@@ -130,7 +130,7 @@ export default function CookiePolicy() {
         <h3 className="text-xl font-semibold text-slate-100 mb-3 mt-6">5.3 Opting Out of Analytics</h3>
         <p>
           To opt out of PostHog analytics (which uses localStorage, not cookies), contact us at{" "}
-          <a href="mailto:hello@linkmedic.pro" className="text-emerald-400 hover:underline">
+          <a href="mailto:hello@linkmedic.pro" className="text-profit-green hover:underline">
             hello@linkmedic.pro
           </a>{" "}
           and we&apos;ll exclude your account from tracking.
@@ -149,7 +149,7 @@ export default function CookiePolicy() {
         <h2 className="text-2xl font-bold text-slate-50 mb-4">7. Contact Us</h2>
         <p>
           Questions about our use of cookies? Contact us at{" "}
-          <a href="mailto:hello@linkmedic.pro" className="text-emerald-400 hover:underline">
+          <a href="mailto:hello@linkmedic.pro" className="text-profit-green hover:underline">
             hello@linkmedic.pro
           </a>
         </p>
