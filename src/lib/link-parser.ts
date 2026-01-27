@@ -1,6 +1,12 @@
+import {
+  AffiliateMerchant,
+  detectMerchant,
+  isAffiliateLink,
+} from "./affiliate-networks";
+
 export interface ParsedLink {
   url: string;
-  merchant: "amazon" | "other";
+  merchant: AffiliateMerchant;
   asin?: string;
 }
 
@@ -159,13 +165,13 @@ export function extractLinksFromDescription(description: string): ParsedLink[] {
     if (seenUrls.has(normalizedUrl)) continue;
     seenUrls.add(normalizedUrl);
 
-    // Determine merchant and extract ASIN if Amazon
-    const isAmazon = isAmazonUrl(normalizedUrl);
-    const asin = isAmazon ? extractAsin(normalizedUrl) : undefined;
+    // Determine merchant using multi-network detection
+    const merchant = detectMerchant(normalizedUrl);
+    const asin = merchant === "amazon" ? extractAsin(normalizedUrl) : undefined;
 
     links.push({
       url: normalizedUrl,
-      merchant: isAmazon ? "amazon" : "other",
+      merchant,
       asin,
     });
   }
@@ -174,10 +180,10 @@ export function extractLinksFromDescription(description: string): ParsedLink[] {
 }
 
 /**
- * Filters links to only include affiliate links (currently Amazon only)
+ * Filters links to only include affiliate links from supported networks
  */
 export function filterAffiliateLinks(links: ParsedLink[]): ParsedLink[] {
-  return links.filter(link => link.merchant === "amazon");
+  return links.filter(link => isAffiliateLink(link.url));
 }
 
 /**
@@ -186,12 +192,15 @@ export function filterAffiliateLinks(links: ParsedLink[]): ParsedLink[] {
 export function getLinkStats(links: ParsedLink[]): {
   total: number;
   amazon: number;
+  affiliate: number;
   other: number;
   withAsin: number;
 } {
+  const affiliateLinks = links.filter(l => l.merchant !== "other");
   return {
     total: links.length,
     amazon: links.filter(l => l.merchant === "amazon").length,
+    affiliate: affiliateLinks.length,
     other: links.filter(l => l.merchant === "other").length,
     withAsin: links.filter(l => l.asin).length,
   };

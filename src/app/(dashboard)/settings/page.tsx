@@ -28,6 +28,14 @@ export default async function SettingsPage() {
       affiliateTagUK: true,
       affiliateTagCA: true,
       affiliateTagDE: true,
+      // Multi-network partner IDs
+      bhphoto_bi: true,
+      bhphoto_kbid: true,
+      impact_sid: true,
+      cj_pid: true,
+      rakuten_id: true,
+      shareasale_id: true,
+      awin_id: true,
       trialEndsAt: true,
       tier: true,
       stripeCustomerId: true,
@@ -116,6 +124,14 @@ export default async function SettingsPage() {
           affiliateTagUK: user.affiliateTagUK,
           affiliateTagCA: user.affiliateTagCA,
           affiliateTagDE: user.affiliateTagDE,
+          // Multi-network partner IDs
+          bhphoto_bi: user.bhphoto_bi,
+          bhphoto_kbid: user.bhphoto_kbid,
+          impact_sid: user.impact_sid,
+          cj_pid: user.cj_pid,
+          rakuten_id: user.rakuten_id,
+          shareasale_id: user.shareasale_id,
+          awin_id: user.awin_id,
         }}
       />
 

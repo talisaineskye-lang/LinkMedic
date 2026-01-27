@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Copy, Check, CheckCircle2, ExternalLink, RefreshCw, FileWarning, Lock, Eye, Pencil, ChevronDown, ChevronRight, Layers, List, X, FileDown, Trash2, Undo2, Search } from "lucide-react";
 import { formatCurrency, formatNumber } from "@/lib/revenue-estimator";
 import { DISCLOSURE_TEMPLATES } from "@/lib/disclosure-detector";
+import { NETWORK_DISPLAY_NAMES, AffiliateMerchant } from "@/lib/affiliate-networks";
 import { FindReplacementsButton } from "./find-replacements-button";
 import { FindReplacement } from "./find-replacement";
 import Link from "next/link";
@@ -125,6 +126,38 @@ function IssueTypeBadge({ status }: { status: string }) {
   return (
     <span className={`inline-flex px-2 py-0.5 text-xs font-bold rounded border ${color}`}>
       {label}
+    </span>
+  );
+}
+
+function NetworkBadge({ merchant }: { merchant: string }) {
+  const getConfig = () => {
+    switch (merchant as AffiliateMerchant) {
+      case "amazon":
+        return { color: "bg-orange-500/20 border-orange-500/50 text-orange-400" };
+      case "bhphoto":
+        return { color: "bg-blue-500/20 border-blue-500/50 text-blue-400" };
+      case "impact":
+        return { color: "bg-purple-500/20 border-purple-500/50 text-purple-400" };
+      case "cj":
+        return { color: "bg-green-500/20 border-green-500/50 text-green-400" };
+      case "rakuten":
+        return { color: "bg-red-500/20 border-red-500/50 text-red-400" };
+      case "shareasale":
+        return { color: "bg-teal-500/20 border-teal-500/50 text-teal-400" };
+      case "awin":
+        return { color: "bg-indigo-500/20 border-indigo-500/50 text-indigo-400" };
+      default:
+        return { color: "bg-yt-gray border-white/20 text-yt-light" };
+    }
+  };
+
+  const displayName = NETWORK_DISPLAY_NAMES[merchant as AffiliateMerchant] || merchant;
+  const { color } = getConfig();
+
+  return (
+    <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded border ${color}`}>
+      {displayName}
     </span>
   );
 }
@@ -1078,9 +1111,12 @@ export function FixCenterClient({
                         </a>
                       </td>
 
-                      {/* Issue Type */}
+                      {/* Issue Type + Network */}
                       <td className="px-4 py-4 text-center">
-                        <IssueTypeBadge status={group.status} />
+                        <div className="flex flex-col items-center gap-1">
+                          <IssueTypeBadge status={group.status} />
+                          <NetworkBadge merchant={group.merchant} />
+                        </div>
                       </td>
 
                       {/* Videos Affected - Expandable */}
@@ -1449,9 +1485,12 @@ export function FixCenterClient({
                       </a>
                     </td>
 
-                    {/* Issue Type */}
+                    {/* Issue Type + Network */}
                     <td className="px-4 py-4 text-center">
-                      <IssueTypeBadge status={issue.status} />
+                      <div className="flex flex-col items-center gap-1">
+                        <IssueTypeBadge status={issue.status} />
+                        <NetworkBadge merchant={issue.merchant} />
+                      </div>
                     </td>
 
                     {/* AI Suggestion */}

@@ -42,6 +42,15 @@ model User {
   affiliateTagCA        String?   // amazon.ca
   affiliateTagDE        String?   // amazon.de
 
+  // Multi-network affiliate partner IDs
+  bhphoto_bi            String?   // B&H Photo BI parameter
+  bhphoto_kbid          String?   // B&H Photo KBID parameter
+  impact_sid            String?   // Impact Account SID
+  cj_pid                String?   // CJ Affiliate Publisher ID
+  rakuten_id            String?   // Rakuten Site ID
+  shareasale_id         String?   // ShareASale Affiliate ID
+  awin_id               String?   // Awin Publisher ID
+
   // Stripe subscription fields
   stripeCustomerId      String?   @unique
   stripeSubscriptionId  String?   @unique

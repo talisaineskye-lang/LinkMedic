@@ -14,10 +14,19 @@ export async function GET() {
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: {
+        // Amazon region tags
         affiliateTagUS: true,
         affiliateTagUK: true,
         affiliateTagCA: true,
         affiliateTagDE: true,
+        // Multi-network partner IDs
+        bhphoto_bi: true,
+        bhphoto_kbid: true,
+        impact_sid: true,
+        cj_pid: true,
+        rakuten_id: true,
+        shareasale_id: true,
+        awin_id: true,
       },
     });
 
@@ -26,10 +35,19 @@ export async function GET() {
     }
 
     return NextResponse.json({
+      // Amazon region tags
       affiliateTagUS: user.affiliateTagUS,
       affiliateTagUK: user.affiliateTagUK,
       affiliateTagCA: user.affiliateTagCA,
       affiliateTagDE: user.affiliateTagDE,
+      // Multi-network partner IDs
+      bhphoto_bi: user.bhphoto_bi,
+      bhphoto_kbid: user.bhphoto_kbid,
+      impact_sid: user.impact_sid,
+      cj_pid: user.cj_pid,
+      rakuten_id: user.rakuten_id,
+      shareasale_id: user.shareasale_id,
+      awin_id: user.awin_id,
     });
   } catch (error) {
     console.error("Failed to fetch affiliate tags:", error);
@@ -46,10 +64,24 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { affiliateTagUS, affiliateTagUK, affiliateTagCA, affiliateTagDE } = body;
+    const {
+      // Amazon region tags
+      affiliateTagUS,
+      affiliateTagUK,
+      affiliateTagCA,
+      affiliateTagDE,
+      // Multi-network partner IDs
+      bhphoto_bi,
+      bhphoto_kbid,
+      impact_sid,
+      cj_pid,
+      rakuten_id,
+      shareasale_id,
+      awin_id,
+    } = body;
 
-    // Validate tag format (should be alphanumeric with dashes, typically ending in -20)
-    const validateTag = (tag: string | null | undefined): string | null => {
+    // Validate Amazon tag format (alphanumeric with dashes, typically ending in -20)
+    const validateAmazonTag = (tag: string | null | undefined): string | null => {
       if (!tag || tag.trim() === "") return null;
       const cleaned = tag.trim();
       // Basic validation: alphanumeric with dashes, reasonable length
@@ -59,13 +91,33 @@ export async function PUT(request: NextRequest) {
       return cleaned;
     };
 
+    // Validate partner ID (more flexible - alphanumeric with dashes/underscores)
+    const validatePartnerId = (id: string | null | undefined): string | null => {
+      if (!id || id.trim() === "") return null;
+      const cleaned = id.trim();
+      // Allow alphanumeric with dashes, underscores, reasonable length
+      if (!/^[a-zA-Z0-9_-]{1,100}$/.test(cleaned)) {
+        return null;
+      }
+      return cleaned;
+    };
+
     await prisma.user.update({
       where: { id: session.user.id },
       data: {
-        affiliateTagUS: validateTag(affiliateTagUS),
-        affiliateTagUK: validateTag(affiliateTagUK),
-        affiliateTagCA: validateTag(affiliateTagCA),
-        affiliateTagDE: validateTag(affiliateTagDE),
+        // Amazon region tags
+        affiliateTagUS: validateAmazonTag(affiliateTagUS),
+        affiliateTagUK: validateAmazonTag(affiliateTagUK),
+        affiliateTagCA: validateAmazonTag(affiliateTagCA),
+        affiliateTagDE: validateAmazonTag(affiliateTagDE),
+        // Multi-network partner IDs
+        bhphoto_bi: validatePartnerId(bhphoto_bi),
+        bhphoto_kbid: validatePartnerId(bhphoto_kbid),
+        impact_sid: validatePartnerId(impact_sid),
+        cj_pid: validatePartnerId(cj_pid),
+        rakuten_id: validatePartnerId(rakuten_id),
+        shareasale_id: validatePartnerId(shareasale_id),
+        awin_id: validatePartnerId(awin_id),
       },
     });
 

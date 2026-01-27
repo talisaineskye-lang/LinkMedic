@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Tag } from "lucide-react";
+import { Tag, HelpCircle } from "lucide-react";
+import { NETWORK_HELP } from "@/lib/affiliate-networks";
 
 const AMAZON_REGIONS = {
   US: { domain: "amazon.com", flag: "\ud83c\uddfa\ud83c\uddf8", name: "United States" },
@@ -18,16 +19,37 @@ interface AffiliateTagsSectionProps {
     affiliateTagUK: string | null;
     affiliateTagCA: string | null;
     affiliateTagDE: string | null;
+    // Multi-network partner IDs
+    bhphoto_bi: string | null;
+    bhphoto_kbid: string | null;
+    impact_sid: string | null;
+    cj_pid: string | null;
+    rakuten_id: string | null;
+    shareasale_id: string | null;
+    awin_id: string | null;
   };
 }
 
 export function AffiliateTagsSection({ initialTags }: AffiliateTagsSectionProps) {
+  // Amazon region tags
   const [tags, setTags] = useState({
     US: initialTags.affiliateTagUS || "",
     UK: initialTags.affiliateTagUK || "",
     CA: initialTags.affiliateTagCA || "",
     DE: initialTags.affiliateTagDE || "",
   });
+
+  // Multi-network partner IDs
+  const [partnerIds, setPartnerIds] = useState({
+    bhphoto_bi: initialTags.bhphoto_bi || "",
+    bhphoto_kbid: initialTags.bhphoto_kbid || "",
+    impact_sid: initialTags.impact_sid || "",
+    cj_pid: initialTags.cj_pid || "",
+    rakuten_id: initialTags.rakuten_id || "",
+    shareasale_id: initialTags.shareasale_id || "",
+    awin_id: initialTags.awin_id || "",
+  });
+
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,10 +64,19 @@ export function AffiliateTagsSection({ initialTags }: AffiliateTagsSectionProps)
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          // Amazon region tags
           affiliateTagUS: tags.US || null,
           affiliateTagUK: tags.UK || null,
           affiliateTagCA: tags.CA || null,
           affiliateTagDE: tags.DE || null,
+          // Multi-network partner IDs
+          bhphoto_bi: partnerIds.bhphoto_bi || null,
+          bhphoto_kbid: partnerIds.bhphoto_kbid || null,
+          impact_sid: partnerIds.impact_sid || null,
+          cj_pid: partnerIds.cj_pid || null,
+          rakuten_id: partnerIds.rakuten_id || null,
+          shareasale_id: partnerIds.shareasale_id || null,
+          awin_id: partnerIds.awin_id || null,
         }),
       });
 
@@ -65,6 +96,7 @@ export function AffiliateTagsSection({ initialTags }: AffiliateTagsSectionProps)
   }
 
   const hasAnyTag = Object.values(tags).some(t => t.trim() !== "");
+  const hasAnyPartnerId = Object.values(partnerIds).some(t => t.trim() !== "");
 
   return (
     <div className="bg-yt-gray/70 backdrop-blur-sm border border-white/10 rounded-xl p-6">
@@ -102,6 +134,134 @@ export function AffiliateTagsSection({ initialTags }: AffiliateTagsSectionProps)
           No affiliate tags saved yet. They will be auto-detected when you scan your channel.
         </p>
       )}
+
+      {/* Other Affiliate Networks */}
+      <div className="mt-8 pt-6 border-t border-white/10">
+        <h3 className="text-sm font-medium text-white mb-2">Other Affiliate Networks</h3>
+        <p className="text-xs text-yt-light/70 mb-4">
+          Add your partner IDs to enable auto-fix for non-Amazon affiliate links.
+        </p>
+
+        {/* B&H Photo - 2 fields in a row */}
+        <div className="mb-6">
+          <div className="text-sm text-white font-medium mb-2">B&amp;H Photo</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-yt-light/70 mb-1.5">BI Parameter</label>
+              <input
+                type="text"
+                value={partnerIds.bhphoto_bi}
+                onChange={(e) => setPartnerIds({ ...partnerIds, bhphoto_bi: e.target.value })}
+                placeholder="Your BI"
+                className="w-full bg-yt-gray border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-yt-light/50 focus:outline-none focus:border-white/30 transition"
+              />
+              <p className="text-xs text-yt-light/50 mt-1 flex items-center gap-1">
+                <HelpCircle className="w-3 h-3" />
+                {NETWORK_HELP.bhphoto_bi}
+              </p>
+            </div>
+            <div>
+              <label className="block text-xs text-yt-light/70 mb-1.5">KBID Parameter</label>
+              <input
+                type="text"
+                value={partnerIds.bhphoto_kbid}
+                onChange={(e) => setPartnerIds({ ...partnerIds, bhphoto_kbid: e.target.value })}
+                placeholder="Your KBID"
+                className="w-full bg-yt-gray border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-yt-light/50 focus:outline-none focus:border-white/30 transition"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Single-field networks */}
+        <div className="space-y-4">
+          {/* Impact */}
+          <div>
+            <label className="block text-xs text-yt-light/70 mb-1.5">Impact Account SID</label>
+            <input
+              type="text"
+              value={partnerIds.impact_sid}
+              onChange={(e) => setPartnerIds({ ...partnerIds, impact_sid: e.target.value })}
+              placeholder="Your Account SID"
+              className="w-full bg-yt-gray border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-yt-light/50 focus:outline-none focus:border-white/30 transition"
+            />
+            <p className="text-xs text-yt-light/50 mt-1 flex items-center gap-1">
+              <HelpCircle className="w-3 h-3" />
+              {NETWORK_HELP.impact_sid}
+            </p>
+          </div>
+
+          {/* CJ Affiliate */}
+          <div>
+            <label className="block text-xs text-yt-light/70 mb-1.5">CJ Affiliate Publisher ID</label>
+            <input
+              type="text"
+              value={partnerIds.cj_pid}
+              onChange={(e) => setPartnerIds({ ...partnerIds, cj_pid: e.target.value })}
+              placeholder="Your Publisher ID"
+              className="w-full bg-yt-gray border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-yt-light/50 focus:outline-none focus:border-white/30 transition"
+            />
+            <p className="text-xs text-yt-light/50 mt-1 flex items-center gap-1">
+              <HelpCircle className="w-3 h-3" />
+              {NETWORK_HELP.cj_pid}
+            </p>
+          </div>
+
+          {/* Rakuten */}
+          <div>
+            <label className="block text-xs text-yt-light/70 mb-1.5">Rakuten Site ID</label>
+            <input
+              type="text"
+              value={partnerIds.rakuten_id}
+              onChange={(e) => setPartnerIds({ ...partnerIds, rakuten_id: e.target.value })}
+              placeholder="Your Site ID"
+              className="w-full bg-yt-gray border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-yt-light/50 focus:outline-none focus:border-white/30 transition"
+            />
+            <p className="text-xs text-yt-light/50 mt-1 flex items-center gap-1">
+              <HelpCircle className="w-3 h-3" />
+              {NETWORK_HELP.rakuten_id}
+            </p>
+          </div>
+
+          {/* ShareASale */}
+          <div>
+            <label className="block text-xs text-yt-light/70 mb-1.5">ShareASale Affiliate ID</label>
+            <input
+              type="text"
+              value={partnerIds.shareasale_id}
+              onChange={(e) => setPartnerIds({ ...partnerIds, shareasale_id: e.target.value })}
+              placeholder="Your Affiliate ID"
+              className="w-full bg-yt-gray border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-yt-light/50 focus:outline-none focus:border-white/30 transition"
+            />
+            <p className="text-xs text-yt-light/50 mt-1 flex items-center gap-1">
+              <HelpCircle className="w-3 h-3" />
+              {NETWORK_HELP.shareasale_id}
+            </p>
+          </div>
+
+          {/* Awin */}
+          <div>
+            <label className="block text-xs text-yt-light/70 mb-1.5">Awin Publisher ID</label>
+            <input
+              type="text"
+              value={partnerIds.awin_id}
+              onChange={(e) => setPartnerIds({ ...partnerIds, awin_id: e.target.value })}
+              placeholder="Your Publisher ID"
+              className="w-full bg-yt-gray border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-yt-light/50 focus:outline-none focus:border-white/30 transition"
+            />
+            <p className="text-xs text-yt-light/50 mt-1 flex items-center gap-1">
+              <HelpCircle className="w-3 h-3" />
+              {NETWORK_HELP.awin_id}
+            </p>
+          </div>
+        </div>
+
+        {!hasAnyPartnerId && (
+          <p className="text-yt-light/50 text-xs mt-4">
+            No partner IDs saved yet. Add your IDs to enable link repair for these networks.
+          </p>
+        )}
+      </div>
 
       <div className="flex items-center gap-4 mt-6">
         <button
