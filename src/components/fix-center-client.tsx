@@ -151,6 +151,7 @@ export function FixCenterClient({
   const [viewingDescriptionId, setViewingDescriptionId] = useState<string | null>(null);
   const [copiedDisclosureId, setCopiedDisclosureId] = useState<string | null>(null);
   const [dismissingDisclosureId, setDismissingDisclosureId] = useState<string | null>(null);
+  const [dismissingAllDisclosures, setDismissingAllDisclosures] = useState(false);
   const [dismissingLinkId, setDismissingLinkId] = useState<string | null>(null);
   const [dismissingAllUrl, setDismissingAllUrl] = useState<string | null>(null);
   const [downloadingExport, setDownloadingExport] = useState(false);
@@ -268,6 +269,35 @@ export function FixCenterClient({
       alert("Failed to dismiss disclosure issue");
     } finally {
       setDismissingDisclosureId(null);
+    }
+  };
+
+  const handleDismissAllDisclosures = async () => {
+    if (disclosureIssues.length === 0) return;
+
+    if (!confirm(`Dismiss all ${disclosureIssues.length} disclosure issue${disclosureIssues.length !== 1 ? "s" : ""}? This cannot be undone.`)) {
+      return;
+    }
+
+    setDismissingAllDisclosures(true);
+    try {
+      const videoIds = disclosureIssues.map((item) => item.id);
+      const response = await fetch("/api/videos/dismiss-disclosure", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ videoIds }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to dismiss disclosure issues");
+      }
+
+      router.refresh();
+    } catch (error) {
+      console.error("Error dismissing all disclosure issues:", error);
+      alert("Failed to dismiss disclosure issues");
+    } finally {
+      setDismissingAllDisclosures(false);
     }
   };
 
@@ -639,7 +669,26 @@ export function FixCenterClient({
                       Suggested Disclosure
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-medium text-yt-light uppercase tracking-wider">
-                      Action
+                      <div className="flex items-center justify-center gap-2">
+                        <span>Action</span>
+                        {disclosureIssues.length > 1 && (
+                          <button
+                            onClick={handleDismissAllDisclosures}
+                            disabled={dismissingAllDisclosures}
+                            className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded bg-yt-gray hover:bg-emergency-red/20 hover:text-emergency-red text-yt-light transition disabled:opacity-50"
+                            title="Dismiss all disclosure issues"
+                          >
+                            {dismissingAllDisclosures ? (
+                              "Dismissing..."
+                            ) : (
+                              <>
+                                <Trash2 className="w-3 h-3" />
+                                Dismiss All
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
                     </th>
                   </tr>
                 </thead>
