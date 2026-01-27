@@ -8,6 +8,7 @@ import { UserMenu } from "@/components/user-menu";
 import { OnboardingModal } from "@/components/onboarding-modal";
 import { ChannelSwitcher } from "@/components/channel-switcher";
 import { LinkStatus } from "@prisma/client";
+import { getMaxChannels } from "@/lib/tier-limits";
 
 // All statuses that indicate a broken/problematic link
 const PROBLEM_STATUSES: LinkStatus[] = [
@@ -42,6 +43,7 @@ export default async function DashboardLayout({
       channels: {
         select: {
           id: true,
+          youtubeChannelId: true,
           title: true,
           thumbnailUrl: true,
         },
@@ -113,6 +115,8 @@ export default async function DashboardLayout({
                 <ChannelSwitcher
                   channels={user.channels}
                   activeChannelId={user.activeChannelId}
+                  channelLimit={getMaxChannels(user.tier)}
+                  tier={user.tier}
                 />
               )}
               <UserMenu user={session.user} />
