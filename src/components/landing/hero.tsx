@@ -45,7 +45,7 @@ export function Hero() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.6 }}
           >
-            Broken affiliate links in your back catalog are costing you commission every day.
+            Broken affiliate links in your YouTube back catalog are costing you commission every day.
             We detect them, suggest fixes, and keep scanning so it doesn&apos;t happen again.
           </motion.p>
 
