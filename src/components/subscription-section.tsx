@@ -20,14 +20,16 @@ export function SubscriptionSection({
   const isPaid = tier === "SPECIALIST" || tier === "OPERATOR";
   const isCanceling = isPaid && subscriptionCancelAt;
 
-  const handleUpgrade = async () => {
-    console.log("[Upgrade] Starting checkout...");
+  const handleUpgrade = async (targetTier: "SPECIALIST" | "OPERATOR" = "SPECIALIST") => {
+    console.log("[Upgrade] Starting checkout for tier:", targetTier);
     setLoading(true);
     setError(null);
 
     try {
       const response = await fetch("/api/stripe/checkout", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tier: targetTier }),
       });
 
       const data = await response.json();
@@ -194,7 +196,7 @@ export function SubscriptionSection({
             </ul>
 
             <button
-              onClick={handleUpgrade}
+              onClick={() => handleUpgrade("SPECIALIST")}
               disabled={loading}
               className="px-4 py-3 text-sm font-bold text-black bg-profit-green hover:brightness-110 rounded-lg transition shadow-[0_0_20px_rgba(0,255,0,0.2)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
@@ -204,6 +206,49 @@ export function SubscriptionSection({
                 <>
                   <Sparkles className="w-4 h-4" />
                   Upgrade to Specialist - $19/mo
+                </>
+              )}
+            </button>
+          </div>
+        )}
+
+        {/* Upgrade to Operator for Specialist users */}
+        {tier === "SPECIALIST" && !isCanceling && (
+          <div className="mt-6 pt-6 border-t border-white/10">
+            <h3 className="text-sm font-medium text-white mb-4 flex items-center gap-2">
+              <Crown className="w-4 h-4 text-profit-green" />
+              Upgrade to Operator - $39/month
+            </h3>
+            <ul className="space-y-2 text-sm text-yt-light mb-6">
+              <li className="flex items-center gap-2">
+                <span className="text-profit-green">✓</span>
+                Everything in Specialist
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-profit-green">✓</span>
+                Up to 3 YouTube channels
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-profit-green">✓</span>
+                Unified dashboard for all channels
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-profit-green">✓</span>
+                Priority support
+              </li>
+            </ul>
+
+            <button
+              onClick={() => handleUpgrade("OPERATOR")}
+              disabled={loading}
+              className="px-4 py-3 text-sm font-bold text-black bg-profit-green hover:brightness-110 rounded-lg transition shadow-[0_0_20px_rgba(0,255,0,0.2)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {loading ? (
+                "Loading..."
+              ) : (
+                <>
+                  <Crown className="w-4 h-4" />
+                  Upgrade to Operator - $39/mo
                 </>
               )}
             </button>
