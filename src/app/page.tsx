@@ -324,6 +324,8 @@ export default async function Home() {
           </div>
 
           <div className="flex gap-6 text-sm text-slate-400">
+            <Link href="/privacy" className="hover:text-white transition">Privacy</Link>
+            <Link href="/terms" className="hover:text-white transition">Terms</Link>
             <Link href="/intel" className="hover:text-white transition">Intel Blog</Link>
           </div>
 
