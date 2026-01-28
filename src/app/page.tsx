@@ -127,26 +127,6 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Social Proof */}
-      <section className="bg-[#0F0F0F] py-16 relative overflow-hidden">
-        {/* Faded play button background */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-5">
-          <div className="text-[20rem]">▶</div>
-        </div>
-
-        <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
-          <p className="font-display text-2xl md:text-3xl text-white mb-4">
-            TRUSTED BY CREATORS WITH OVER
-          </p>
-          <p className="font-display text-5xl md:text-7xl text-[#00FF00] drop-shadow-[0_0_30px_rgba(0,255,0,0.3)]">
-            500M+ VIEWS
-          </p>
-          <p className="text-[#AAAAAA] mt-4">
-            From tech reviewers to lifestyle vloggers. If you have affiliate links, you have leaks.
-          </p>
-        </div>
-      </section>
-
       {/* Pricing */}
       <section id="pricing" className="bg-[#0A0A0A] py-24">
         <div className="max-w-5xl mx-auto px-6">
@@ -308,10 +288,6 @@ export default async function Home() {
           >
             SCAN MY CHANNEL — FREE
           </Link>
-
-          <p className="text-[#AAAAAA]/50 text-sm mt-6">
-            Join 500+ creators who plugged their leaks
-          </p>
         </div>
       </section>
 

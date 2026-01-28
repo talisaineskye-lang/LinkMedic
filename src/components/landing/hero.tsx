@@ -25,18 +25,27 @@ export function Hero() {
 
         {/* Main headline */}
         <div className="text-center mb-12">
+          <motion.div
+            className="inline-block mb-4"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <span className="px-3 py-1 text-xs font-bold tracking-wider bg-[#00FF00]/20 text-[#00FF00] border border-[#00FF00]/50 rounded-full">
+              BETA
+            </span>
+          </motion.div>
           <motion.h1
             className="font-display text-5xl md:text-7xl lg:text-8xl leading-[0.95] tracking-wide mb-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            YOU&apos;RE{" "}
-            <span className="text-[#FF0000] drop-shadow-[0_0_30px_rgba(255,0,0,0.5)]">
-              LEAKING REVENUE
-            </span>
+            YOUR VIDEOS ARE QUIETLY{" "}
             <br />
-            FROM YOUR OLD VIDEOS.
+            <span className="text-[#FF0000] drop-shadow-[0_0_30px_rgba(255,0,0,0.5)]">
+              LOSING REVENUE.
+            </span>
           </motion.h1>
 
           <motion.p
@@ -66,122 +75,7 @@ export function Hero() {
           </motion.div>
         </div>
 
-        {/* Profit Pipe Visual */}
-        <ProfitPipe />
-
       </div>
     </section>
-  );
-}
-
-function ProfitPipe() {
-  return (
-    <div className="relative max-w-3xl mx-auto mt-12">
-      <div className="flex items-center justify-center gap-4">
-
-        {/* Left: Money flowing in - multiple dollar signs */}
-        <div className="flex-1 flex justify-end">
-          <motion.div
-            className="flex items-center gap-1"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.8 }}
-          >
-            <span className="text-[#00FF00] font-mono text-sm mr-2">REVENUE IN</span>
-            {[...Array(5)].map((_, i) => (
-              <motion.span
-                key={i}
-                className="text-[#00FF00] font-bold text-2xl"
-                animate={{ x: [0, 15, 30], opacity: [0.3, 1, 0.3] }}
-                transition={{
-                  duration: 1.5,
-                  repeat: Infinity,
-                  delay: i * 0.25,
-                  ease: "linear"
-                }}
-              >
-                $
-              </motion.span>
-            ))}
-          </motion.div>
-        </div>
-
-        {/* Center: The Leak */}
-        <motion.div
-          className="relative"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 1 }}
-        >
-          <div className="w-32 h-20 bg-[#272727] rounded-lg border-2 border-[#AAAAAA]/20 relative overflow-hidden">
-            {/* Crack */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <svg width="60" height="40" viewBox="0 0 60 40" className="text-[#FF0000]">
-                <path
-                  d="M0 20 L20 20 L25 10 L30 30 L35 15 L40 25 L45 20 L60 20"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  fill="none"
-                />
-              </svg>
-            </div>
-
-            {/* Leaking money - dollar signs falling */}
-            {[...Array(3)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="absolute bottom-0 -translate-x-1/2 translate-y-full text-[#FF0000] font-bold text-lg"
-                style={{ left: `${40 + i * 10}%` }}
-                animate={{ y: [0, 15, 30], opacity: [1, 0.5, 0] }}
-                transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.3 }}
-              >
-                $
-              </motion.div>
-            ))}
-          </div>
-
-          <p className="text-[#FF0000] text-xs font-mono text-center mt-2">
-            ⚠ LEAK DETECTED
-          </p>
-        </motion.div>
-
-        {/* Right: Reduced money out - two staggered dollar signs, muted green */}
-        <div className="flex-1 flex justify-start">
-          <motion.div
-            className="flex items-center gap-1"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.8 }}
-          >
-            {[0, 1].map((i) => (
-              <motion.span
-                key={i}
-                className="text-[#00FF00]/40 font-bold text-2xl"
-                animate={{ x: [0, 40, 80], opacity: [0.2, 0.5, 0.2] }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "linear",
-                  delay: i * 1.5
-                }}
-              >
-                $
-              </motion.span>
-            ))}
-            <span className="text-[#AAAAAA]/50 font-mono text-sm ml-4">REVENUE OUT</span>
-          </motion.div>
-        </div>
-
-      </div>
-
-      {/* Lost revenue indicator */}
-      <motion.div
-        className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2"
-        animate={{ y: [0, 5, 0] }}
-        transition={{ duration: 2, repeat: Infinity }}
-      >
-        <span className="text-[#FF0000] font-mono text-sm">-$1,847/year lost</span>
-      </motion.div>
-    </div>
   );
 }

@@ -60,24 +60,28 @@ export function DiagnosticReport() {
           {/* Card 2: Fracture */}
           <motion.div
             className="bg-[#272727]/70 backdrop-blur-sm rounded-xl p-6 border border-white/10 relative overflow-hidden"
-            whileHover={{ scale: 1.02, borderColor: 'rgba(255,165,0,0.3)' }}
+            whileHover={{ scale: 1.02, borderColor: 'rgba(255,0,0,0.3)' }}
             transition={{ duration: 0.2 }}
           >
-            {/* Fracture icon */}
-            <div className="mb-4 text-4xl">
-              <motion.span
-                animate={{ rotate: [0, 5, -5, 0] }}
-                transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 2 }}
-              >
-                🔗
-              </motion.span>
-              <span className="text-orange-400 ml-1">💥</span>
+            {/* Flatline */}
+            <div className="mb-4">
+              <svg width="100%" height="40" viewBox="0 0 200 40" className="text-[#FF0000]">
+                <motion.path
+                  d="M0 20 L200 20"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  fill="none"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                />
+              </svg>
             </div>
             <h3 className="font-display text-2xl text-white mb-2">URL FRACTURE</h3>
             <p className="text-[#AAAAAA] text-sm">
               Amazon changes URLs silently. Redirects break your affiliate tag. You lose credit for sales.
             </p>
-            <div className="mt-4 font-mono text-xs text-orange-400">
+            <div className="mt-4 font-mono text-xs text-[#FF0000]">
               STATUS: WARNING
             </div>
           </motion.div>
@@ -85,24 +89,28 @@ export function DiagnosticReport() {
           {/* Card 3: Tag Expired */}
           <motion.div
             className="bg-[#272727]/70 backdrop-blur-sm rounded-xl p-6 border border-white/10 relative overflow-hidden"
-            whileHover={{ scale: 1.02, borderColor: 'rgba(255,255,0,0.3)' }}
+            whileHover={{ scale: 1.02, borderColor: 'rgba(255,0,0,0.3)' }}
             transition={{ duration: 0.2 }}
           >
-            {/* Tag icon */}
+            {/* Flatline */}
             <div className="mb-4">
-              <motion.div
-                className="text-4xl"
-                animate={{ opacity: [1, 0.3, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                🏷️
-              </motion.div>
+              <svg width="100%" height="40" viewBox="0 0 200 40" className="text-[#FF0000]">
+                <motion.path
+                  d="M0 20 L200 20"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  fill="none"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 1.5, repeat: Infinity, delay: 0.5 }}
+                />
+              </svg>
             </div>
             <h3 className="font-display text-2xl text-white mb-2">TAG EXPIRED</h3>
             <p className="text-[#AAAAAA] text-sm">
               Affiliate tags expire or get stripped during redirects. You send the click, someone else gets the commission.
             </p>
-            <div className="mt-4 font-mono text-xs text-yellow-400">
+            <div className="mt-4 font-mono text-xs text-[#FF0000]">
               STATUS: AT RISK
             </div>
           </motion.div>
