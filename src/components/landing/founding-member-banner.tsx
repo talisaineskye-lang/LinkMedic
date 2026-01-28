@@ -44,7 +44,7 @@ export function FoundingMemberBanner() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <div className="max-w-6xl mx-auto px-6 py-3 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center">
+      <div className="max-w-6xl mx-auto px-6 py-2 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-4 text-center">
         <div className="flex items-center gap-2">
           <span className="text-cyan-400 font-mono text-xs sm:text-sm tracking-wider">
             FOUNDING MEMBER OFFER

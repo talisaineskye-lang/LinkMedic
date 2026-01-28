@@ -321,7 +321,7 @@ export async function scanUserLinks(
 }
 
 /**
- * Gets scan statistics for a user
+ * Gets scan statistics for a user using efficient database aggregations
  */
 export async function getScanStats(userId: string): Promise<{
   totalLinks: number;
@@ -331,19 +331,29 @@ export async function getScanStats(userId: string): Promise<{
   oosLinks: number;
   unknownLinks: number;
 }> {
-  const links = await prisma.affiliateLink.findMany({
-    where: { video: { userId } },
-    select: { status: true, lastCheckedAt: true },
-  });
+  // Run all counts in parallel for maximum speed
+  const [totalLinks, checkedLinks, okLinks, brokenLinks, oosLinks, unknownLinks] = await Promise.all([
+    prisma.affiliateLink.count({
+      where: { video: { userId } },
+    }),
+    prisma.affiliateLink.count({
+      where: { video: { userId }, lastCheckedAt: { not: null } },
+    }),
+    prisma.affiliateLink.count({
+      where: { video: { userId }, status: "OK" },
+    }),
+    prisma.affiliateLink.count({
+      where: { video: { userId }, status: "NOT_FOUND" },
+    }),
+    prisma.affiliateLink.count({
+      where: { video: { userId }, status: "OOS" },
+    }),
+    prisma.affiliateLink.count({
+      where: { video: { userId }, status: "UNKNOWN" },
+    }),
+  ]);
 
-  return {
-    totalLinks: links.length,
-    checkedLinks: links.filter(l => l.lastCheckedAt).length,
-    okLinks: links.filter(l => l.status === "OK").length,
-    brokenLinks: links.filter(l => l.status === "NOT_FOUND").length,
-    oosLinks: links.filter(l => l.status === "OOS").length,
-    unknownLinks: links.filter(l => l.status === "UNKNOWN").length,
-  };
+  return { totalLinks, checkedLinks, okLinks, brokenLinks, oosLinks, unknownLinks };
 }
 
 /**

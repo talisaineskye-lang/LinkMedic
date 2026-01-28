@@ -6,14 +6,11 @@ import { findReplacementProduct, getConfidenceLevel } from "@/lib/suggestion-eng
 import { isAmazonDomain } from "@/lib/link-audit-engine";
 import { checkTierLimits, getUpgradeMessage } from "@/lib/tier-limits";
 import { LinkStatus } from "@prisma/client";
+import pLimit from "p-limit";
 
-// Rate limiting: max 5 at a time
+// Rate limiting: max 5 at a time, process 2 concurrently
 const MAX_PER_REQUEST = 5;
-const DELAY_BETWEEN_REQUESTS = 2000; // 2 seconds
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+const CONCURRENT_LIMIT = 2;
 
 export async function POST(request: Request) {
   try {
@@ -156,11 +153,14 @@ export async function POST(request: Request) {
       error?: string;
     }> = [];
 
-    for (const link of linksToProcess) {
+    // Process links concurrently with limit
+    const limit = pLimit(CONCURRENT_LIMIT);
+
+    const processLink = async (link: typeof linksToProcess[0]) => {
       // Only process Amazon links
       if (!isAmazonDomain(link.originalUrl) && link.merchant !== "amazon") {
         console.log(`[find-replacements] Skipping non-Amazon link: ${link.id}`);
-        results.push({
+        return {
           linkId: link.id,
           success: false,
           productTitle: null,
@@ -170,8 +170,7 @@ export async function POST(request: Request) {
           confidenceScore: null,
           confidenceLevel: "none",
           error: "Not an Amazon link",
-        });
-        continue;
+        };
       }
 
       try {
@@ -185,7 +184,7 @@ export async function POST(request: Request) {
         );
 
         if (suggestion.success && suggestion.bestMatch) {
-          const { product, confidenceScore, matchReason } = suggestion.bestMatch;
+          const { product, confidenceScore } = suggestion.bestMatch;
 
           console.log(`[find-replacements] Found: "${product.title.slice(0, 40)}..." (${confidenceScore}%)`);
 
@@ -202,8 +201,7 @@ export async function POST(request: Request) {
             },
           });
 
-          found++;
-          results.push({
+          return {
             linkId: link.id,
             success: true,
             productTitle: product.title,
@@ -212,10 +210,10 @@ export async function POST(request: Request) {
             productPrice: product.price,
             confidenceScore: confidenceScore,
             confidenceLevel: getConfidenceLevel(confidenceScore),
-          });
+          };
         } else {
           console.log(`[find-replacements] No match for ${link.id}: ${suggestion.error}`);
-          results.push({
+          return {
             linkId: link.id,
             success: false,
             productTitle: null,
@@ -225,11 +223,11 @@ export async function POST(request: Request) {
             confidenceScore: null,
             confidenceLevel: "none",
             error: suggestion.error || "No reliable match found",
-          });
+          };
         }
       } catch (error) {
         console.error(`[find-replacements] Error for ${link.id}:`, error);
-        results.push({
+        return {
           linkId: link.id,
           success: false,
           productTitle: null,
@@ -239,13 +237,19 @@ export async function POST(request: Request) {
           confidenceScore: null,
           confidenceLevel: "none",
           error: error instanceof Error ? error.message : "Unknown error",
-        });
+        };
       }
+    };
 
-      // Rate limiting
-      if (linksToProcess.indexOf(link) < linksToProcess.length - 1) {
-        await sleep(DELAY_BETWEEN_REQUESTS);
-      }
+    // Run all links through the concurrency limiter
+    const processedResults = await Promise.all(
+      linksToProcess.map(link => limit(() => processLink(link)))
+    );
+
+    // Collect results
+    for (const result of processedResults) {
+      results.push(result);
+      if (result.success) found++;
     }
 
     const message = `Found ${found} replacement(s) for ${linksToProcess.length} link(s)`;
