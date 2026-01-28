@@ -326,7 +326,7 @@ export function DashboardClient({
           <button
             onClick={handleScan}
             disabled={isScanning || isSyncing}
-            className="btn-primary flex items-center gap-2 px-6 py-3"
+            className="btn-primary flex items-center gap-2 px-4 py-2 text-sm"
           >
             <Search className={`w-4 h-4 ${isScanning ? "animate-pulse" : ""}`} />
             {isScanning ? "Scanning..." : "Scan Links"}
@@ -336,7 +336,7 @@ export function DashboardClient({
           <button
             onClick={() => handleSync("quick")}
             disabled={isSyncing || isScanning || !tierInfo.canResync || !scanEligibility.quickScanAvailable}
-            className={`flex flex-col items-center px-4 py-2 rounded-lg font-semibold transition border ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition border ${
               tierInfo.canResync && scanEligibility.quickScanAvailable
                 ? "bg-slate-800 hover:bg-slate-700 border-white/20 text-white"
                 : "bg-slate-800/50 border-white/10 cursor-not-allowed text-slate-500"
@@ -349,28 +349,19 @@ export function DashboardClient({
                 : "Sync videos from last 30 days + top 20 by views"
             }
           >
-            <div className="flex items-center gap-2">
-              {!tierInfo.canResync ? (
-                <Lock className="w-4 h-4 text-slate-500" />
-              ) : (
-                <RotateCw className={`w-4 h-4 ${isSyncing && activeScanType === "quick" ? "animate-spin" : ""}`} />
-              )}
-              <span className="text-sm">
-                {isSyncing && activeScanType === "quick" ? "Quick..." : "Quick Scan"}
-              </span>
-            </div>
-            {!scanEligibility.quickScanAvailable && tierInfo.canResync && (
-              <span className="text-[10px] text-slate-500 mt-0.5">
-                {formatCooldown(scanEligibility.quickScanCooldownEnds)}
-              </span>
+            {!tierInfo.canResync ? (
+              <Lock className="w-4 h-4 text-slate-500" />
+            ) : (
+              <RotateCw className={`w-4 h-4 ${isSyncing && activeScanType === "quick" ? "animate-spin" : ""}`} />
             )}
+            {isSyncing && activeScanType === "quick" ? "Quick..." : "Quick Scan"}
           </button>
 
           {/* Full Scan Button */}
           <button
             onClick={() => handleSync("full")}
             disabled={isSyncing || isScanning || !tierInfo.canResync || !scanEligibility.fullScanAvailable}
-            className={`flex flex-col items-center px-4 py-2 rounded-lg font-semibold transition border ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition border ${
               tierInfo.canResync && scanEligibility.fullScanAvailable
                 ? "bg-slate-800 hover:bg-slate-700 border-white/20 text-white"
                 : "bg-slate-800/50 border-white/10 cursor-not-allowed text-slate-500"
@@ -383,26 +374,17 @@ export function DashboardClient({
                 : "Full sync of all videos (up to 500)"
             }
           >
-            <div className="flex items-center gap-2">
-              {!tierInfo.canResync ? (
-                <Lock className="w-4 h-4 text-slate-500" />
-              ) : (
-                <RotateCw className={`w-4 h-4 ${isSyncing && activeScanType === "full" ? "animate-spin" : ""}`} />
-              )}
-              <span className="text-sm">
-                {isSyncing && activeScanType === "full" ? "Full..." : "Full Scan"}
-              </span>
-            </div>
-            {!scanEligibility.fullScanAvailable && tierInfo.canResync && (
-              <span className="text-[10px] text-slate-500 mt-0.5">
-                {formatCooldown(scanEligibility.fullScanCooldownEnds)}
-              </span>
+            {!tierInfo.canResync ? (
+              <Lock className="w-4 h-4 text-slate-500" />
+            ) : (
+              <RotateCw className={`w-4 h-4 ${isSyncing && activeScanType === "full" ? "animate-spin" : ""}`} />
             )}
+            {isSyncing && activeScanType === "full" ? "Full..." : "Full Scan"}
           </button>
           <button
             onClick={handleExportCSV}
             disabled={isExporting || !tierInfo.canExportCSV}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition border ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition border ${
               tierInfo.canExportCSV
                 ? "bg-slate-800 hover:bg-slate-700 border-white/20 text-white"
                 : "bg-slate-800/50 border-white/10 cursor-not-allowed text-slate-500"

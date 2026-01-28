@@ -91,16 +91,19 @@ export const authOptions: NextAuthOptions = {
         console.error("[NextAuth] Failed to track signup event:", error);
       }
 
-      // Founding Member Program: First 50 users get 90 days free Specialist tier
+      // Founding Member Program: First 49 users get 6 months free Specialist tier
       try {
         if (user?.id) {
+          const FOUNDING_MEMBER_LIMIT = 49;
+          const FOUNDING_MEMBER_DAYS = 180; // 6 months
+
           const foundingMemberCount = await prisma.user.count({
             where: { isFoundingMember: true },
           });
 
-          if (foundingMemberCount < 50) {
+          if (foundingMemberCount < FOUNDING_MEMBER_LIMIT) {
             const expiryDate = new Date();
-            expiryDate.setDate(expiryDate.getDate() + 90); // 90 days from now
+            expiryDate.setDate(expiryDate.getDate() + FOUNDING_MEMBER_DAYS);
 
             await prisma.user.update({
               where: { id: user.id },

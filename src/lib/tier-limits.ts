@@ -288,6 +288,57 @@ export async function isPaidUser(userId: string): Promise<boolean> {
 }
 
 /**
+ * Check if user has Specialist-level access (paid OR active founding member)
+ */
+export async function hasSpecialistAccess(userId: string): Promise<boolean> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      tier: true,
+      isFoundingMember: true,
+      foundingMemberUntil: true,
+    },
+  });
+
+  if (!user) return false;
+
+  // Paid subscriber (Specialist or Operator)
+  if (user.tier === "SPECIALIST" || user.tier === "OPERATOR") {
+    return true;
+  }
+
+  // Active founding member (hasn't expired yet)
+  if (
+    user.isFoundingMember &&
+    user.foundingMemberUntil &&
+    new Date(user.foundingMemberUntil) > new Date()
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Check if user's founding member period is expired
+ */
+export async function isFoundingMemberExpired(userId: string): Promise<boolean> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      isFoundingMember: true,
+      foundingMemberUntil: true,
+    },
+  });
+
+  if (!user || !user.isFoundingMember) return false;
+
+  return user.foundingMemberUntil
+    ? new Date(user.foundingMemberUntil) <= new Date()
+    : false;
+}
+
+/**
  * Get upgrade prompt message based on feature
  */
 export function getUpgradeMessage(feature: FeatureKey): string {

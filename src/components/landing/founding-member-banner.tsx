@@ -53,7 +53,7 @@ export function FoundingMemberBanner() {
         </div>
         <p className="text-white text-sm">
           <span className="font-bold text-cyan-400">{data.spotsRemaining}</span> of {data.totalSpots} spots left
-          <span className="text-slate-400"> — Get Specialist tier free for 90 days</span>
+          <span className="text-slate-400"> — Get Specialist tier free for 6 months</span>
         </p>
         <Link
           href="/login"

@@ -5,6 +5,7 @@ import { SettingsForm } from "@/components/settings-form";
 import { SubscriptionSection } from "@/components/subscription-section";
 import { AffiliateTagsSection } from "@/components/affiliate-tags-section";
 import { getTierDisplayName, getTierBadgeColors } from "@/lib/tier-limits";
+import { Sparkles } from "lucide-react";
 
 // Disable caching to ensure fresh data after returning from Stripe portal
 export const dynamic = "force-dynamic";
@@ -43,6 +44,8 @@ export default async function SettingsPage() {
       tier: true,
       stripeCustomerId: true,
       subscriptionCancelAt: true,
+      isFoundingMember: true,
+      foundingMemberUntil: true,
     },
   });
 
@@ -112,6 +115,26 @@ export default async function SettingsPage() {
           </div>
         </dl>
       </div>
+
+      {/* Founding Member Status */}
+      {user.isFoundingMember && user.foundingMemberUntil && (
+        <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-xl p-6">
+          <div className="flex items-center gap-2 text-cyan-400 font-semibold mb-2">
+            <Sparkles className="w-5 h-5" />
+            <span className="font-display text-xl tracking-wide">FOUNDING MEMBER</span>
+          </div>
+          <p className="text-slate-400">
+            You&apos;re one of our first 49 users! Free Specialist access until{" "}
+            <span className="text-white font-medium">
+              {new Date(user.foundingMemberUntil).toLocaleDateString("en-US", {
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </span>
+          </p>
+        </div>
+      )}
 
       {/* Subscription */}
       <SubscriptionSection

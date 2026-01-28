@@ -47,15 +47,14 @@
   --color-text-muted: var(--text-muted);
   --color-border-subtle: rgba(255, 255, 255, 0.06);
   --color-border-light: rgba(255, 255, 255, 0.1);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-outfit);
   --font-mono: var(--font-geist-mono);
-  --font-display: var(--font-display);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), system-ui, sans-serif;
+  font-family: var(--font-outfit), system-ui, sans-serif;
   letter-spacing: 0.01em;
   line-height: 1.7;
 }
@@ -73,12 +72,15 @@ p, li {
   letter-spacing: 0.02em;
 }
 
+/* Display style - uses Outfit with heavier weight for headlines */
 .font-display {
-  font-family: var(--font-display), sans-serif;
+  font-family: var(--font-outfit), system-ui, sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
 .font-sans {
-  font-family: var(--font-sans), system-ui, sans-serif;
+  font-family: var(--font-outfit), system-ui, sans-serif;
 }
 
 .font-mono {
