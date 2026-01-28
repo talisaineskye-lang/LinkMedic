@@ -94,7 +94,7 @@ export const authOptions: NextAuthOptions = {
       // Founding Member Program: First 49 users get 6 months free Specialist tier
       try {
         if (user?.id) {
-          const FOUNDING_MEMBER_LIMIT = 49;
+          const FOUNDING_MEMBER_LIMIT = 48;
           const FOUNDING_MEMBER_DAYS = 180; // 6 months
 
           const foundingMemberCount = await prisma.user.count({

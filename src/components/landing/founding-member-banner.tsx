@@ -47,19 +47,19 @@ export function FoundingMemberBanner() {
       <div className="max-w-6xl mx-auto px-6 py-3 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center">
         <div className="flex items-center gap-2">
           <span className="text-cyan-400 font-mono text-xs sm:text-sm tracking-wider">
-            FOUNDING MEMBER PROGRAM
+            FOUNDING MEMBER OFFER
           </span>
           <span className="hidden sm:inline text-white/30">|</span>
         </div>
         <p className="text-white text-sm">
-          <span className="font-bold text-cyan-400">{data.spotsRemaining}</span> of {data.totalSpots} spots left
-          <span className="text-slate-400"> — Get Specialist tier free for 6 months</span>
+          First {data.totalSpots} users get full Specialist access free for 6 months.
+          <span className="text-slate-400"> No credit card required.</span>
         </p>
         <Link
           href="/login"
           className="text-cyan-400 text-sm font-bold hover:underline underline-offset-2"
         >
-          Claim Your Spot →
+          {data.spotsRemaining} spots left →
         </Link>
       </div>
     </motion.div>

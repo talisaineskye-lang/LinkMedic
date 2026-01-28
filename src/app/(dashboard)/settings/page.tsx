@@ -124,7 +124,7 @@ export default async function SettingsPage() {
             <span className="font-display text-xl tracking-wide">FOUNDING MEMBER</span>
           </div>
           <p className="text-slate-400">
-            You&apos;re one of our first 49 users! Free Specialist access until{" "}
+            You&apos;re one of our first 48 users! Free Specialist access until{" "}
             <span className="text-white font-medium">
               {new Date(user.foundingMemberUntil).toLocaleDateString("en-US", {
                 month: "long",
