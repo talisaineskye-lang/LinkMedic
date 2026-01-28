@@ -89,7 +89,7 @@ export default function MerchantYieldMap() {
 
           <h2 className="font-display text-2xl text-white mt-12 mb-4">THE 2026 MERCHANT YIELD MAP</h2>
 
-          <h3 className="font-display text-xl text-white mt-8 mb-4">Tech & Gaming</h3>
+          <h3 className="text-xl font-semibold tracking-wide text-white mt-8 mb-4">Tech & Gaming</h3>
           <div className="overflow-x-auto mb-6">
             <table className="w-full text-sm border border-white/10 rounded-lg overflow-hidden">
               <thead className="bg-yt-gray/70">
@@ -114,7 +114,7 @@ export default function MerchantYieldMap() {
             <strong className="text-profit-green">The takeaway:</strong> Never use Amazon as your primary link for electronics. The 1% rate is insulting. B&H and Adorama should be your defaults for cameras and laptops.
           </p>
 
-          <h3 className="font-display text-xl text-white mt-8 mb-4">Software & Digital Tools</h3>
+          <h3 className="text-xl font-semibold tracking-wide text-white mt-8 mb-4">Software & Digital Tools</h3>
           <div className="overflow-x-auto mb-6">
             <table className="w-full text-sm border border-white/10 rounded-lg overflow-hidden">
               <thead className="bg-yt-gray/70">
@@ -138,7 +138,7 @@ export default function MerchantYieldMap() {
             <strong className="text-profit-green">The takeaway:</strong> Software is where the real money is. A single VPN signup can pay more than 100 Amazon product sales. If you&apos;re recommending any digital tools, go direct or through PartnerStack.
           </p>
 
-          <h3 className="font-display text-xl text-white mt-8 mb-4">Beauty & Personal Care</h3>
+          <h3 className="text-xl font-semibold tracking-wide text-white mt-8 mb-4">Beauty & Personal Care</h3>
           <div className="overflow-x-auto mb-6">
             <table className="w-full text-sm border border-white/10 rounded-lg overflow-hidden">
               <thead className="bg-yt-gray/70">
@@ -162,7 +162,7 @@ export default function MerchantYieldMap() {
             <strong className="text-profit-green">The takeaway:</strong> Amazon&apos;s beauty rates aren&apos;t terrible, but the cookie window kills you. Sephora and Ulta give you weeks instead of hours.
           </p>
 
-          <h3 className="font-display text-xl text-white mt-8 mb-4">Home & DIY</h3>
+          <h3 className="text-xl font-semibold tracking-wide text-white mt-8 mb-4">Home & DIY</h3>
           <div className="overflow-x-auto mb-6">
             <table className="w-full text-sm border border-white/10 rounded-lg overflow-hidden">
               <thead className="bg-yt-gray/70">
@@ -186,7 +186,7 @@ export default function MerchantYieldMap() {
             <strong className="text-profit-green">The takeaway:</strong> Home Depot and Lowe&apos;s let you link to entire project lists. Instead of 3% on a drill, get 3-8% on all the materials for a deck build. Same video, way more revenue.
           </p>
 
-          <h3 className="font-display text-xl text-white mt-8 mb-4">Fashion & Apparel</h3>
+          <h3 className="text-xl font-semibold tracking-wide text-white mt-8 mb-4">Fashion & Apparel</h3>
           <div className="overflow-x-auto mb-6">
             <table className="w-full text-sm border border-white/10 rounded-lg overflow-hidden">
               <thead className="bg-yt-gray/70">
@@ -210,7 +210,7 @@ export default function MerchantYieldMap() {
             <strong className="text-profit-green">The takeaway:</strong> Fashion is competitive. Lots of options, similar rates. The real win is cookie windows&mdash;Nike&apos;s 30-day cookie beats Amazon&apos;s 24 hours every time for considered purchases.
           </p>
 
-          <h3 className="font-display text-xl text-white mt-8 mb-4">Health & Supplements</h3>
+          <h3 className="text-xl font-semibold tracking-wide text-white mt-8 mb-4">Health & Supplements</h3>
           <div className="overflow-x-auto mb-6">
             <table className="w-full text-sm border border-white/10 rounded-lg overflow-hidden">
               <thead className="bg-yt-gray/70">

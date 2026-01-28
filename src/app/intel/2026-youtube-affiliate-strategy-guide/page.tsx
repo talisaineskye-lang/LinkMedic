@@ -80,7 +80,7 @@ export default function AffiliateStrategyGuide() {
             Top creators in 2026 don&apos;t just drop one link and hope for the best. They use a tiered approach to capture every type of buyer.
           </p>
 
-          <h3 className="font-display text-xl text-white mt-8 mb-3">Tier 1: The Intent Link (High Commission)</h3>
+          <h3 className="text-xl font-semibold tracking-wide text-white mt-8 mb-3">Tier 1: The Intent Link (High Commission)</h3>
           <p className="text-yt-light">
             This is your direct-to-brand link. Think Sony.com, Nike.com, or the manufacturer&apos;s store.
           </p>
@@ -90,7 +90,7 @@ export default function AffiliateStrategyGuide() {
             <li><strong className="text-white">Why it works:</strong> Brands want direct relationships with customers. They&apos;ll pay more to get them.</li>
           </ul>
 
-          <h3 className="font-display text-xl text-white mt-8 mb-3">Tier 2: The Convenience Link (Volume)</h3>
+          <h3 className="text-xl font-semibold tracking-wide text-white mt-8 mb-3">Tier 2: The Convenience Link (Volume)</h3>
           <p className="text-yt-light">
             This is your Amazon, Walmart, or Target link.
           </p>
@@ -100,7 +100,7 @@ export default function AffiliateStrategyGuide() {
             <li><strong className="text-white">Why it works:</strong> Lower commission, but way more people actually click &quot;Buy Now&quot;</li>
           </ul>
 
-          <h3 className="font-display text-xl text-white mt-8 mb-3">Tier 3: The Expert Link (Niche Trust)</h3>
+          <h3 className="text-xl font-semibold tracking-wide text-white mt-8 mb-3">Tier 3: The Expert Link (Niche Trust)</h3>
           <p className="text-yt-light">
             This is your specialist retailer. B&H for cameras. Sweetwater for audio. Sephora for beauty.
           </p>
@@ -120,7 +120,7 @@ export default function AffiliateStrategyGuide() {
             Different niches, different playbooks. Here&apos;s what&apos;s working in 2026.
           </p>
 
-          <h3 className="font-display text-xl text-white mt-8 mb-3">Tech & Electronics</h3>
+          <h3 className="text-xl font-semibold tracking-wide text-white mt-8 mb-3">Tech & Electronics</h3>
           <p className="text-yt-light">
             <strong className="text-emergency-red">The problem:</strong> Amazon pays 1% on electronics. One percent. On a $1,500 laptop, that&apos;s $15.
           </p>
@@ -131,7 +131,7 @@ export default function AffiliateStrategyGuide() {
             For software and digital tools? Even better. SaaS affiliate programs (VPNs, AI tools, editing software) pay <strong className="text-white">20-30% monthly recurring</strong>. One sign-up can pay you for years.
           </p>
 
-          <h3 className="font-display text-xl text-white mt-8 mb-3">Health & Wellness</h3>
+          <h3 className="text-xl font-semibold tracking-wide text-white mt-8 mb-3">Health & Wellness</h3>
           <p className="text-yt-light">
             <strong className="text-emergency-red">The problem:</strong> Linking to a $30 bottle of vitamins earns you pocket change.
           </p>
@@ -139,7 +139,7 @@ export default function AffiliateStrategyGuide() {
             <strong className="text-profit-green">The play:</strong> Focus on subscriptions with bounties. Programs like AG1 or InsideTracker pay <strong className="text-white">$50-$100 per new customer</strong> instead of a percentage. One conversion beats selling 50 bottles.
           </p>
 
-          <h3 className="font-display text-xl text-white mt-8 mb-3">Beauty & Fashion</h3>
+          <h3 className="text-xl font-semibold tracking-wide text-white mt-8 mb-3">Beauty & Fashion</h3>
           <p className="text-yt-light">
             <strong className="text-emergency-red">The problem:</strong> Amazon&apos;s beauty commission (3-10%) isn&apos;t terrible, but you&apos;re missing a huge opportunity.
           </p>
@@ -147,7 +147,7 @@ export default function AffiliateStrategyGuide() {
             <strong className="text-profit-green">The play:</strong> Use LTK (formerly rewardStyle) and YouTube Shopping tags for mobile viewers. Keep Impact or Rakuten links in your description for desktop users. This &quot;double tagging&quot; approach means you get paid no matter how someone watches.
           </p>
 
-          <h3 className="font-display text-xl text-white mt-8 mb-3">Home Improvement & DIY</h3>
+          <h3 className="text-xl font-semibold tracking-wide text-white mt-8 mb-3">Home Improvement & DIY</h3>
           <p className="text-yt-light">
             <strong className="text-emergency-red">The problem:</strong> Linking to one drill isn&apos;t exciting.
           </p>
@@ -160,17 +160,17 @@ export default function AffiliateStrategyGuide() {
             YouTube keeps changing. Here&apos;s what&apos;s working right now.
           </p>
 
-          <h3 className="font-display text-xl text-white mt-8 mb-3">Pinned Comments</h3>
+          <h3 className="text-xl font-semibold tracking-wide text-white mt-8 mb-3">Pinned Comments</h3>
           <p className="text-yt-light">
             Put your highest-margin link in the pinned comment. On mobile (where most people watch), the pinned comment is the first thing they see. Higher click-through rate than the description.
           </p>
 
-          <h3 className="font-display text-xl text-white mt-8 mb-3">YouTube Shorts</h3>
+          <h3 className="text-xl font-semibold tracking-wide text-white mt-8 mb-3">YouTube Shorts</h3>
           <p className="text-yt-light">
             Here&apos;s a secret: direct affiliate links in Shorts descriptions get buried by the algorithm. Instead, link to your full review video. Let the long-form content do the selling.
           </p>
 
-          <h3 className="font-display text-xl text-white mt-8 mb-3">Community Tab</h3>
+          <h3 className="text-xl font-semibold tracking-wide text-white mt-8 mb-3">Community Tab</h3>
           <p className="text-yt-light">
             Post flash deals and limited-time offers here. Your &quot;deal hunter&quot; subscribers love this&mdash;and they often don&apos;t watch every video. Meet them where they are.
           </p>
@@ -180,7 +180,7 @@ export default function AffiliateStrategyGuide() {
             You can have the perfect strategy and still lose money if your links are broken. Audit these three things weekly:
           </p>
 
-          <h3 className="font-display text-xl text-white mt-8 mb-3">1. Cookie Health</h3>
+          <h3 className="text-xl font-semibold tracking-wide text-white mt-8 mb-3">1. Cookie Health</h3>
           <p className="text-yt-light">
             Are you using Amazon&apos;s 24-hour cookie for high-consideration purchases? Big mistake.
           </p>
@@ -188,7 +188,7 @@ export default function AffiliateStrategyGuide() {
             Nobody impulse-buys a $2,000 camera. They research for days. If you&apos;re using Amazon, you lose credit after 24 hours. Switch to B&H (30-day cookie) for expensive items.
           </p>
 
-          <h3 className="font-display text-xl text-white mt-8 mb-3">2. Out of Stock Products</h3>
+          <h3 className="text-xl font-semibold tracking-wide text-white mt-8 mb-3">2. Out of Stock Products</h3>
           <p className="text-yt-light">
             That product you linked six months ago? It might be discontinued. Out of stock. Page deleted.
           </p>
@@ -196,7 +196,7 @@ export default function AffiliateStrategyGuide() {
             Every broken link is lost revenue. Tools like <Link href="/" className="text-profit-green hover:underline">LinkMedic</Link> scan your entire back catalog and find these dead links before your viewers do.
           </p>
 
-          <h3 className="font-display text-xl text-white mt-8 mb-3">3. Redirect Integrity</h3>
+          <h3 className="text-xl font-semibold tracking-wide text-white mt-8 mb-3">3. Redirect Integrity</h3>
           <p className="text-yt-light">
             If you&apos;re using link shorteners (bit.ly, sjv.io), make sure they&apos;re not stripping your tracking parameters. A &quot;clean&quot; looking link is worthless if you&apos;re not getting credit for sales.
           </p>
