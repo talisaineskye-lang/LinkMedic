@@ -277,11 +277,11 @@ export default async function Home() {
               },
             ].map((item, i) => (
               <details key={i} className="group glass-card">
-                <summary className="flex justify-between items-center cursor-pointer text-white font-display text-sm tracking-wide p-6">
+                <summary className="flex justify-between items-center cursor-pointer text-white font-display text-base tracking-wide p-6">
                   {item.q.toUpperCase()}
                   <span className="text-cyan-400 group-open:rotate-45 transition-transform text-xl">+</span>
                 </summary>
-                <p className="text-slate-400 text-sm px-6 pb-6 -mt-2">
+                <p className="text-slate-300 text-base px-6 pb-6 -mt-2 leading-relaxed">
                   {item.a}
                 </p>
               </details>
