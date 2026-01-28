@@ -59,7 +59,7 @@ export function FoundingMemberBanner() {
           href="/login"
           className="text-cyan-400 text-sm font-bold hover:underline underline-offset-2"
         >
-          {data.spotsRemaining} spots left →
+          Click here →
         </Link>
       </div>
     </motion.div>
