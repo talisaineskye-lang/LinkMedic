@@ -7,6 +7,17 @@ export const metadata: Metadata = {
   title: "Intel Blog | LinkMedic",
   description: "Affiliate marketing strategies, commission guides, and revenue optimization tips for YouTube creators.",
   keywords: ["affiliate marketing", "youtube affiliate", "commission rates", "affiliate strategy"],
+  openGraph: {
+    title: "Intel Blog | LinkMedic",
+    description: "Affiliate marketing strategies, commission guides, and revenue optimization tips for YouTube creators.",
+    type: "website",
+    url: "https://linkmedic.io/intel",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Intel Blog | LinkMedic",
+    description: "Affiliate marketing strategies and commission guides for YouTube creators.",
+  },
 };
 
 interface BlogPost {

@@ -7,6 +7,17 @@ export const metadata: Metadata = {
   title: "Why Affiliate Links Break on YouTube (And What to Do) | LinkMedic",
   description: "Learn why YouTube affiliate links fail silently, common Amazon link issues, and how to fix broken affiliate links to recover lost revenue.",
   keywords: ["broken affiliate links", "youtube affiliate links", "amazon affiliate problems", "fix broken links"],
+  openGraph: {
+    title: "Why Affiliate Links Break on YouTube (And What to Do)",
+    description: "Learn why YouTube affiliate links fail silently and how to fix them.",
+    type: "article",
+    url: "https://linkmedic.io/resources/why-affiliate-links-break",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Why Affiliate Links Break on YouTube",
+    description: "Learn why YouTube affiliate links fail silently and how to fix them.",
+  },
 };
 
 export default function WhyAffiliateLinksBreak() {

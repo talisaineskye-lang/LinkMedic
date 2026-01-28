@@ -1,3 +1,4 @@
+import { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { getServerSession } from "next-auth";
@@ -8,6 +9,23 @@ import { LiveTicker } from "@/components/landing/live-ticker";
 import { DiagnosticReport } from "@/components/landing/diagnostic-report";
 import { BeforeAfter } from "@/components/landing/before-after";
 import { LeakCalculator } from "@/components/landing/revenue-slider";
+
+export const metadata: Metadata = {
+  title: "LinkMedic – Find & Fix Broken YouTube Affiliate Links",
+  description: "Scan your YouTube channel for broken affiliate links. Detect 404s, out-of-stock products, and dead redirects across Amazon, Impact, CJ, Rakuten, ShareASale, and Awin.",
+  keywords: ["youtube affiliate links", "broken link checker", "affiliate revenue", "amazon affiliate", "youtube creator tools"],
+  openGraph: {
+    title: "LinkMedic – Find & Fix Broken YouTube Affiliate Links",
+    description: "Scan your YouTube channel for broken affiliate links. Detect 404s, out-of-stock products, and dead redirects.",
+    type: "website",
+    url: "https://linkmedic.io",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "LinkMedic – Find & Fix Broken YouTube Affiliate Links",
+    description: "Scan your YouTube channel for broken affiliate links. Detect 404s, out-of-stock products, and dead redirects.",
+  },
+};
 
 export default async function Home() {
   const session = await getServerSession(authOptions);

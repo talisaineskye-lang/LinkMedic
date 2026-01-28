@@ -7,12 +7,12 @@ import Image from "next/image";
 export const metadata: Metadata = {
   title: "Free YouTube Affiliate Link Audit Tool – Find Broken Links & Lost Revenue",
   description: "Instantly audit your YouTube channel for broken affiliate links. See exactly how much revenue you're losing from outdated or unavailable products. Free, no signup required.",
-  keywords: "YouTube affiliate audit, broken links, affiliate revenue, link checker, YouTube affiliate link checker, broken affiliate links YouTube",
+  keywords: ["youtube affiliate audit", "broken links", "affiliate revenue", "link checker", "youtube affiliate link checker", "broken affiliate links youtube"],
   openGraph: {
     title: "Free YouTube Affiliate Link Audit – Find Your Lost Revenue",
     description: "Discover how much affiliate revenue you're losing to broken links. Free audit tool for YouTube creators.",
     type: "website",
-    url: "https://link-medic.vercel.app/audit",
+    url: "https://linkmedic.io/audit",
   },
   twitter: {
     card: "summary_large_image",

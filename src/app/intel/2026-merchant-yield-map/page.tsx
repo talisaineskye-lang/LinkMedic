@@ -7,6 +7,17 @@ export const metadata: Metadata = {
   title: "The 2026 Merchant Yield Map | LinkMedic Intel",
   description: "A side-by-side comparison of affiliate commission rates and cookie windows. Bookmark this and reference it every time you add links to a video.",
   keywords: ["affiliate commission rates", "cookie windows", "amazon alternatives", "b&h photo affiliate", "impact affiliate", "rakuten affiliate"],
+  openGraph: {
+    title: "The 2026 Merchant Yield Map | LinkMedic Intel",
+    description: "Compare affiliate commission rates and cookie windows across all major networks.",
+    type: "article",
+    url: "https://linkmedic.io/intel/2026-merchant-yield-map",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "The 2026 Merchant Yield Map",
+    description: "Compare affiliate commission rates and cookie windows across all major networks.",
+  },
 };
 
 export default function MerchantYieldMap() {

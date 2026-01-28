@@ -7,6 +7,17 @@ export const metadata: Metadata = {
   title: "How to Audit YouTube Affiliate Links (The Right Way) | LinkMedic",
   description: "Learn the right way to audit YouTube descriptions for broken affiliate links, prioritize fixes by revenue impact, and set up ongoing monitoring.",
   keywords: ["youtube affiliate audit", "audit affiliate links", "broken link audit", "youtube description audit"],
+  openGraph: {
+    title: "How to Audit YouTube Affiliate Links (The Right Way)",
+    description: "Prioritize fixes by revenue impact, not random checks.",
+    type: "article",
+    url: "https://linkmedic.io/resources/audit-youtube-affiliate-links",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "How to Audit YouTube Affiliate Links",
+    description: "Prioritize fixes by revenue impact, not random checks.",
+  },
 };
 
 export default function AuditYouTubeAffiliateLinks() {

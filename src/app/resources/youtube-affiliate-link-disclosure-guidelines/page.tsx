@@ -10,6 +10,12 @@ export const metadata: Metadata = {
     title: "YouTube Affiliate Link Disclosure Guidelines (FTC 2026)",
     description: "How to properly disclose affiliate links on YouTube to stay FTC compliant.",
     type: "article",
+    url: "https://linkmedic.io/resources/youtube-affiliate-link-disclosure-guidelines",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "YouTube Affiliate Link Disclosure Guidelines (FTC 2026)",
+    description: "How to properly disclose affiliate links on YouTube to stay FTC compliant.",
   },
 };
 

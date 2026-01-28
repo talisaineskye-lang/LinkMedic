@@ -7,6 +7,17 @@ export const metadata: Metadata = {
   title: "The 2026 YouTube Affiliate Strategy Guide | LinkMedic Intel",
   description: "Stop leaving money on the table. Amazon isn't the only game in town anymore. Smart creators are using multiple affiliate networks to earn 2x to 5x more from the same videos.",
   keywords: ["youtube affiliate strategy", "affiliate marketing 2026", "amazon alternatives", "affiliate commission rates", "three link tier system"],
+  openGraph: {
+    title: "The 2026 YouTube Affiliate Strategy Guide | LinkMedic Intel",
+    description: "Learn the three-link tier system that top creators use to earn 2x to 5x more from the same videos.",
+    type: "article",
+    url: "https://linkmedic.io/intel/2026-youtube-affiliate-strategy-guide",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "The 2026 YouTube Affiliate Strategy Guide",
+    description: "Learn the three-link tier system that top creators use to earn 2x to 5x more from the same videos.",
+  },
 };
 
 export default function AffiliateStrategyGuide() {

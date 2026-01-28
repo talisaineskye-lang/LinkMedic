@@ -6,6 +6,17 @@ export const metadata: Metadata = {
   title: "Resources | LinkMedic - YouTube Affiliate Link Guides",
   description: "Guides and resources for YouTube creators managing affiliate links. Learn how to find and fix broken links, audit descriptions, and protect your revenue.",
   keywords: ["youtube affiliate links", "affiliate link resources", "youtube creator guides", "broken link guides"],
+  openGraph: {
+    title: "Resources | LinkMedic - YouTube Affiliate Link Guides",
+    description: "Guides and resources for YouTube creators managing affiliate links.",
+    type: "website",
+    url: "https://linkmedic.io/resources",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Resources | LinkMedic",
+    description: "Guides and resources for YouTube creators managing affiliate links.",
+  },
 };
 
 const RESOURCES = [
