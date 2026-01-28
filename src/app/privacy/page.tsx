@@ -4,7 +4,7 @@ import { PolicyLayout } from "@/components/policy-layout";
 
 export default function PrivacyPolicy() {
   return (
-    <PolicyLayout title="Privacy Policy" lastUpdated="January 20, 2026">
+    <PolicyLayout title="Privacy Policy" lastUpdated="January 28, 2026">
       <section>
         <h2 className="text-2xl font-bold text-slate-50 mb-4">1. Introduction</h2>
         <p>
@@ -30,13 +30,18 @@ export default function PrivacyPolicy() {
         </ul>
 
         <h3 className="text-xl font-semibold text-slate-100 mb-3 mt-6">2.2 YouTube Data</h3>
-        <p className="mb-2">With your explicit authorization via YouTube API, we access:</p>
+        <p className="mb-2">With your explicit authorization via YouTube API, we access and store:</p>
         <ul className="list-disc list-inside space-y-2 ml-4">
           <li>Your YouTube channel information (name, ID, subscriber count)</li>
           <li>Video metadata (titles, descriptions, view counts, publish dates)</li>
           <li>Video descriptions containing affiliate links</li>
           <li>Public video statistics</li>
         </ul>
+        <p className="mt-4">
+          <strong>Important:</strong> Video titles and descriptions are stored in our database solely to provide
+          the affiliate link scanning service. <strong>We do NOT sell this data</strong>, and you may request
+          deletion of all your YouTube data at any time by contacting us or deleting your account.
+        </p>
         <p className="mt-4 italic">
           We do NOT access: private videos, comments, watch history, or any data beyond what&apos;s necessary to
           analyze affiliate links in your public video descriptions.
@@ -129,7 +134,13 @@ export default function PrivacyPolicy() {
 
       <section>
         <h2 className="text-2xl font-bold text-slate-50 mb-4">5. Data Sharing & Disclosure</h2>
-        <p className="mb-4">We do NOT sell your personal information. We may share data with:</p>
+        <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-4 mb-4">
+          <p className="font-semibold text-cyan-400">
+            We do NOT sell, rent, or trade your personal information, including your YouTube video titles,
+            descriptions, or any other data we collect. Your data is used solely to provide the LinkMedic service.
+          </p>
+        </div>
+        <p className="mb-4">We may share data with the following service providers:</p>
 
         <h3 className="text-xl font-semibold text-slate-100 mb-3 mt-6">5.1 Service Providers</h3>
         <ul className="list-disc list-inside space-y-2 ml-4">
@@ -160,20 +171,27 @@ export default function PrivacyPolicy() {
 
       <section>
         <h2 className="text-2xl font-bold text-slate-50 mb-4">6. Your Rights & Choices</h2>
+        <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-4 mb-4">
+          <p className="font-semibold text-cyan-400">
+            You may request deletion of all your data at any time. This includes your account information,
+            YouTube video data (titles, descriptions), affiliate link records, and all associated data.
+          </p>
+        </div>
         <p className="mb-4">You have the right to:</p>
         <ul className="list-disc list-inside space-y-2 ml-4">
           <li><strong>Access your data:</strong> Request a copy of the personal information we hold about you</li>
           <li><strong>Correct your data:</strong> Update inaccurate or incomplete information</li>
-          <li><strong>Delete your data:</strong> Request deletion of your account and associated data</li>
+          <li><strong>Delete your data:</strong> Request deletion of your account and all associated data at any time—no questions asked</li>
           <li><strong>Revoke YouTube access:</strong> Disconnect LinkMedic from your YouTube account at any time via Google Account settings</li>
           <li><strong>Opt-out of analytics:</strong> Request to be excluded from PostHog tracking</li>
           <li><strong>Export your data:</strong> Download your affiliate link data and reports</li>
         </ul>
         <p className="mt-4">
-          To exercise these rights, contact us at{" "}
+          To exercise any of these rights, contact us at{" "}
           <a href="mailto:hello@linkmedic.pro" className="text-cyan-400 hover:underline">
             hello@linkmedic.pro
           </a>
+          . We will process your request within 30 days.
         </p>
       </section>
 
