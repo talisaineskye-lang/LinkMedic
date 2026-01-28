@@ -73,16 +73,16 @@ export function FindReplacement({
   };
 
   return (
-    <div className="mt-4 p-4 bg-yt-gray/50 rounded-lg border border-white/5">
+    <div className="mt-4 p-4 bg-white/5/50 rounded-lg border border-white/5">
       {/* Context hint */}
-      <p className="text-yt-light text-xs mb-3">
+      <p className="text-slate-400 text-xs mb-3">
         From video:{" "}
         <span className="text-white">&quot;{videoTitle.slice(0, 60)}{videoTitle.length > 60 ? "..." : ""}&quot;</span>
       </p>
 
       {/* Original region badge */}
       {link.amazonRegion && (
-        <p className="text-xs text-yt-light/70 mb-3">
+        <p className="text-xs text-slate-400/70 mb-3">
           Original link: {AMAZON_REGIONS[link.amazonRegion as AmazonRegion]?.flag}{" "}
           {link.amazonRegion}
         </p>
@@ -91,14 +91,14 @@ export function FindReplacement({
       {/* Search input */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-yt-light/50" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400/50" />
           <input
             type="text"
             placeholder="What was this product? (e.g., wireless mouse)"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="w-full bg-yt-gray border border-white/10 rounded-lg pl-10 pr-4 py-3 text-sm text-white placeholder-yt-light/50 focus:outline-none focus:border-white/30 transition"
+            className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-sm text-white placeholder-slate-400/50 focus:outline-none focus:border-white/30 transition"
           />
         </div>
 
@@ -107,7 +107,7 @@ export function FindReplacement({
           <select
             value={selectedRegion}
             onChange={(e) => setSelectedRegion(e.target.value as AmazonRegion)}
-            className="appearance-none bg-yt-gray border border-white/10 rounded-lg px-4 py-3 pr-10 text-sm text-white focus:outline-none focus:border-white/30 cursor-pointer w-full sm:w-auto"
+            className="appearance-none bg-white/5 border border-white/10 rounded-lg px-4 py-3 pr-10 text-sm text-white focus:outline-none focus:border-white/30 cursor-pointer w-full sm:w-auto"
           >
             {(Object.keys(AMAZON_REGIONS) as AmazonRegion[]).map((region) => (
               <option key={region} value={region}>
@@ -115,7 +115,7 @@ export function FindReplacement({
               </option>
             ))}
           </select>
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-yt-light/50 pointer-events-none text-xs">
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400/50 pointer-events-none text-xs">
             &#9660;
           </span>
         </div>
@@ -126,8 +126,8 @@ export function FindReplacement({
           disabled={!searchTerm.trim()}
           className={`rounded-lg px-5 py-3 font-bold text-sm text-center whitespace-nowrap transition flex items-center justify-center gap-2 ${
             searchTerm.trim()
-              ? "bg-profit-green text-black hover:brightness-110"
-              : "bg-yt-gray border border-white/10 text-yt-light/50 cursor-not-allowed"
+              ? "bg-cyan-500 text-black hover:brightness-110"
+              : "bg-white/5 border border-white/10 text-slate-400/50 cursor-not-allowed"
           }`}
         >
           <span>Search {AMAZON_REGIONS[selectedRegion].flag}</span>
@@ -145,8 +145,8 @@ export function FindReplacement({
             </a>
           </p>
         ) : (
-          <p className="text-yt-light/50 text-xs">
-            Using tag: <code className="text-yt-light bg-yt-gray/50 px-1 rounded">{affiliateTag}</code>
+          <p className="text-slate-400/50 text-xs">
+            Using tag: <code className="text-slate-400 bg-white/5/50 px-1 rounded">{affiliateTag}</code>
           </p>
         )}
       </div>

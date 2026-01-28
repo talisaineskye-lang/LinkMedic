@@ -90,7 +90,7 @@ export function SubscriptionSection({
   };
 
   return (
-    <div className="bg-yt-gray/70 backdrop-blur-sm border border-white/10 rounded-xl p-6">
+    <div className="bg-white/5/70 backdrop-blur-sm border border-white/10 rounded-xl p-6">
       <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
         <CreditCard className="w-5 h-5" />
         Subscription
@@ -100,15 +100,15 @@ export function SubscriptionSection({
         {/* Current Plan */}
         <div className="flex items-center justify-between">
           <div>
-            <dt className="text-sm text-yt-light">Current Plan</dt>
+            <dt className="text-sm text-slate-400">Current Plan</dt>
             <dd className="flex items-center gap-2 mt-1">
               <span
                 className={`inline-flex items-center gap-1.5 px-3 py-1 text-sm font-bold rounded border ${
                   tier === "OPERATOR"
-                    ? "bg-profit-green/20 border-profit-green/50 text-profit-green"
+                    ? "bg-cyan-500/20 border-cyan-500/50 text-cyan-400"
                     : tier === "SPECIALIST"
-                    ? "bg-profit-green/20 border-profit-green/50 text-profit-green"
-                    : "bg-yt-gray border-white/20 text-yt-light"
+                    ? "bg-cyan-500/20 border-cyan-500/50 text-cyan-400"
+                    : "bg-white/5 border-white/20 text-slate-400"
                 }`}
               >
                 {tier === "OPERATOR" && <Crown className="w-3.5 h-3.5" />}
@@ -125,14 +125,14 @@ export function SubscriptionSection({
               <button
                 onClick={handleManageSubscription}
                 disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-white bg-yt-gray hover:bg-white/10 border border-white/20 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-sm font-medium text-white bg-white/5 hover:bg-white/10 border border-white/20 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? "Loading..." : "Manage Subscription"}
               </button>
               <button
                 onClick={handleManageSubscription}
                 disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-emergency-red hover:bg-emergency-red/10 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-500/10 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
@@ -172,25 +172,25 @@ export function SubscriptionSection({
             <h3 className="text-sm font-medium text-white mb-4">
               Upgrade to Specialist - $19/month
             </h3>
-            <ul className="space-y-2 text-sm text-yt-light mb-6">
+            <ul className="space-y-2 text-sm text-slate-400 mb-6">
               <li className="flex items-center gap-2">
-                <span className="text-profit-green">✓</span>
+                <span className="text-cyan-400">✓</span>
                 Full channel scan (unlimited videos)
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-profit-green">✓</span>
+                <span className="text-cyan-400">✓</span>
                 AI fix suggestions
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-profit-green">✓</span>
+                <span className="text-cyan-400">✓</span>
                 Weekly monitoring
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-profit-green">✓</span>
+                <span className="text-cyan-400">✓</span>
                 Export fix list
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-profit-green">✓</span>
+                <span className="text-cyan-400">✓</span>
                 Fix in dashboard
               </li>
             </ul>
@@ -198,7 +198,7 @@ export function SubscriptionSection({
             <button
               onClick={() => handleUpgrade("SPECIALIST")}
               disabled={loading}
-              className="px-4 py-3 text-sm font-bold text-black bg-profit-green hover:brightness-110 rounded-lg transition shadow-[0_0_20px_rgba(0,255,0,0.2)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-4 py-3 text-sm font-bold text-black bg-cyan-500 hover:brightness-110 rounded-lg transition shadow-[0_0_20px_rgba(0,255,0,0.2)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {loading ? (
                 "Loading..."
@@ -216,24 +216,24 @@ export function SubscriptionSection({
         {tier === "SPECIALIST" && !isCanceling && (
           <div className="mt-6 pt-6 border-t border-white/10">
             <h3 className="text-sm font-medium text-white mb-4 flex items-center gap-2">
-              <Crown className="w-4 h-4 text-profit-green" />
+              <Crown className="w-4 h-4 text-cyan-400" />
               Upgrade to Operator - $39/month
             </h3>
-            <ul className="space-y-2 text-sm text-yt-light mb-6">
+            <ul className="space-y-2 text-sm text-slate-400 mb-6">
               <li className="flex items-center gap-2">
-                <span className="text-profit-green">✓</span>
+                <span className="text-cyan-400">✓</span>
                 Everything in Specialist
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-profit-green">✓</span>
+                <span className="text-cyan-400">✓</span>
                 Up to 3 YouTube channels
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-profit-green">✓</span>
+                <span className="text-cyan-400">✓</span>
                 Unified dashboard for all channels
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-profit-green">✓</span>
+                <span className="text-cyan-400">✓</span>
                 Priority support
               </li>
             </ul>
@@ -241,7 +241,7 @@ export function SubscriptionSection({
             <button
               onClick={() => handleUpgrade("OPERATOR")}
               disabled={loading}
-              className="px-4 py-3 text-sm font-bold text-black bg-profit-green hover:brightness-110 rounded-lg transition shadow-[0_0_20px_rgba(0,255,0,0.2)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-4 py-3 text-sm font-bold text-black bg-cyan-500 hover:brightness-110 rounded-lg transition shadow-[0_0_20px_rgba(0,255,0,0.2)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {loading ? (
                 "Loading..."
@@ -258,12 +258,12 @@ export function SubscriptionSection({
         {/* Current benefits for paid users */}
         {isPaid && (
           <div className="mt-4 pt-4 border-t border-white/10">
-            <p className="text-sm text-yt-light">
+            <p className="text-sm text-slate-400">
               You have access to all {tier === "OPERATOR" ? "Operator" : "Specialist"} features
               including AI suggestions, exports, and weekly monitoring.
             </p>
             {hasStripeCustomer && (
-              <p className="text-xs text-yt-light/50 mt-3">
+              <p className="text-xs text-slate-400/50 mt-3">
                 Manage your payment method, view invoices, or cancel your subscription through Stripe&apos;s secure portal.
               </p>
             )}
@@ -271,7 +271,7 @@ export function SubscriptionSection({
         )}
 
         {error && (
-          <p className="text-sm text-emergency-red mt-4">{error}</p>
+          <p className="text-sm text-red-500 mt-4">{error}</p>
         )}
       </div>
     </div>

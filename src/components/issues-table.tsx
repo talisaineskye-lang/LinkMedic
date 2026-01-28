@@ -70,7 +70,7 @@ export function IssuesTable({ issues }: IssuesTableProps) {
   if (issues.length === 0) {
     return (
       <div className="p-8 text-center text-slate-400">
-        <CheckCircle2 className="w-12 h-12 mx-auto text-profit-green mb-4" />
+        <CheckCircle2 className="w-12 h-12 mx-auto text-cyan-400 mb-4" />
         <p className="mb-2 text-lg font-semibold text-white">No issues found!</p>
         <p className="text-sm">All your affiliate links are working properly.</p>
       </div>
@@ -109,7 +109,7 @@ export function IssuesTable({ issues }: IssuesTableProps) {
               <td className="px-4 py-4">
                 <Link
                   href={`/videos/${issue.videoId}`}
-                  className="text-sm text-white hover:text-profit-green transition block"
+                  className="text-sm text-white hover:text-cyan-400 transition block"
                 >
                   {issue.videoTitle.length > 35
                     ? issue.videoTitle.slice(0, 35) + "..."
@@ -151,7 +151,7 @@ export function IssuesTable({ issues }: IssuesTableProps) {
                         href={issue.suggestedLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-profit-green hover:underline block max-w-[220px] truncate"
+                        className="text-sm text-cyan-400 hover:underline block max-w-[220px] truncate"
                         title={issue.suggestedTitle}
                       >
                         {issue.suggestedTitle.length > 50
@@ -166,7 +166,7 @@ export function IssuesTable({ issues }: IssuesTableProps) {
                           href={issue.suggestedLink}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs text-slate-400 hover:text-profit-green truncate block max-w-[160px]"
+                          className="text-xs text-slate-400 hover:text-cyan-400 truncate block max-w-[160px]"
                           title={issue.suggestedLink}
                         >
                           {issue.suggestedLink.length > 35
@@ -176,13 +176,13 @@ export function IssuesTable({ issues }: IssuesTableProps) {
                       )}
                       <button
                         onClick={() => copyToClipboard(issue.suggestedLink!, issue.id)}
-                        className="p-1.5 rounded-md bg-profit-green/10/50 border border-profit-green/50 hover:bg-profit-green/20/50 transition flex-shrink-0"
+                        className="p-1.5 rounded-md bg-cyan-500/10/50 border border-cyan-500/50 hover:bg-cyan-500/20/50 transition flex-shrink-0"
                         title="Copy replacement link"
                       >
                         {copiedId === issue.id ? (
-                          <Check className="w-3.5 h-3.5 text-profit-green" />
+                          <Check className="w-3.5 h-3.5 text-cyan-400" />
                         ) : (
-                          <Copy className="w-3.5 h-3.5 text-profit-green" />
+                          <Copy className="w-3.5 h-3.5 text-cyan-400" />
                         )}
                       </button>
                       <ExternalLink className="w-3 h-3 text-slate-500 flex-shrink-0" />
@@ -234,7 +234,7 @@ export function IssuesTable({ issues }: IssuesTableProps) {
                 <button
                   onClick={() => markAsFixed(issue.id)}
                   disabled={markingFixed === issue.id}
-                  className="px-3 py-1.5 text-xs font-medium rounded-md bg-slate-700/50 border border-slate-600/50 text-slate-300 hover:bg-profit-green/10/50 hover:border-profit-green/50 hover:text-profit-green disabled:opacity-50 transition"
+                  className="px-3 py-1.5 text-xs font-medium rounded-md bg-slate-700/50 border border-slate-600/50 text-slate-300 hover:bg-cyan-500/10/50 hover:border-cyan-500/50 hover:text-cyan-400 disabled:opacity-50 transition"
                 >
                   {markingFixed === issue.id ? "Marking..." : "Mark Fixed"}
                 </button>
@@ -246,7 +246,7 @@ export function IssuesTable({ issues }: IssuesTableProps) {
 
       {/* Copy Toast */}
       {copiedId && (
-        <div className="fixed bottom-6 right-6 px-4 py-3 bg-profit-green text-white rounded-lg shadow-lg flex items-center gap-2 animate-in slide-in-from-bottom-2">
+        <div className="fixed bottom-6 right-6 px-4 py-3 bg-cyan-500 text-white rounded-lg shadow-lg flex items-center gap-2 animate-in slide-in-from-bottom-2">
           <Check className="w-4 h-4" />
           <span className="text-sm font-medium">Copied! Ready to paste into YouTube.</span>
         </div>

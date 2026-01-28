@@ -55,40 +55,40 @@ export default async function SettingsPage() {
       {/* Header */}
       <div>
         <h1 className="font-display text-3xl tracking-wide mb-1">SETTINGS</h1>
-        <p className="text-yt-light">Manage your account and preferences</p>
+        <p className="text-slate-400">Manage your account and preferences</p>
       </div>
 
       {/* Account Info */}
-      <div className="bg-yt-gray/70 backdrop-blur-sm border border-white/10 rounded-xl p-6">
+      <div className="bg-white/5/70 backdrop-blur-sm border border-white/10 rounded-xl p-6">
         <h2 className="font-display text-xl tracking-wide mb-6">PROFILE</h2>
         <dl className="space-y-4">
           <div>
-            <dt className="text-sm text-yt-light mb-1">Email</dt>
+            <dt className="text-sm text-slate-400 mb-1">Email</dt>
             <dd className="text-white">{user.email}</dd>
           </div>
           <div>
-            <dt className="text-sm text-yt-light mb-1">Name</dt>
+            <dt className="text-sm text-slate-400 mb-1">Name</dt>
             <dd className="text-white">{user.name || "-"}</dd>
           </div>
           <div>
-            <dt className="text-sm text-yt-light mb-1">YouTube Channel</dt>
+            <dt className="text-sm text-slate-400 mb-1">YouTube Channel</dt>
             <dd className="text-white">
               {user.youtubeChannelId ? (
                 <a
                   href={`https://youtube.com/channel/${user.youtubeChannelId}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-profit-green hover:underline"
+                  className="text-cyan-400 hover:underline"
                 >
                   {user.youtubeChannelId}
                 </a>
               ) : (
-                <span className="text-yt-light/50">Not connected</span>
+                <span className="text-slate-400/50">Not connected</span>
               )}
             </dd>
           </div>
           <div>
-            <dt className="text-sm text-yt-light mb-1">Plan</dt>
+            <dt className="text-sm text-slate-400 mb-1">Plan</dt>
             <dd className="flex flex-col gap-2">
               <span
                 className={`inline-flex px-2 py-1 text-xs font-bold rounded border ${
@@ -139,9 +139,9 @@ export default async function SettingsPage() {
       />
 
       {/* Revenue Assumptions */}
-      <div className="bg-yt-gray/70 backdrop-blur-sm border border-white/10 rounded-xl p-6">
+      <div className="bg-white/5/70 backdrop-blur-sm border border-white/10 rounded-xl p-6">
         <h2 className="font-display text-xl tracking-wide mb-2">REVENUE ASSUMPTIONS</h2>
-        <p className="text-sm text-yt-light mb-6">
+        <p className="text-sm text-slate-400 mb-6">
           Customize the assumptions used to estimate revenue loss from broken links.
         </p>
         <SettingsForm
@@ -155,13 +155,13 @@ export default async function SettingsPage() {
       </div>
 
       {/* Danger Zone */}
-      <div className="bg-emergency-red/10 border border-emergency-red/30 rounded-xl p-6">
-        <h2 className="font-display text-xl tracking-wide text-emergency-red mb-2">DANGER ZONE</h2>
-        <p className="text-sm text-yt-light mb-4">
+      <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6">
+        <h2 className="font-display text-xl tracking-wide text-red-500 mb-2">DANGER ZONE</h2>
+        <p className="text-sm text-slate-400 mb-4">
           These actions are irreversible. Please proceed with caution.
         </p>
         <button
-          className="px-4 py-2 text-sm font-semibold text-emergency-red border border-emergency-red/50 rounded-lg hover:bg-emergency-red/10 disabled:opacity-50 transition"
+          className="px-4 py-2 text-sm font-semibold text-red-500 border border-red-500/50 rounded-lg hover:bg-red-500/10 disabled:opacity-50 transition"
           disabled
         >
           Delete Account (Coming Soon)

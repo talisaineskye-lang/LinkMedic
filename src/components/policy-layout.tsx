@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Link as LinkIcon } from "lucide-react";
 
 const POLICY_TABS = [
   { href: "/terms", label: "Terms of Service" },
@@ -21,14 +21,12 @@ export function PolicyLayout({ title, lastUpdated, children }: PolicyLayoutProps
   const pathname = usePathname();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-50">
+    <div className="min-h-screen bg-[#020617] text-slate-50">
       {/* Header */}
-      <header className="border-b border-slate-800/50">
+      <header className="border-b border-white/10 bg-[#020617]/90 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-0.5 text-xl font-semibold">
-            <span className="text-white">Link</span>
-            <LinkIcon className="w-5 h-5 text-profit-green" />
-            <span className="text-profit-green">Medic</span>
+          <Link href="/" className="flex items-center">
+            <Image src="/logo.png" alt="LinkMedic" width={120} height={28} className="h-7 w-auto" />
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-sm text-slate-400">
             <Link href="/" className="hover:text-white transition">Home</Link>
@@ -38,7 +36,7 @@ export function PolicyLayout({ title, lastUpdated, children }: PolicyLayoutProps
           </nav>
           <Link
             href="/login"
-            className="bg-profit-green hover:bg-profit-green/90 text-black px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            className="btn-primary px-4 py-2 text-sm"
           >
             Start Free Trial
           </Link>
@@ -48,7 +46,7 @@ export function PolicyLayout({ title, lastUpdated, children }: PolicyLayoutProps
       <div className="max-w-3xl mx-auto px-6 py-12">
         {/* Tab Navigation */}
         <div className="mb-8">
-          <div className="flex flex-wrap gap-2 p-1 bg-slate-800/50 rounded-xl">
+          <div className="flex flex-wrap gap-2 p-1 bg-white/5 rounded-xl">
             {POLICY_TABS.map((tab) => {
               const isActive = pathname === tab.href;
               return (
@@ -57,8 +55,8 @@ export function PolicyLayout({ title, lastUpdated, children }: PolicyLayoutProps
                   href={tab.href}
                   className={`flex-1 min-w-[120px] px-4 py-2.5 text-sm font-medium text-center rounded-lg transition-all ${
                     isActive
-                      ? "bg-profit-green text-black shadow-lg"
-                      : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+                      ? "bg-gradient-to-r from-cyan-500 to-cyan-600 text-black shadow-lg"
+                      : "text-slate-400 hover:text-white hover:bg-white/5"
                   }`}
                 >
                   {tab.label}
@@ -78,7 +76,7 @@ export function PolicyLayout({ title, lastUpdated, children }: PolicyLayoutProps
         </div>
 
         {/* CTA Section */}
-        <div className="mt-16 p-8 bg-gradient-to-br from-profit-green/10 to-slate-900 border border-profit-green/30 rounded-xl text-center">
+        <div className="mt-16 glass-card p-8 text-center border-cyan-500/30">
           <h3 className="text-xl font-bold text-white mb-3">
             Ready to Protect Your Affiliate Revenue?
           </h3>
@@ -87,21 +85,21 @@ export function PolicyLayout({ title, lastUpdated, children }: PolicyLayoutProps
           </p>
           <Link
             href="/audit"
-            className="inline-block px-6 py-3 bg-profit-green hover:bg-profit-green/90 rounded-lg font-semibold text-black transition"
+            className="btn-primary inline-block px-6 py-3"
           >
             Run Free Audit
           </Link>
         </div>
 
         {/* Footer */}
-        <div className="mt-12 pt-8 border-t border-slate-700/50 text-sm text-slate-400">
+        <div className="mt-12 pt-8 border-t border-white/10 text-sm text-slate-400">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p>&copy; 2026 LinkMedic. All rights reserved.</p>
             <div className="flex items-center gap-6">
-              <Link href="/" className="hover:text-profit-green transition">Home</Link>
-              <Link href="/pricing" className="hover:text-profit-green transition">Pricing</Link>
-              <Link href="/resources" className="hover:text-profit-green transition">Resources</Link>
-              <Link href="/login" className="hover:text-profit-green transition">Sign In</Link>
+              <Link href="/" className="hover:text-cyan-400 transition">Home</Link>
+              <Link href="/pricing" className="hover:text-cyan-400 transition">Pricing</Link>
+              <Link href="/resources" className="hover:text-cyan-400 transition">Resources</Link>
+              <Link href="/login" className="hover:text-cyan-400 transition">Sign In</Link>
             </div>
           </div>
         </div>

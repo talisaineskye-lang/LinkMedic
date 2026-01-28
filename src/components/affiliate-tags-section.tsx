@@ -99,12 +99,12 @@ export function AffiliateTagsSection({ initialTags }: AffiliateTagsSectionProps)
   const hasAnyPartnerId = Object.values(partnerIds).some(t => t.trim() !== "");
 
   return (
-    <div className="bg-yt-gray/70 backdrop-blur-sm border border-white/10 rounded-xl p-6">
+    <div className="bg-white/5/70 backdrop-blur-sm border border-white/10 rounded-xl p-6">
       <h2 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
         <Tag className="w-5 h-5" />
         Affiliate Tags
       </h2>
-      <p className="text-yt-light text-sm mb-6">
+      <p className="text-slate-400 text-sm mb-6">
         Auto-detected from your links. Edit if needed. These tags are used when finding replacement products.
       </p>
 
@@ -114,7 +114,7 @@ export function AffiliateTagsSection({ initialTags }: AffiliateTagsSectionProps)
             <div className="w-full sm:w-40 flex items-center gap-2 text-sm">
               <span className="text-lg">{AMAZON_REGIONS[region].flag}</span>
               <span className="text-white font-medium">{region}</span>
-              <span className="text-yt-light/50 text-xs hidden sm:inline">
+              <span className="text-slate-400/50 text-xs hidden sm:inline">
                 ({AMAZON_REGIONS[region].domain})
               </span>
             </div>
@@ -123,7 +123,7 @@ export function AffiliateTagsSection({ initialTags }: AffiliateTagsSectionProps)
               value={tags[region]}
               onChange={(e) => setTags({ ...tags, [region]: e.target.value })}
               placeholder="your-tag-20"
-              className="flex-1 bg-yt-gray border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-yt-light/50 focus:outline-none focus:border-white/30 transition"
+              className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-400/50 focus:outline-none focus:border-white/30 transition"
             />
           </div>
         ))}
@@ -138,7 +138,7 @@ export function AffiliateTagsSection({ initialTags }: AffiliateTagsSectionProps)
       {/* Other Affiliate Networks */}
       <div className="mt-8 pt-6 border-t border-white/10">
         <h3 className="text-sm font-medium text-white mb-2">Other Affiliate Networks</h3>
-        <p className="text-xs text-yt-light/70 mb-4">
+        <p className="text-xs text-slate-400/70 mb-4">
           Add your partner IDs to enable auto-fix for non-Amazon affiliate links.
         </p>
 
@@ -147,27 +147,27 @@ export function AffiliateTagsSection({ initialTags }: AffiliateTagsSectionProps)
           <div className="text-sm text-white font-medium mb-2">B&amp;H Photo</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-yt-light/70 mb-1.5">BI Parameter</label>
+              <label className="block text-xs text-slate-400/70 mb-1.5">BI Parameter</label>
               <input
                 type="text"
                 value={partnerIds.bhphoto_bi}
                 onChange={(e) => setPartnerIds({ ...partnerIds, bhphoto_bi: e.target.value })}
                 placeholder="Your BI"
-                className="w-full bg-yt-gray border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-yt-light/50 focus:outline-none focus:border-white/30 transition"
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-400/50 focus:outline-none focus:border-white/30 transition"
               />
-              <p className="text-xs text-yt-light/50 mt-1 flex items-center gap-1">
+              <p className="text-xs text-slate-400/50 mt-1 flex items-center gap-1">
                 <HelpCircle className="w-3 h-3" />
                 {NETWORK_HELP.bhphoto_bi}
               </p>
             </div>
             <div>
-              <label className="block text-xs text-yt-light/70 mb-1.5">KBID Parameter</label>
+              <label className="block text-xs text-slate-400/70 mb-1.5">KBID Parameter</label>
               <input
                 type="text"
                 value={partnerIds.bhphoto_kbid}
                 onChange={(e) => setPartnerIds({ ...partnerIds, bhphoto_kbid: e.target.value })}
                 placeholder="Your KBID"
-                className="w-full bg-yt-gray border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-yt-light/50 focus:outline-none focus:border-white/30 transition"
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-400/50 focus:outline-none focus:border-white/30 transition"
               />
             </div>
           </div>
@@ -177,15 +177,15 @@ export function AffiliateTagsSection({ initialTags }: AffiliateTagsSectionProps)
         <div className="space-y-4">
           {/* Impact */}
           <div>
-            <label className="block text-xs text-yt-light/70 mb-1.5">Impact Account SID</label>
+            <label className="block text-xs text-slate-400/70 mb-1.5">Impact Account SID</label>
             <input
               type="text"
               value={partnerIds.impact_sid}
               onChange={(e) => setPartnerIds({ ...partnerIds, impact_sid: e.target.value })}
               placeholder="Your Account SID"
-              className="w-full bg-yt-gray border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-yt-light/50 focus:outline-none focus:border-white/30 transition"
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-400/50 focus:outline-none focus:border-white/30 transition"
             />
-            <p className="text-xs text-yt-light/50 mt-1 flex items-center gap-1">
+            <p className="text-xs text-slate-400/50 mt-1 flex items-center gap-1">
               <HelpCircle className="w-3 h-3" />
               {NETWORK_HELP.impact_sid}
             </p>
@@ -193,15 +193,15 @@ export function AffiliateTagsSection({ initialTags }: AffiliateTagsSectionProps)
 
           {/* CJ Affiliate */}
           <div>
-            <label className="block text-xs text-yt-light/70 mb-1.5">CJ Affiliate Publisher ID</label>
+            <label className="block text-xs text-slate-400/70 mb-1.5">CJ Affiliate Publisher ID</label>
             <input
               type="text"
               value={partnerIds.cj_pid}
               onChange={(e) => setPartnerIds({ ...partnerIds, cj_pid: e.target.value })}
               placeholder="Your Publisher ID"
-              className="w-full bg-yt-gray border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-yt-light/50 focus:outline-none focus:border-white/30 transition"
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-400/50 focus:outline-none focus:border-white/30 transition"
             />
-            <p className="text-xs text-yt-light/50 mt-1 flex items-center gap-1">
+            <p className="text-xs text-slate-400/50 mt-1 flex items-center gap-1">
               <HelpCircle className="w-3 h-3" />
               {NETWORK_HELP.cj_pid}
             </p>
@@ -209,15 +209,15 @@ export function AffiliateTagsSection({ initialTags }: AffiliateTagsSectionProps)
 
           {/* Rakuten */}
           <div>
-            <label className="block text-xs text-yt-light/70 mb-1.5">Rakuten Site ID</label>
+            <label className="block text-xs text-slate-400/70 mb-1.5">Rakuten Site ID</label>
             <input
               type="text"
               value={partnerIds.rakuten_id}
               onChange={(e) => setPartnerIds({ ...partnerIds, rakuten_id: e.target.value })}
               placeholder="Your Site ID"
-              className="w-full bg-yt-gray border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-yt-light/50 focus:outline-none focus:border-white/30 transition"
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-400/50 focus:outline-none focus:border-white/30 transition"
             />
-            <p className="text-xs text-yt-light/50 mt-1 flex items-center gap-1">
+            <p className="text-xs text-slate-400/50 mt-1 flex items-center gap-1">
               <HelpCircle className="w-3 h-3" />
               {NETWORK_HELP.rakuten_id}
             </p>
@@ -225,15 +225,15 @@ export function AffiliateTagsSection({ initialTags }: AffiliateTagsSectionProps)
 
           {/* ShareASale */}
           <div>
-            <label className="block text-xs text-yt-light/70 mb-1.5">ShareASale Affiliate ID</label>
+            <label className="block text-xs text-slate-400/70 mb-1.5">ShareASale Affiliate ID</label>
             <input
               type="text"
               value={partnerIds.shareasale_id}
               onChange={(e) => setPartnerIds({ ...partnerIds, shareasale_id: e.target.value })}
               placeholder="Your Affiliate ID"
-              className="w-full bg-yt-gray border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-yt-light/50 focus:outline-none focus:border-white/30 transition"
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-400/50 focus:outline-none focus:border-white/30 transition"
             />
-            <p className="text-xs text-yt-light/50 mt-1 flex items-center gap-1">
+            <p className="text-xs text-slate-400/50 mt-1 flex items-center gap-1">
               <HelpCircle className="w-3 h-3" />
               {NETWORK_HELP.shareasale_id}
             </p>
@@ -241,15 +241,15 @@ export function AffiliateTagsSection({ initialTags }: AffiliateTagsSectionProps)
 
           {/* Awin */}
           <div>
-            <label className="block text-xs text-yt-light/70 mb-1.5">Awin Publisher ID</label>
+            <label className="block text-xs text-slate-400/70 mb-1.5">Awin Publisher ID</label>
             <input
               type="text"
               value={partnerIds.awin_id}
               onChange={(e) => setPartnerIds({ ...partnerIds, awin_id: e.target.value })}
               placeholder="Your Publisher ID"
-              className="w-full bg-yt-gray border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-yt-light/50 focus:outline-none focus:border-white/30 transition"
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-400/50 focus:outline-none focus:border-white/30 transition"
             />
-            <p className="text-xs text-yt-light/50 mt-1 flex items-center gap-1">
+            <p className="text-xs text-slate-400/50 mt-1 flex items-center gap-1">
               <HelpCircle className="w-3 h-3" />
               {NETWORK_HELP.awin_id}
             </p>
@@ -257,7 +257,7 @@ export function AffiliateTagsSection({ initialTags }: AffiliateTagsSectionProps)
         </div>
 
         {!hasAnyPartnerId && (
-          <p className="text-yt-light/50 text-xs mt-4">
+          <p className="text-slate-400/50 text-xs mt-4">
             No partner IDs saved yet. Add your IDs to enable link repair for these networks.
           </p>
         )}
@@ -267,18 +267,18 @@ export function AffiliateTagsSection({ initialTags }: AffiliateTagsSectionProps)
         <button
           onClick={handleSave}
           disabled={isSaving}
-          className="rounded-lg bg-profit-green text-black px-6 py-2.5 font-bold text-sm hover:brightness-110 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          className="rounded-lg bg-cyan-500 text-black px-6 py-2.5 font-bold text-sm hover:brightness-110 transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSaving ? "Saving..." : "Save Tags"}
         </button>
 
         {saved && (
-          <span className="text-profit-green text-sm flex items-center gap-1">
+          <span className="text-cyan-400 text-sm flex items-center gap-1">
             <span>&#10003;</span> Saved
           </span>
         )}
 
-        {error && <span className="text-emergency-red text-sm">{error}</span>}
+        {error && <span className="text-red-500 text-sm">{error}</span>}
       </div>
     </div>
   );

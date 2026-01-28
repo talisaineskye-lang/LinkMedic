@@ -75,7 +75,7 @@ export function FindReplacementsButton({ canUseAI = true }: FindReplacementsButt
       disabled={loading || linksNeeding === 0 || !canUseAI}
       className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg text-white transition ${
         canUseAI
-          ? "bg-profit-green hover:bg-profit-green/90 disabled:bg-slate-600"
+          ? "bg-cyan-500 hover:bg-cyan-500/90 disabled:bg-slate-600"
           : "bg-slate-700 cursor-not-allowed"
       }`}
       title={!canUseAI ? "Upgrade to use AI suggestions" : undefined}
@@ -98,7 +98,7 @@ export function FindReplacementsButton({ canUseAI = true }: FindReplacementsButt
           <Search className="w-4 h-4" />
           Find Replacements
           {linksNeeding !== null && linksNeeding > 0 && (
-            <span className="ml-1 px-1.5 py-0.5 text-xs bg-profit-green rounded-full">
+            <span className="ml-1 px-1.5 py-0.5 text-xs bg-cyan-500 rounded-full">
               {linksNeeding}
             </span>
           )}

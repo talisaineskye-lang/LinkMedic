@@ -48,7 +48,7 @@ export default async function ChannelsSettingsPage() {
       {/* Header */}
       <div>
         <h1 className="font-display text-3xl tracking-wide mb-1">CHANNELS</h1>
-        <p className="text-yt-light">Manage your connected YouTube channels</p>
+        <p className="text-slate-400">Manage your connected YouTube channels</p>
       </div>
 
       {/* Over Limit Warning */}
@@ -68,18 +68,18 @@ export default async function ChannelsSettingsPage() {
       )}
 
       {/* Current Plan Info */}
-      <div className="bg-yt-gray/70 backdrop-blur-sm border border-white/10 rounded-xl p-6">
+      <div className="bg-white/5/70 backdrop-blur-sm border border-white/10 rounded-xl p-6">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="font-display text-xl tracking-wide mb-1">YOUR PLAN</h2>
-            <p className="text-yt-light">
+            <p className="text-slate-400">
               {getTierDisplayName(user.tier)} &middot; {channels.length}/{channelLimit} channels used
             </p>
           </div>
           {!isOperator && (
             <a
               href="/pricing"
-              className="px-4 py-2 bg-profit-green hover:bg-profit-green/90 text-black font-semibold rounded-lg transition-colors"
+              className="px-4 py-2 bg-cyan-500 hover:bg-cyan-500/90 text-black font-semibold rounded-lg transition-colors"
             >
               Upgrade for More Channels
             </a>

@@ -83,8 +83,8 @@ export function ChannelSwitcher({
   // For single-channel users (non-Operator), show simpler display
   if (!isOperator && channels.length <= 1) {
     return (
-      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-yt-gray/50 border border-white/10">
-        <Youtube className="w-4 h-4 text-profit-green" />
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5/50 border border-white/10">
+        <Youtube className="w-4 h-4 text-cyan-400" />
         <span className="text-sm text-white truncate max-w-[140px]">
           {activeChannel?.title || "No Channel"}
         </span>
@@ -97,7 +97,7 @@ export function ChannelSwitcher({
       <button
         onClick={() => setIsOpen(!isOpen)}
         disabled={isSwitching}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-yt-gray/50 border border-white/10 hover:bg-yt-gray hover:border-white/20 transition-colors"
+        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5/50 border border-white/10 hover:bg-white/5 hover:border-white/20 transition-colors"
       >
         {activeChannel?.thumbnailUrl ? (
           <Image
@@ -108,19 +108,19 @@ export function ChannelSwitcher({
             className="rounded-full"
           />
         ) : (
-          <Youtube className="w-5 h-5 text-profit-green" />
+          <Youtube className="w-5 h-5 text-cyan-400" />
         )}
         <span className="text-sm text-white truncate max-w-[120px]">
           {activeChannel?.title || "Select Channel"}
         </span>
-        <span className="text-xs text-yt-light bg-yt-gray px-1.5 py-0.5 rounded">
+        <span className="text-xs text-slate-400 bg-white/5 px-1.5 py-0.5 rounded">
           {channels.length}/{channelLimit}
         </span>
         {isSwitching ? (
-          <Loader2 className="w-4 h-4 text-yt-light animate-spin" />
+          <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
         ) : (
           <ChevronDown
-            className={`w-4 h-4 text-yt-light transition-transform ${
+            className={`w-4 h-4 text-slate-400 transition-transform ${
               isOpen ? "rotate-180" : ""
             }`}
           />
@@ -128,10 +128,10 @@ export function ChannelSwitcher({
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 mt-2 w-64 bg-yt-dark border border-white/10 rounded-xl shadow-xl overflow-hidden z-50">
+        <div className="absolute left-0 mt-2 w-64 bg-slate-900 border border-white/10 rounded-xl shadow-xl overflow-hidden z-50">
           {/* Channel list */}
           <div className="py-2">
-            <div className="px-3 py-1.5 text-xs font-semibold text-yt-light uppercase tracking-wide">
+            <div className="px-3 py-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wide">
               Your Channels
             </div>
             {channels.map((channel) => (
@@ -140,7 +140,7 @@ export function ChannelSwitcher({
                 onClick={() => handleSwitchChannel(channel.id)}
                 disabled={isSwitching}
                 className={`flex items-center gap-3 w-full px-3 py-2 text-left hover:bg-white/5 transition-colors ${
-                  channel.id === activeChannelId ? "bg-profit-green/10" : ""
+                  channel.id === activeChannelId ? "bg-cyan-500/10" : ""
                 }`}
               >
                 {channel.thumbnailUrl ? (
@@ -152,20 +152,20 @@ export function ChannelSwitcher({
                     className="rounded-full"
                   />
                 ) : (
-                  <div className="w-8 h-8 rounded-full bg-yt-gray flex items-center justify-center">
-                    <Youtube className="w-4 h-4 text-yt-light" />
+                  <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
+                    <Youtube className="w-4 h-4 text-slate-400" />
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-white truncate">{channel.title}</p>
                   {channel.videoCount !== undefined && (
-                    <p className="text-xs text-yt-light">
+                    <p className="text-xs text-slate-400">
                       {channel.videoCount.toLocaleString()} videos
                     </p>
                   )}
                 </div>
                 {channel.id === activeChannelId && (
-                  <Check className="w-4 h-4 text-profit-green flex-shrink-0" />
+                  <Check className="w-4 h-4 text-cyan-400 flex-shrink-0" />
                 )}
               </button>
             ))}
@@ -180,13 +180,13 @@ export function ChannelSwitcher({
                     setIsOpen(false);
                     router.push("/settings/channels");
                   }}
-                  className="flex items-center gap-3 w-full px-3 py-2 text-sm text-profit-green hover:bg-white/5 transition-colors"
+                  className="flex items-center gap-3 w-full px-3 py-2 text-sm text-cyan-400 hover:bg-white/5 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                   Add Channel ({channels.length}/{channelLimit})
                 </button>
               ) : (
-                <div className="px-3 py-2 text-sm text-yt-light">
+                <div className="px-3 py-2 text-sm text-slate-400">
                   Channel limit reached ({channelLimit}/{channelLimit})
                 </div>
               )}
@@ -201,7 +201,7 @@ export function ChannelSwitcher({
                   setIsOpen(false);
                   router.push("/pricing");
                 }}
-                className="flex items-center gap-3 w-full px-3 py-2 text-sm text-profit-green hover:bg-white/5 transition-colors"
+                className="flex items-center gap-3 w-full px-3 py-2 text-sm text-cyan-400 hover:bg-white/5 transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 Upgrade for more channels

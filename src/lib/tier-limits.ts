@@ -36,12 +36,12 @@ export function getTierBadgeColors(tier: UserTier | string): string {
   switch (tierStr) {
     case "SPECIALIST":
     case "OPERATOR":
-      return "bg-profit-green/20 border-profit-green/50 text-profit-green";
+      return "bg-cyan-500/20 border-cyan-500/50 text-cyan-400";
     case "TRIAL":
       return "bg-orange-500/20 border-orange-500/50 text-orange-400";
     case "AUDITOR":
     default:
-      return "bg-yt-light/20 border-yt-light/50 text-yt-light";
+      return "bg-slate-400/20 border-slate-400/50 text-slate-400";
   }
 }
 

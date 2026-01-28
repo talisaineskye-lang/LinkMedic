@@ -23,7 +23,7 @@ export default function RefundPolicy() {
           <li>Be a first-time subscriber (not a returning customer)</li>
           <li>Request a refund within 14 days of your initial payment</li>
           <li>Contact us at{" "}
-            <a href="mailto:hello@linkmedic.pro" className="text-profit-green hover:underline">
+            <a href="mailto:hello@linkmedic.pro" className="text-cyan-400 hover:underline">
               hello@linkmedic.pro
             </a>{" "}
             with your account email and reason for the refund
@@ -44,7 +44,7 @@ export default function RefundPolicy() {
           <li>Visiting your account settings in the LinkMedic dashboard</li>
           <li>Clicking &quot;Cancel Subscription&quot;</li>
           <li>Or emailing us at{" "}
-            <a href="mailto:hello@linkmedic.pro" className="text-profit-green hover:underline">
+            <a href="mailto:hello@linkmedic.pro" className="text-cyan-400 hover:underline">
               hello@linkmedic.pro
             </a>
           </li>
@@ -92,7 +92,7 @@ export default function RefundPolicy() {
         </ul>
         <p className="mt-4">
           To request an exception, contact us at{" "}
-          <a href="mailto:hello@linkmedic.pro" className="text-profit-green hover:underline">
+          <a href="mailto:hello@linkmedic.pro" className="text-cyan-400 hover:underline">
             hello@linkmedic.pro
           </a>{" "}
           with details of the issue.
@@ -141,7 +141,7 @@ export default function RefundPolicy() {
         </ul>
         <p className="mt-4">
           Most issues can be resolved quickly by emailing{" "}
-          <a href="mailto:hello@linkmedic.pro" className="text-profit-green hover:underline">
+          <a href="mailto:hello@linkmedic.pro" className="text-cyan-400 hover:underline">
             hello@linkmedic.pro
           </a>.
         </p>
@@ -174,7 +174,7 @@ export default function RefundPolicy() {
       <section>
         <h2 className="text-2xl font-bold text-slate-50 mb-4">10. How to Request a Refund</h2>
         <p className="mb-4">To request a refund, email us at{" "}
-          <a href="mailto:hello@linkmedic.pro" className="text-profit-green hover:underline">
+          <a href="mailto:hello@linkmedic.pro" className="text-cyan-400 hover:underline">
             hello@linkmedic.pro
           </a>{" "}
           with:
@@ -195,7 +195,7 @@ export default function RefundPolicy() {
         <h2 className="text-2xl font-bold text-slate-50 mb-4">11. Contact Us</h2>
         <p>
           Questions about refunds or cancellations? Contact us at{" "}
-          <a href="mailto:hello@linkmedic.pro" className="text-profit-green hover:underline">
+          <a href="mailto:hello@linkmedic.pro" className="text-cyan-400 hover:underline">
             hello@linkmedic.pro
           </a>
         </p>

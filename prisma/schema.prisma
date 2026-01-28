@@ -66,6 +66,8 @@ model User {
   sessions           Session[]
   videos             Video[]
   channels           Channel[]  // User's connected YouTube channels
+  feedback           Feedback[] // Beta feedback submissions
+  contactSubmissions ContactSubmission[]
 }
 
 enum UserTier {
@@ -295,4 +297,41 @@ model Waitlist {
 
   @@index([tier])
   @@index([joinedAt])
+}
+
+// ============================================
+// FEEDBACK (Beta Phase)
+// ============================================
+// Stores feedback from beta testers
+model Feedback {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // "bug", "feature", "general"
+  message   String   @db.Text
+  page      String?  // Optional: which page they were on
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ============================================
+// CONTACT SUBMISSIONS
+// ============================================
+// Stores contact form submissions from visitors
+model ContactSubmission {
+  id        String   @id @default(cuid())
+  email     String
+  category  String   // "support", "billing", "partnerships", "general"
+  subject   String
+  message   String   @db.Text
+  userId    String?  // Optional - if logged in
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  status    String   @default("new") // "new", "read", "replied", "closed"
+  createdAt DateTime @default(now())
+
+  @@index([category])
+  @@index([status])
+  @@index([createdAt])
 }

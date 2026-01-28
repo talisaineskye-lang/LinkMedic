@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import Link from "next/link";
-import { Link as LinkIcon, ArrowRight, ExternalLink, FileText, FileSearch, AlertTriangle } from "lucide-react";
+import Image from "next/image";
+import { ArrowRight, ExternalLink, FileText, FileSearch, AlertTriangle } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Resources | LinkMedic - YouTube Affiliate Link Guides",
@@ -49,14 +50,12 @@ const RESOURCES = [
 
 export default function Resources() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-50">
+    <div className="min-h-screen bg-[#020617] text-white">
       {/* Header */}
-      <header className="border-b border-slate-800/50">
+      <header className="border-b border-white/10 bg-[#020617]/90 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-0.5 text-xl font-semibold">
-            <span className="text-white">Link</span>
-            <LinkIcon className="w-5 h-5 text-profit-green" />
-            <span className="text-profit-green">Medic</span>
+          <Link href="/" className="flex items-center">
+            <Image src="/logo.png" alt="LinkMedic" width={140} height={32} className="h-8 w-auto" />
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-sm text-slate-400">
             <Link href="/" className="hover:text-white transition">Home</Link>
@@ -66,7 +65,7 @@ export default function Resources() {
           </nav>
           <Link
             href="/login"
-            className="bg-profit-green hover:bg-profit-green/90 text-black px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            className="btn-primary px-4 py-2 text-sm"
           >
             Start Free Trial
           </Link>
@@ -76,7 +75,10 @@ export default function Resources() {
       {/* Hero */}
       <section className="py-16">
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <h1 className="text-4xl font-bold mb-4">Resources</h1>
+          <span className="text-cyan-400 text-sm font-semibold tracking-wide uppercase">
+            Knowledge Base
+          </span>
+          <h1 className="font-display text-4xl md:text-5xl tracking-tight mt-3 mb-4">RESOURCES</h1>
           <p className="text-lg text-slate-400 max-w-2xl mx-auto">
             Guides for YouTube creators managing affiliate links. Learn how to find broken links, audit descriptions, and protect your revenue.
           </p>
@@ -93,27 +95,27 @@ export default function Resources() {
                 <Link
                   key={resource.href}
                   href={resource.href}
-                  className={`block rounded-xl border transition-all hover:border-profit-green/50 hover:bg-slate-800/30 ${
+                  className={`block glass-card transition-all hover:border-cyan-500/50 ${
                     resource.featured
-                      ? "bg-profit-green/10 border-profit-green/30"
-                      : "bg-slate-800/20 border-slate-700/50"
+                      ? "border-cyan-500/30"
+                      : ""
                   }`}
                 >
                   <div className="p-6 flex items-start gap-4">
                     <div className={`p-3 rounded-lg ${
-                      resource.featured ? "bg-profit-green/20" : "bg-slate-700/50"
+                      resource.featured ? "bg-cyan-500/20" : "bg-white/5"
                     }`}>
                       <Icon className={`w-5 h-5 ${
-                        resource.featured ? "text-profit-green" : "text-slate-400"
+                        resource.featured ? "text-cyan-400" : "text-slate-400"
                       }`} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2">
-                        <h2 className="text-lg font-semibold text-slate-100">
+                        <h2 className="text-lg font-semibold text-white">
                           {resource.title}
                         </h2>
                         {resource.featured && (
-                          <span className="px-2 py-0.5 text-xs font-medium bg-profit-green/20 text-profit-green rounded">
+                          <span className="px-2 py-0.5 text-xs font-medium bg-cyan-500/20 text-cyan-400 rounded">
                             Tool
                           </span>
                         )}
@@ -132,15 +134,15 @@ export default function Resources() {
       </section>
 
       {/* CTA */}
-      <section className="py-16 border-t border-slate-800/50 bg-slate-900/30">
+      <section className="py-16 border-t border-white/10 bg-[#0f172a]">
         <div className="max-w-3xl mx-auto px-6 text-center">
-          <h2 className="text-2xl font-bold mb-4">Ready to Find Your Broken Links?</h2>
+          <h2 className="font-display text-2xl tracking-wide mb-4">READY TO FIND YOUR BROKEN LINKS?</h2>
           <p className="text-slate-400 mb-8">
             Run a free audit and see which affiliate links need attention on your channel.
           </p>
           <Link
             href="/audit"
-            className="inline-flex items-center gap-2 bg-profit-green hover:bg-profit-green/90 text-black font-semibold px-6 py-3 rounded-xl transition-all"
+            className="btn-primary inline-flex items-center gap-2 px-6 py-3"
           >
             Run Free Audit
             <ArrowRight className="w-4 h-4" />
@@ -149,25 +151,22 @@ export default function Resources() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800/50 py-8">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-0.5">
-              <span className="text-white">Link</span>
-              <LinkIcon className="w-4 h-4 text-profit-green" />
-              <span className="text-profit-green">Medic</span>
-            </div>
-            <div className="flex items-center gap-6 text-sm text-slate-500">
-              <Link href="/" className="hover:text-profit-green transition">Home</Link>
-              <Link href="/pricing" className="hover:text-profit-green transition">Pricing</Link>
-              <Link href="/intel" className="hover:text-profit-green transition">Intel Blog</Link>
-              <Link href="/privacy" className="hover:text-profit-green transition">Privacy</Link>
-              <Link href="/terms" className="hover:text-profit-green transition">Terms</Link>
-            </div>
+      <footer className="bg-[#0f172a] border-t border-white/10 py-12 px-6">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex items-center">
+            <Image src="/logo.png" alt="LinkMedic" width={120} height={28} className="h-7 w-auto" />
           </div>
-          <p className="text-center text-sm text-slate-600 mt-4">
-            &copy; 2026 LinkMedic. All rights reserved.
-          </p>
+
+          <div className="flex gap-6 text-sm text-slate-400">
+            <Link href="/privacy" className="hover:text-white transition">Privacy</Link>
+            <Link href="/terms" className="hover:text-white transition">Terms</Link>
+            <Link href="/contact" className="hover:text-white transition">Contact</Link>
+            <Link href="/intel" className="hover:text-white transition">Intel Blog</Link>
+          </div>
+
+          <div className="text-slate-500 text-sm">
+            &copy; 2026 LinkMedic
+          </div>
         </div>
       </footer>
     </div>

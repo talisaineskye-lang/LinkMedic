@@ -136,7 +136,7 @@ export default async function HistoryPage() {
                             href={link.suggestedLink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-sm text-profit-green hover:underline truncate block max-w-[180px]"
+                            className="text-sm text-cyan-400 hover:underline truncate block max-w-[180px]"
                             title={link.suggestedTitle || link.suggestedLink}
                           >
                             {link.suggestedTitle

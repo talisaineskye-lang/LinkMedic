@@ -172,20 +172,20 @@ export function ChannelManagement({
     <div className="space-y-6">
       {/* Error Display */}
       {error && (
-        <div className="bg-emergency-red/10 border border-emergency-red/30 rounded-xl p-4">
-          <p className="text-sm text-emergency-red">{error}</p>
+        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+          <p className="text-sm text-red-500">{error}</p>
         </div>
       )}
 
       {/* Upgrade Prompt Modal */}
       {showUpgradePrompt && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-yt-dark border border-white/10 rounded-xl p-6 max-w-md mx-4">
+          <div className="bg-slate-900 border border-white/10 rounded-xl p-6 max-w-md mx-4">
             <div className="flex items-center gap-3 mb-4">
-              <Crown className="w-8 h-8 text-profit-green" />
+              <Crown className="w-8 h-8 text-cyan-400" />
               <h3 className="font-display text-xl">UPGRADE REQUIRED</h3>
             </div>
-            <p className="text-yt-light mb-6">
+            <p className="text-slate-400 mb-6">
               Your current plan only allows {channelLimit} channel{channelLimit !== 1 ? "s" : ""}.
               Upgrade to Operator ($39/mo) to connect up to 3 YouTube channels and manage them
               from a unified dashboard.
@@ -193,13 +193,13 @@ export function ChannelManagement({
             <div className="flex gap-3">
               <button
                 onClick={() => setShowUpgradePrompt(false)}
-                className="flex-1 px-4 py-2 border border-white/20 rounded-lg text-yt-light hover:text-white hover:border-white/40 transition-colors"
+                className="flex-1 px-4 py-2 border border-white/20 rounded-lg text-slate-400 hover:text-white hover:border-white/40 transition-colors"
               >
                 Maybe Later
               </button>
               <a
                 href="/pricing"
-                className="flex-1 px-4 py-2 bg-profit-green hover:bg-profit-green/90 text-black font-semibold rounded-lg text-center transition-colors"
+                className="flex-1 px-4 py-2 bg-cyan-500 hover:bg-cyan-500/90 text-black font-semibold rounded-lg text-center transition-colors"
               >
                 View Plans
               </a>
@@ -209,15 +209,15 @@ export function ChannelManagement({
       )}
 
       {/* Connected Channels */}
-      <div className="bg-yt-gray/70 backdrop-blur-sm border border-white/10 rounded-xl overflow-hidden">
+      <div className="bg-white/5/70 backdrop-blur-sm border border-white/10 rounded-xl overflow-hidden">
         <div className="p-4 border-b border-white/10">
           <h2 className="font-display text-lg tracking-wide">CONNECTED CHANNELS</h2>
         </div>
 
         {channels.length === 0 ? (
           <div className="p-8 text-center">
-            <Youtube className="w-12 h-12 mx-auto text-yt-light/50 mb-3" />
-            <p className="text-yt-light">No channels connected yet</p>
+            <Youtube className="w-12 h-12 mx-auto text-slate-400/50 mb-3" />
+            <p className="text-slate-400">No channels connected yet</p>
           </div>
         ) : (
           <div className="divide-y divide-white/5">
@@ -243,8 +243,8 @@ export function ChannelManagement({
                       className="rounded-full"
                     />
                   ) : (
-                    <div className="w-12 h-12 rounded-full bg-yt-gray flex items-center justify-center">
-                      <Youtube className="w-6 h-6 text-yt-light" />
+                    <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
+                      <Youtube className="w-6 h-6 text-slate-400" />
                     </div>
                   )}
 
@@ -253,7 +253,7 @@ export function ChannelManagement({
                     <div className="flex items-center gap-2">
                       <p className="font-medium text-white truncate">{channel.title}</p>
                       {isActive && (
-                        <span className="text-xs px-2 py-0.5 bg-profit-green/20 text-profit-green rounded">
+                        <span className="text-xs px-2 py-0.5 bg-cyan-500/20 text-cyan-400 rounded">
                           Active
                         </span>
                       )}
@@ -265,7 +265,7 @@ export function ChannelManagement({
                       )}
                     </div>
                     {channel.videoCount !== undefined && (
-                      <p className="text-sm text-yt-light">
+                      <p className="text-sm text-slate-400">
                         {channel.videoCount.toLocaleString()} videos
                       </p>
                     )}
@@ -277,7 +277,7 @@ export function ChannelManagement({
                       <button
                         onClick={() => handleSetActive(channel.id)}
                         disabled={isLoadingThis}
-                        className="px-3 py-1.5 text-sm text-yt-light hover:text-white border border-white/20 hover:border-white/40 rounded-lg transition-colors disabled:opacity-50"
+                        className="px-3 py-1.5 text-sm text-slate-400 hover:text-white border border-white/20 hover:border-white/40 rounded-lg transition-colors disabled:opacity-50"
                       >
                         {isLoadingThis ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -289,7 +289,7 @@ export function ChannelManagement({
                     <button
                       onClick={() => handleRemoveChannel(channel.id)}
                       disabled={isLoadingThis}
-                      className="p-2 text-yt-light hover:text-emergency-red transition-colors disabled:opacity-50"
+                      className="p-2 text-slate-400 hover:text-red-500 transition-colors disabled:opacity-50"
                       title="Remove channel"
                     >
                       {isLoadingThis ? (
@@ -313,8 +313,8 @@ export function ChannelManagement({
               disabled={fetchingAvailable || !canAddMore}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                 canAddMore
-                  ? "text-profit-green hover:bg-profit-green/10"
-                  : "text-yt-light cursor-not-allowed"
+                  ? "text-cyan-400 hover:bg-cyan-500/10"
+                  : "text-slate-400 cursor-not-allowed"
               }`}
             >
               {fetchingAvailable ? (
@@ -332,12 +332,12 @@ export function ChannelManagement({
 
       {/* Add Channel Panel */}
       {showAddPanel && availableChannels.length > 0 && (
-        <div className="bg-yt-gray/70 backdrop-blur-sm border border-white/10 rounded-xl overflow-hidden">
+        <div className="bg-white/5/70 backdrop-blur-sm border border-white/10 rounded-xl overflow-hidden">
           <div className="p-4 border-b border-white/10 flex items-center justify-between">
             <h2 className="font-display text-lg tracking-wide">AVAILABLE CHANNELS</h2>
             <button
               onClick={() => setShowAddPanel(false)}
-              className="text-yt-light hover:text-white"
+              className="text-slate-400 hover:text-white"
             >
               Cancel
             </button>
@@ -357,14 +357,14 @@ export function ChannelManagement({
                       className="rounded-full"
                     />
                   ) : (
-                    <div className="w-12 h-12 rounded-full bg-yt-gray flex items-center justify-center">
-                      <Youtube className="w-6 h-6 text-yt-light" />
+                    <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
+                      <Youtube className="w-6 h-6 text-slate-400" />
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-white truncate">{channel.title}</p>
                     {channel.videoCount !== undefined && (
-                      <p className="text-sm text-yt-light">
+                      <p className="text-sm text-slate-400">
                         {channel.videoCount.toLocaleString()} videos
                       </p>
                     )}
@@ -372,7 +372,7 @@ export function ChannelManagement({
                   <button
                     onClick={() => handleAddChannel(channel)}
                     disabled={isLoadingThis}
-                    className="flex items-center gap-2 px-4 py-2 bg-profit-green hover:bg-profit-green/90 text-black font-semibold rounded-lg transition-colors disabled:opacity-50"
+                    className="flex items-center gap-2 px-4 py-2 bg-cyan-500 hover:bg-cyan-500/90 text-black font-semibold rounded-lg transition-colors disabled:opacity-50"
                   >
                     {isLoadingThis ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -391,15 +391,15 @@ export function ChannelManagement({
       )}
 
       {showAddPanel && availableChannels.length === 0 && (
-        <div className="bg-yt-gray/70 backdrop-blur-sm border border-white/10 rounded-xl p-6 text-center">
-          <Check className="w-12 h-12 mx-auto text-profit-green mb-3" />
+        <div className="bg-white/5/70 backdrop-blur-sm border border-white/10 rounded-xl p-6 text-center">
+          <Check className="w-12 h-12 mx-auto text-cyan-400 mb-3" />
           <p className="text-white font-medium mb-1">All channels connected</p>
-          <p className="text-sm text-yt-light">
+          <p className="text-sm text-slate-400">
             All YouTube channels associated with your account are already connected.
           </p>
           <button
             onClick={() => setShowAddPanel(false)}
-            className="mt-4 px-4 py-2 border border-white/20 rounded-lg text-yt-light hover:text-white hover:border-white/40 transition-colors"
+            className="mt-4 px-4 py-2 border border-white/20 rounded-lg text-slate-400 hover:text-white hover:border-white/40 transition-colors"
           >
             Close
           </button>
@@ -408,18 +408,18 @@ export function ChannelManagement({
 
       {/* Non-Operator Upgrade CTA */}
       {!isOperator && (
-        <div className="bg-gradient-to-r from-profit-green/10 to-profit-green/5 border border-profit-green/30 rounded-xl p-6">
+        <div className="bg-gradient-to-r from-cyan-500/10 to-cyan-500/5 border border-cyan-500/30 rounded-xl p-6">
           <div className="flex items-start gap-4">
-            <Crown className="w-8 h-8 text-profit-green flex-shrink-0" />
+            <Crown className="w-8 h-8 text-cyan-400 flex-shrink-0" />
             <div>
               <h3 className="font-display text-lg text-white mb-1">MANAGE MULTIPLE CHANNELS</h3>
-              <p className="text-sm text-yt-light mb-4">
+              <p className="text-sm text-slate-400 mb-4">
                 Upgrade to Operator ($39/mo) to connect up to 3 YouTube channels. Perfect for
                 creators who manage multiple channels or work with clients.
               </p>
               <a
                 href="/pricing"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-profit-green hover:bg-profit-green/90 text-black font-semibold rounded-lg transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-500 hover:bg-cyan-500/90 text-black font-semibold rounded-lg transition-colors"
               >
                 Upgrade to Operator
               </a>

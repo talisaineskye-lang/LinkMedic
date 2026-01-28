@@ -126,14 +126,14 @@ export function AuditTool() {
               value={channelUrl}
               onChange={(e) => setChannelUrl(e.target.value)}
               placeholder="Paste YouTube channel URL or @handle"
-              className="w-full pl-12 pr-4 py-4 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:border-profit-green/50 focus:ring-2 focus:ring-profit-green/20 transition"
+              className="w-full pl-12 pr-4 py-4 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition"
               disabled={loading}
             />
           </div>
           <button
             type="submit"
             disabled={loading || !channelUrl.trim()}
-            className="px-8 py-4 bg-profit-green hover:bg-profit-green disabled:bg-slate-600 rounded-xl font-semibold text-white transition flex items-center justify-center gap-2"
+            className="px-8 py-4 bg-cyan-500 hover:bg-cyan-500 disabled:bg-slate-600 rounded-xl font-semibold text-white transition flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
@@ -164,7 +164,7 @@ export function AuditTool() {
       {/* Loading State */}
       {loading && (
         <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-12 text-center">
-          <Loader2 className="w-12 h-12 text-profit-green mx-auto mb-4 animate-spin" />
+          <Loader2 className="w-12 h-12 text-cyan-400 mx-auto mb-4 animate-spin" />
           <p className="text-white font-medium mb-2">Scanning your last 15 videos...</p>
           <p className="text-sm text-slate-400">
             This may take 20-30 seconds while we check your affiliate links.
@@ -213,7 +213,7 @@ export function AuditTool() {
           {/* ============================================ */}
           {/* REVENUE RECOVERY HEADLINE - High Impact */}
           {/* ============================================ */}
-          <div className="bg-gradient-to-br from-red-950/40 via-slate-900 to-profit-green/10/30 border border-red-700/30 rounded-xl p-8">
+          <div className="bg-gradient-to-br from-red-950/40 via-slate-900 to-cyan-500/10 border border-red-700/30 rounded-xl p-8">
             <div className="text-center mb-6">
               <p className="text-sm text-red-400 uppercase tracking-wide mb-3 flex items-center justify-center gap-2">
                 <AlertTriangle className="w-4 h-4" />
@@ -248,8 +248,8 @@ export function AuditTool() {
 
           {/* Status Breakdown */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-profit-green/10/30 border border-profit-green/50 rounded-lg p-4 text-center">
-              <p className="text-2xl font-bold text-profit-green">{result.healthyLinks}</p>
+            <div className="bg-cyan-500/10/30 border border-cyan-500/50 rounded-lg p-4 text-center">
+              <p className="text-2xl font-bold text-cyan-400">{result.healthyLinks}</p>
               <p className="text-sm text-slate-400">Healthy</p>
             </div>
             <div className="bg-red-950/30 border border-red-700/50 rounded-lg p-4 text-center">
@@ -319,7 +319,7 @@ export function AuditTool() {
           {/* ============================================ */}
           {/* REVENUE RECOVERY CTA */}
           {/* ============================================ */}
-          <div className="bg-gradient-to-br from-profit-green/10/60 to-slate-900 border-2 border-profit-green/50 rounded-2xl p-8">
+          <div className="bg-gradient-to-br from-cyan-500/10 to-slate-900 border-2 border-cyan-500/50 rounded-2xl p-8">
             <div className="text-center mb-6">
               <h3 className="text-2xl md:text-3xl font-bold text-white mb-3">
                 Stop the Leak. Recover Your Revenue Today.
@@ -334,7 +334,7 @@ export function AuditTool() {
             <div className="flex justify-center mb-6">
               <Link
                 href="/login"
-                className="inline-flex items-center gap-3 px-8 py-4 bg-profit-green hover:bg-profit-green rounded-xl font-semibold text-white text-lg transition shadow-lg shadow-profit-green/20/50 hover:shadow-profit-green/30/50"
+                className="inline-flex items-center gap-3 px-8 py-4 bg-cyan-500 hover:bg-cyan-500 rounded-xl font-semibold text-white text-lg transition shadow-lg shadow-cyan-500/20/50 hover:shadow-cyan-500/30/50"
               >
                 <Zap className="w-5 h-5" />
                 Fix All My Links & Start 7-Day Free Trial
@@ -345,15 +345,15 @@ export function AuditTool() {
             {/* Risk Reversal Micro-copy */}
             <div className="flex flex-wrap justify-center gap-4 text-sm text-slate-400">
               <span className="flex items-center gap-1">
-                <Check className="w-4 h-4 text-profit-green" />
+                <Check className="w-4 h-4 text-cyan-400" />
                 No charge today
               </span>
               <span className="flex items-center gap-1">
-                <Check className="w-4 h-4 text-profit-green" />
+                <Check className="w-4 h-4 text-cyan-400" />
                 Cancel anytime with one click
               </span>
               <span className="flex items-center gap-1">
-                <Shield className="w-4 h-4 text-profit-green" />
+                <Shield className="w-4 h-4 text-cyan-400" />
                 Stripe-verified secure checkout
               </span>
             </div>
@@ -361,7 +361,7 @@ export function AuditTool() {
             {/* ROI Estimate */}
             {result.verifiedMonthlyLoss > 0 && (
               <div className="mt-6 text-center">
-                <p className="text-profit-green font-semibold">
+                <p className="text-cyan-400 font-semibold">
                   Estimated ROI for your channel: <span className="text-2xl">{Math.round((calculateAnnualizedImpact(result.verifiedMonthlyLoss) / 228) * 10) / 10}x</span> per year
                 </p>
               </div>
@@ -374,7 +374,7 @@ export function AuditTool() {
           <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-6">
             <div className="text-center mb-6">
               <h3 className="text-lg font-semibold text-white mb-2 flex items-center justify-center gap-2">
-                <Sparkles className="w-5 h-5 text-profit-green" />
+                <Sparkles className="w-5 h-5 text-cyan-400" />
                 Feature Spotlight: AI-Powered Fixes
               </h3>
               <p className="text-sm text-slate-400">See how LinkMedic saves you hours of manual work</p>
@@ -398,19 +398,19 @@ export function AuditTool() {
               </div>
 
               {/* After: AI Suggested Fix */}
-              <div className="bg-profit-green/10/20 border border-profit-green/30 rounded-lg p-4">
+              <div className="bg-cyan-500/10/20 border border-cyan-500/30 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-3">
-                  <Sparkles className="w-4 h-4 text-profit-green" />
-                  <span className="text-xs font-medium text-profit-green uppercase">AI Suggested Fix</span>
+                  <Sparkles className="w-4 h-4 text-cyan-400" />
+                  <span className="text-xs font-medium text-cyan-400 uppercase">AI Suggested Fix</span>
                 </div>
                 <div className="bg-slate-900/50 rounded p-3">
                   <p className="text-xs text-slate-500 mb-1">Replacement Product:</p>
-                  <p className="text-sm text-profit-green font-mono break-all">
+                  <p className="text-sm text-cyan-400 font-mono break-all">
                     https://amazon.com/dp/B0CJ4K...?tag=yourstore-20
                   </p>
-                  <p className="text-xs text-slate-500 mt-2">Match: <span className="text-profit-green">98% Similar · In Stock · $49.99</span></p>
+                  <p className="text-xs text-slate-500 mt-2">Match: <span className="text-cyan-400">98% Similar · In Stock · $49.99</span></p>
                 </div>
-                <button className="mt-3 w-full py-2 bg-profit-green/20 hover:bg-profit-green/30 border border-profit-green/50 rounded text-profit-green text-sm font-medium transition flex items-center justify-center gap-2">
+                <button className="mt-3 w-full py-2 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 rounded text-cyan-400 text-sm font-medium transition flex items-center justify-center gap-2">
                   <CheckCircle2 className="w-4 h-4" />
                   Apply Fix & Copy to Clipboard
                 </button>

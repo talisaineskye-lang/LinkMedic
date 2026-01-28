@@ -50,14 +50,14 @@ const blogPosts: BlogPost[] = [
 
 export default function IntelBlogPage() {
   return (
-    <div className="min-h-screen bg-yt-black text-white">
+    <div className="min-h-screen bg-[#020617] text-white">
       {/* Header */}
-      <header className="border-b border-white/10 bg-yt-dark/95 backdrop-blur-md">
+      <header className="border-b border-white/10 bg-[#020617]/90 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center">
             <Image src="/logo.png" alt="LinkMedic" width={120} height={28} className="h-7 w-auto" />
           </Link>
-          <nav className="hidden md:flex items-center gap-6 text-sm text-yt-light">
+          <nav className="hidden md:flex items-center gap-6 text-sm text-slate-400">
             <Link href="/" className="hover:text-white transition">Home</Link>
             <Link href="/audit" className="hover:text-white transition">Free Audit</Link>
             <Link href="/pricing" className="hover:text-white transition">Pricing</Link>
@@ -66,7 +66,7 @@ export default function IntelBlogPage() {
           </nav>
           <Link
             href="/login"
-            className="bg-profit-green text-black px-4 py-2 rounded-lg text-sm font-bold hover:brightness-110 transition shadow-[0_0_20px_rgba(0,255,0,0.2)]"
+            className="btn-primary px-4 py-2 text-sm"
           >
             Start Free Trial
           </Link>
@@ -76,11 +76,11 @@ export default function IntelBlogPage() {
       {/* Hero */}
       <section className="py-16 border-b border-white/10">
         <div className="max-w-5xl mx-auto px-6 text-center">
-          <p className="text-profit-green text-sm font-mono tracking-wider mb-4">INTEL BLOG</p>
+          <p className="text-cyan-400 text-sm font-mono tracking-wider mb-4">INTEL BLOG</p>
           <h1 className="font-display text-4xl md:text-5xl tracking-wide mb-6">
             AFFILIATE INTELLIGENCE
           </h1>
-          <p className="text-xl text-yt-light max-w-2xl mx-auto">
+          <p className="text-xl text-slate-400 max-w-2xl mx-auto">
             Strategies, commission guides, and revenue optimization tactics for YouTube creators who take affiliate earnings seriously.
           </p>
         </div>
@@ -94,13 +94,13 @@ export default function IntelBlogPage() {
               <Link
                 key={post.slug}
                 href={`/intel/${post.slug}`}
-                className="block bg-yt-gray/70 backdrop-blur-sm border border-white/10 rounded-xl p-8 hover:border-profit-green/50 transition group"
+                className="block glass-card p-8 hover:border-cyan-500/50 transition group"
               >
                 <div className="flex items-center gap-4 mb-4">
-                  <span className="px-3 py-1 bg-profit-green/20 text-profit-green text-xs font-medium rounded-full">
+                  <span className="px-3 py-1 bg-cyan-500/20 text-cyan-400 text-xs font-medium rounded-full">
                     {post.category}
                   </span>
-                  <div className="flex items-center gap-4 text-sm text-yt-light/70">
+                  <div className="flex items-center gap-4 text-sm text-slate-500">
                     <span className="flex items-center gap-1.5">
                       <Calendar className="w-3.5 h-3.5" />
                       {post.date}
@@ -111,13 +111,13 @@ export default function IntelBlogPage() {
                     </span>
                   </div>
                 </div>
-                <h2 className="font-display text-2xl text-white mb-3 group-hover:text-profit-green transition">
+                <h2 className="font-display text-2xl text-white mb-3 group-hover:text-cyan-400 transition">
                   {post.title.toUpperCase()}
                 </h2>
-                <p className="text-yt-light mb-4">
+                <p className="text-slate-400 mb-4">
                   {post.description}
                 </p>
-                <span className="inline-flex items-center gap-2 text-profit-green text-sm font-medium">
+                <span className="inline-flex items-center gap-2 text-cyan-400 text-sm font-medium">
                   Read article
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
                 </span>
@@ -133,12 +133,12 @@ export default function IntelBlogPage() {
           <h2 className="font-display text-3xl text-white mb-4">
             PUT THESE STRATEGIES TO WORK
           </h2>
-          <p className="text-yt-light mb-8">
+          <p className="text-slate-400 mb-8">
             LinkMedic scans your YouTube channel for broken links, out-of-stock products, and dead redirects across Amazon, Impact, CJ, Rakuten, ShareASale, and Awin.
           </p>
           <Link
             href="/audit"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-profit-green text-black font-bold rounded-lg hover:brightness-110 transition shadow-[0_0_20px_rgba(0,255,0,0.2)]"
+            className="btn-primary inline-flex items-center gap-2 px-8 py-4"
           >
             Run Free Audit
             <ArrowRight className="w-5 h-5" />
@@ -147,21 +147,21 @@ export default function IntelBlogPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-white/10 py-12 bg-yt-dark">
-        <div className="max-w-5xl mx-auto px-6 text-center">
-          <div className="flex items-center justify-center mb-4">
+      <footer className="bg-[#0f172a] border-t border-white/10 py-12 px-6">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex items-center">
             <Image src="/logo.png" alt="LinkMedic" width={120} height={28} className="h-7 w-auto" />
           </div>
-          <p className="text-yt-light/50 text-sm mb-4">
-            Detect broken links. Suggest fixes. Scan weekly.
-          </p>
-          <div className="flex items-center justify-center gap-6 text-sm text-yt-light">
-            <Link href="/" className="hover:text-white transition">Home</Link>
-            <Link href="/pricing" className="hover:text-white transition">Pricing</Link>
-            <Link href="/resources" className="hover:text-white transition">Resources</Link>
-            <Link href="/intel" className="hover:text-white transition">Intel Blog</Link>
+
+          <div className="flex gap-6 text-sm text-slate-400">
             <Link href="/privacy" className="hover:text-white transition">Privacy</Link>
             <Link href="/terms" className="hover:text-white transition">Terms</Link>
+            <Link href="/contact" className="hover:text-white transition">Contact</Link>
+            <Link href="/intel" className="hover:text-white transition">Intel Blog</Link>
+          </div>
+
+          <div className="text-slate-500 text-sm">
+            &copy; 2026 LinkMedic
           </div>
         </div>
       </footer>

@@ -12,14 +12,14 @@ function LoginContent() {
   const error = searchParams.get("error");
 
   return (
-    <main className="min-h-screen bg-yt-black flex flex-col">
+    <main className="min-h-screen bg-[#020617] flex flex-col">
       {/* Header */}
-      <header className="border-b border-white/10 bg-yt-dark/95 backdrop-blur-md">
+      <header className="border-b border-white/10 bg-[#020617]/90 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center">
             <Image src="/logo.png" alt="LinkMedic" width={120} height={28} className="h-7 w-auto" />
           </Link>
-          <nav className="hidden md:flex items-center gap-6 text-sm text-yt-light">
+          <nav className="hidden md:flex items-center gap-6 text-sm text-slate-400">
             <Link href="/" className="hover:text-white transition">Home</Link>
             <Link href="/audit" className="hover:text-white transition">Free Audit</Link>
             <Link href="/pricing" className="hover:text-white transition">Pricing</Link>
@@ -35,10 +35,10 @@ function LoginContent() {
           <div className="flex items-center justify-center mb-3">
             <Image src="/logo.png" alt="LinkMedic" width={180} height={42} className="h-10 w-auto" />
           </div>
-          <p className="text-yt-light text-center mb-8">Sign in to protect your affiliate revenue</p>
+          <p className="text-slate-400 text-center mb-8">Sign in to protect your affiliate revenue</p>
 
           {error && (
-            <div className="mb-4 p-4 bg-emergency-red/10 border border-emergency-red/30 rounded-xl text-emergency-red text-sm">
+            <div className="mb-4 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">
               {error === "OAuthSignin" && "Error starting sign in process. Please try again."}
               {error === "OAuthCallback" && "Error during authentication callback."}
               {error === "OAuthCreateAccount" && "Error creating your account."}
@@ -53,7 +53,7 @@ function LoginContent() {
             </div>
           )}
 
-          <div className="bg-yt-gray/70 backdrop-blur-sm p-8 rounded-xl border border-white/10">
+          <div className="glass-card p-8">
             <button
               onClick={() => signIn("google", { callbackUrl })}
               className="w-full flex items-center justify-center gap-3 bg-white hover:bg-white/90 text-black px-4 py-4 rounded-lg font-bold transition"
@@ -79,34 +79,36 @@ function LoginContent() {
               Continue with Google
             </button>
 
-            <p className="mt-4 text-xs text-yt-light/50 text-center leading-relaxed">
+            <p className="mt-4 text-xs text-slate-500 text-center leading-relaxed">
               We&apos;ll access your YouTube channel to scan video descriptions for affiliate links.
             </p>
           </div>
 
-          <p className="mt-4 text-xs text-yt-light/50 text-center">
+          <p className="mt-4 text-xs text-slate-500 text-center">
             By signing in, you agree to our{" "}
-            <Link href="/terms" className="text-profit-green hover:underline">Terms of Service</Link>
+            <Link href="/terms" className="text-cyan-400 hover:underline">Terms of Service</Link>
             {" "}and{" "}
-            <Link href="/privacy" className="text-profit-green hover:underline">Privacy Policy</Link>.
+            <Link href="/privacy" className="text-cyan-400 hover:underline">Privacy Policy</Link>.
           </p>
         </div>
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-white/10 py-6 bg-yt-dark">
-        <div className="max-w-5xl mx-auto px-6 text-center text-sm text-yt-light">
-          <div className="flex items-center justify-center mb-1">
-            <Image src="/logo.png" alt="LinkMedic" width={100} height={24} className="h-6 w-auto" />
+      <footer className="bg-[#0f172a] border-t border-white/10 py-12 px-6">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex items-center">
+            <Image src="/logo.png" alt="LinkMedic" width={120} height={28} className="h-7 w-auto" />
           </div>
-          <p className="mb-3 text-yt-light/50">Affiliate link health monitoring for YouTube creators.</p>
-          <div className="flex items-center justify-center gap-6">
-            <Link href="/" className="hover:text-white transition">Home</Link>
-            <Link href="/pricing" className="hover:text-white transition">Pricing</Link>
-            <Link href="/resources" className="hover:text-white transition">Resources</Link>
-            <Link href="/intel" className="hover:text-white transition">Intel Blog</Link>
+
+          <div className="flex gap-6 text-sm text-slate-400">
             <Link href="/privacy" className="hover:text-white transition">Privacy</Link>
             <Link href="/terms" className="hover:text-white transition">Terms</Link>
+            <Link href="/contact" className="hover:text-white transition">Contact</Link>
+            <Link href="/intel" className="hover:text-white transition">Intel Blog</Link>
+          </div>
+
+          <div className="text-slate-500 text-sm">
+            &copy; 2026 LinkMedic
           </div>
         </div>
       </footer>
@@ -117,8 +119,8 @@ function LoginContent() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-yt-black flex items-center justify-center">
-        <div className="text-yt-light">Loading...</div>
+      <div className="min-h-screen bg-[#020617] flex items-center justify-center">
+        <div className="text-slate-400">Loading...</div>
       </div>
     }>
       <LoginContent />
