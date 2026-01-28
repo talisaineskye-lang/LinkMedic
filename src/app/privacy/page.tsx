@@ -18,7 +18,23 @@ export default function PrivacyPolicy() {
       </section>
 
       <section>
-        <h2 className="text-2xl font-bold text-slate-50 mb-4">2. Information We Collect</h2>
+        <h2 className="text-2xl font-bold text-slate-50 mb-4">2. Google API Disclosure</h2>
+        <p>
+          LinkMedic&apos;s use and transfer to any other app of information received from Google APIs will adhere to{" "}
+          <a
+            href="https://developers.google.com/terms/api-services-user-data-policy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-cyan-400 hover:underline"
+          >
+            Google API Services User Data Policy
+          </a>
+          , including the Limited Use requirements.
+        </p>
+      </section>
+
+      <section>
+        <h2 className="text-2xl font-bold text-slate-50 mb-4">3. Information We Collect</h2>
 
         <h3 className="text-xl font-semibold text-slate-100 mb-3 mt-6">2.1 Account Information</h3>
         <p className="mb-2">When you create an account using Google OAuth, we collect:</p>
@@ -90,7 +106,7 @@ export default function PrivacyPolicy() {
       </section>
 
       <section>
-        <h2 className="text-2xl font-bold text-slate-50 mb-4">3. How We Use Your Information</h2>
+        <h2 className="text-2xl font-bold text-slate-50 mb-4">4. How We Use Your Information</h2>
         <p className="mb-4">We use the collected information to:</p>
         <ul className="list-disc list-inside space-y-2 ml-4">
           <li><strong>Provide the Service:</strong> Scan videos, check link health, generate reports, and suggest replacements</li>
@@ -104,7 +120,7 @@ export default function PrivacyPolicy() {
       </section>
 
       <section>
-        <h2 className="text-2xl font-bold text-slate-50 mb-4">4. Data Storage & Security</h2>
+        <h2 className="text-2xl font-bold text-slate-50 mb-4">5. Data Storage & Security</h2>
 
         <h3 className="text-xl font-semibold text-slate-100 mb-3 mt-6">4.1 Where We Store Data</h3>
         <ul className="list-disc list-inside space-y-2 ml-4">
@@ -133,7 +149,7 @@ export default function PrivacyPolicy() {
       </section>
 
       <section>
-        <h2 className="text-2xl font-bold text-slate-50 mb-4">5. Data Sharing & Disclosure</h2>
+        <h2 className="text-2xl font-bold text-slate-50 mb-4">6. Data Sharing & Disclosure</h2>
         <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-4 mb-4">
           <p className="font-semibold text-cyan-400">
             We do NOT sell, rent, or trade your personal information, including your YouTube video titles,
@@ -170,7 +186,7 @@ export default function PrivacyPolicy() {
       </section>
 
       <section>
-        <h2 className="text-2xl font-bold text-slate-50 mb-4">6. Your Rights & Choices</h2>
+        <h2 className="text-2xl font-bold text-slate-50 mb-4">7. Your Rights & Choices</h2>
         <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-4 mb-4">
           <p className="font-semibold text-cyan-400">
             You may request deletion of all your data at any time. This includes your account information,
@@ -196,7 +212,7 @@ export default function PrivacyPolicy() {
       </section>
 
       <section>
-        <h2 className="text-2xl font-bold text-slate-50 mb-4">7. Data Retention</h2>
+        <h2 className="text-2xl font-bold text-slate-50 mb-4">8. Data Retention</h2>
         <p className="mb-4">We retain your data for as long as:</p>
         <ul className="list-disc list-inside space-y-2 ml-4">
           <li>Your account remains active</li>
@@ -210,7 +226,7 @@ export default function PrivacyPolicy() {
       </section>
 
       <section>
-        <h2 className="text-2xl font-bold text-slate-50 mb-4">8. Cookies & Tracking Technologies</h2>
+        <h2 className="text-2xl font-bold text-slate-50 mb-4">9. Cookies & Tracking Technologies</h2>
         <p className="mb-4">
           LinkMedic uses minimal cookies and tracking:
         </p>
@@ -222,7 +238,7 @@ export default function PrivacyPolicy() {
       </section>
 
       <section>
-        <h2 className="text-2xl font-bold text-slate-50 mb-4">9. Children&apos;s Privacy</h2>
+        <h2 className="text-2xl font-bold text-slate-50 mb-4">10. Children&apos;s Privacy</h2>
         <p>
           LinkMedic is not intended for users under 18 years old. We do not knowingly collect personal information
           from children. If we become aware that a child has provided us with personal data, we will delete it
@@ -234,7 +250,7 @@ export default function PrivacyPolicy() {
       </section>
 
       <section>
-        <h2 className="text-2xl font-bold text-slate-50 mb-4">10. International Users</h2>
+        <h2 className="text-2xl font-bold text-slate-50 mb-4">11. International Users</h2>
         <p>
           LinkMedic is operated from Canada. If you access the Service from outside Canada, your information may
           be transferred to, stored, and processed in Canada or other countries where our service providers operate.
@@ -243,7 +259,7 @@ export default function PrivacyPolicy() {
       </section>
 
       <section>
-        <h2 className="text-2xl font-bold text-slate-50 mb-4">11. Third-Party Links</h2>
+        <h2 className="text-2xl font-bold text-slate-50 mb-4">12. Third-Party Links</h2>
         <p>
           Our Service may contain links to third-party websites (YouTube, Amazon, etc.). We are not responsible
           for the privacy practices of these external sites. We encourage you to review their privacy policies
@@ -252,7 +268,7 @@ export default function PrivacyPolicy() {
       </section>
 
       <section>
-        <h2 className="text-2xl font-bold text-slate-50 mb-4">12. Changes to This Privacy Policy</h2>
+        <h2 className="text-2xl font-bold text-slate-50 mb-4">13. Changes to This Privacy Policy</h2>
         <p>
           We may update this Privacy Policy from time to time. We will notify you of material changes via email
           or a prominent notice in the Service at least 30 days before the changes take effect. Your continued
@@ -261,7 +277,7 @@ export default function PrivacyPolicy() {
       </section>
 
       <section>
-        <h2 className="text-2xl font-bold text-slate-50 mb-4">13. Contact Us</h2>
+        <h2 className="text-2xl font-bold text-slate-50 mb-4">14. Contact Us</h2>
         <p>
           For questions about this Privacy Policy or our data practices, please contact us at{" "}
           <a href="mailto:hello@linkmedic.pro" className="text-cyan-400 hover:underline">
