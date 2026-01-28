@@ -58,6 +58,10 @@ model User {
   stripeSubscriptionId  String?   @unique
   subscriptionCancelAt  DateTime?           // When subscription will end (if canceling)
 
+  // Founding Member Program (first 50 users get 90 days free Specialist tier)
+  isFoundingMember      Boolean   @default(false)
+  foundingMemberUntil   DateTime?           // When founding member benefits expire
+
   accounts           Account[]
   sessions           Session[]
   videos             Video[]

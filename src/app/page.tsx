@@ -9,6 +9,7 @@ import { LiveTicker } from "@/components/landing/live-ticker";
 import { DiagnosticReport } from "@/components/landing/diagnostic-report";
 import { BeforeAfter } from "@/components/landing/before-after";
 import { LeakCalculator } from "@/components/landing/revenue-slider";
+import { FoundingMemberBanner } from "@/components/landing/founding-member-banner";
 
 export const metadata: Metadata = {
   title: "LinkMedic – Find & Fix Broken YouTube Affiliate Links",
@@ -61,6 +62,11 @@ export default async function Home() {
           </div>
         </div>
       </nav>
+
+      {/* Founding Member Banner */}
+      <div className="fixed top-[65px] w-full z-40">
+        <FoundingMemberBanner />
+      </div>
 
       {/* Hero */}
       <Hero />

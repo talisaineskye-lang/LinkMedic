@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export function Hero() {
   return (
-    <section className="min-h-screen bg-[#0F0F0F] text-white flex items-center justify-center px-6 pt-24 pb-12 relative overflow-hidden">
+    <section className="min-h-screen bg-[#0F0F0F] text-white flex items-center justify-center px-6 pt-32 pb-12 relative overflow-hidden">
 
       {/* Subtle scan lines effect */}
       <div
