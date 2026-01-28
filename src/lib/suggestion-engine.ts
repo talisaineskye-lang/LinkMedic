@@ -217,6 +217,7 @@ export interface SemanticMatch {
   matchReason: string;
   categoryMatch: boolean;
   brandMatch: boolean;
+  isAlternateBrand: boolean;  // True if replacement is from a different brand
 }
 
 export interface SuggestionResult {
@@ -237,11 +238,13 @@ interface ExtractedKeywords {
   brand: string | null;
   category: string;
   searchQuery: string;
+  genericSearchQuery: string;  // Brand-free query for alternate brand fallback
 }
 
 /**
  * Extract search keywords from an actual Amazon product title
  * This is the ONLY reliable source - video context is not useful
+ * Returns both brand-specific and generic (brand-free) search queries
  */
 async function extractKeywordsFromProductTitle(
   productTitle: string
@@ -254,7 +257,7 @@ async function extractKeywordsFromProductTitle(
     const anthropic = getAnthropicClient();
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 200,
+      max_tokens: 250,
       messages: [
         {
           role: "user",
@@ -267,12 +270,29 @@ Return JSON only:
   "productName": "cleaned product name",
   "brand": "brand or null",
   "category": "Webcam/Headset/Mouse/Keyboard/Monitor/Microphone/Mouse Pad/etc",
-  "searchQuery": "3-5 word Amazon search to find similar products"
+  "searchQuery": "3-5 word Amazon search INCLUDING brand name",
+  "genericSearchQuery": "3-5 word Amazon search WITHOUT brand, focusing on product type and key features"
 }
 
 Example:
 Input: "Logitech G440 Hard Gaming Mouse Pad, Optimized for Gaming Sensors..."
-Output: {"productName": "Logitech G440 Mouse Pad", "brand": "Logitech", "category": "Mouse Pad", "searchQuery": "logitech gaming mouse pad"}`,
+Output: {
+  "productName": "Logitech G440 Mouse Pad",
+  "brand": "Logitech",
+  "category": "Mouse Pad",
+  "searchQuery": "logitech gaming mouse pad",
+  "genericSearchQuery": "hard gaming mouse pad"
+}
+
+Example 2:
+Input: "Razer DeathAdder V3 Pro Wireless Gaming Mouse - 63g Ergonomic..."
+Output: {
+  "productName": "Razer DeathAdder V3 Pro",
+  "brand": "Razer",
+  "category": "Mouse",
+  "searchQuery": "razer deathadder gaming mouse",
+  "genericSearchQuery": "wireless ergonomic gaming mouse"
+}`,
         },
       ],
     });
@@ -286,11 +306,18 @@ Output: {"productName": "Logitech G440 Mouse Pad", "brand": "Logitech", "categor
 
     console.log(`[Suggestion] Extracted keywords:`, parsed);
 
+    // Generate a fallback generic query if LLM didn't provide one
+    const genericQuery = parsed.genericSearchQuery ||
+      (parsed.searchQuery && parsed.brand
+        ? parsed.searchQuery.toLowerCase().replace(parsed.brand.toLowerCase(), "").trim()
+        : parsed.category || productTitle.slice(0, 30));
+
     return {
       productName: parsed.productName || productTitle,
       brand: parsed.brand || null,
       category: parsed.category || "Unknown",
       searchQuery: parsed.searchQuery || productTitle.slice(0, 50),
+      genericSearchQuery: genericQuery,
     };
   } catch (error) {
     console.error("[Suggestion] Keyword extraction error:", error);
@@ -561,11 +588,13 @@ function filterByPriceRange(
  * Use LLM to pick the best matching product from all candidates
  * Compares all options at once for better accuracy
  * Includes price comparison when original price is available
+ * @param isAlternateBrandSearch - If true, allows different brands as valid replacements
  */
 async function verifyBestMatch(
   original: ExtractedKeywords,
   candidates: ProductMatch[],
-  originalPrice?: string | null
+  originalPrice?: string | null,
+  isAlternateBrandSearch: boolean = false
 ): Promise<{
   bestIndex: number | null;
   confidenceScore: number;
@@ -589,6 +618,17 @@ async function verifyBestMatch(
 - If replacement is 2x+ more expensive, reduce confidence by 20 points`;
     }
 
+    // Different rules for alternate brand search
+    const brandRules = isAlternateBrandSearch
+      ? `3. BRAND FLEXIBILITY (Alternate Brand Search):
+   - Different brands ARE acceptable for this search
+   - Focus on matching specifications and quality tier
+   - ${original.brand ? `Original was ${original.brand} - comparable brands like Logitech, Razer, SteelSeries, Corsair, HyperX are acceptable` : "Any reputable brand is acceptable"}
+   - Prioritize products with good ratings and reviews`
+      : `3. BRAND MATCHING (Same Brand Preferred):
+   - Same brand is preferred but not required
+   - If different brand, ensure it's a comparable quality tier`;
+
     const anthropic = getAnthropicClient();
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
@@ -602,7 +642,8 @@ ORIGINAL PRODUCT:
 - Name: ${original.productName}
 - Category: ${original.category}
 - Brand: ${original.brand || "Unknown"}
-- Search terms: ${original.searchQuery}${priceGuidance}
+- Search terms: ${isAlternateBrandSearch ? original.genericSearchQuery : original.searchQuery}${priceGuidance}
+${isAlternateBrandSearch ? "\n⚠️ ALTERNATE BRAND SEARCH: Original brand products were unavailable or too expensive. Finding comparable alternatives." : ""}
 
 CANDIDATE REPLACEMENTS:
 ${candidateList}
@@ -623,22 +664,24 @@ STRICT RULES:
    - Wired mouse → Wired mouse ✓
    - Wired mouse → Wireless mouse ✓ (same type)
 
-3. PRICE CONSIDERATION:
+${brandRules}
+
+4. PRICE CONSIDERATION:
    - Prefer similar price range (within 50% of original)
    - If candidate is 2x+ more expensive, lower confidence
 
-4. REJECT ALL IF:
+5. REJECT ALL IF:
    - No candidates match the category
    - All candidates are accessories instead of main product
    - Category is ambiguous and risky
 
-5. When in doubt, REJECT. It's better to return nothing than a wrong product.
+6. When in doubt, REJECT. It's better to return nothing than a wrong product.
 
 Respond with ONLY this JSON:
 {
   "bestMatch": <number 1-${candidates.length} or null if none valid>,
   "confidence": <0-100>,
-  "reason": "<brief explanation including price note if relevant>",
+  "reason": "<brief explanation including brand/price notes if relevant>",
   "categoryMatch": <true/false>
 }`,
         },
@@ -662,7 +705,7 @@ Respond with ONLY this JSON:
       categoryMatch: parsed.categoryMatch === true,
     };
 
-    console.log(`[Suggestion] LLM verification: ${result.bestIndex !== null ? `#${result.bestIndex + 1}` : 'REJECTED'} (${result.confidenceScore}%) - ${result.matchReason}`);
+    console.log(`[Suggestion] LLM verification${isAlternateBrandSearch ? ' (ALT BRAND)' : ''}: ${result.bestIndex !== null ? `#${result.bestIndex + 1}` : 'REJECTED'} (${result.confidenceScore}%) - ${result.matchReason}`);
 
     return result;
   } catch (error) {
@@ -766,10 +809,33 @@ export async function findReplacementProduct(
   }
 
   console.log(`[Suggestion] Search query: "${keywords.searchQuery}" (Category: ${keywords.category})`);
+  console.log(`[Suggestion] Generic query: "${keywords.genericSearchQuery}" (for fallback)`);
 
-  // Step 2: Search Amazon (in the same region as the original link)
-  const searchHtml = await fetchAmazonSearch(keywords.searchQuery, region);
-  if (!searchHtml) {
+  // Helper function to perform search and return results
+  async function performSearch(query: string, isGenericSearch: boolean): Promise<{
+    products: ProductMatch[];
+    filteredProducts: ProductMatch[];
+    searchQuery: string;
+  } | null> {
+    const searchHtml = await fetchAmazonSearch(query, region);
+    if (!searchHtml) return null;
+
+    const products = parseSearchResults(searchHtml, tag, region);
+    if (products.length === 0) return null;
+
+    console.log(`[Suggestion] Found ${products.length} products from ${isGenericSearch ? 'generic' : 'brand'} search`);
+
+    const filteredProducts = filterByPriceRange(products, originalPrice, 50);
+
+    return { products, filteredProducts, searchQuery: query };
+  }
+
+  // Step 2: Search Amazon with brand-specific query first
+  let searchResult = await performSearch(keywords.searchQuery, false);
+  let isAlternateBrandSearch = false;
+  let usedSearchQuery = keywords.searchQuery;
+
+  if (!searchResult) {
     return {
       success: false,
       originalProductName: keywords.productName,
@@ -780,30 +846,27 @@ export async function findReplacementProduct(
     };
   }
 
-  // Step 3: Parse results (skip ads, use correct region domain)
-  const products = parseSearchResults(searchHtml, tag, region);
-  if (products.length === 0) {
-    return {
-      success: false,
-      originalProductName: keywords.productName,
-      searchQuery: keywords.searchQuery,
-      bestMatch: null,
-      alternativeMatches: [],
-      error: "No search results found",
-    };
+  // Step 3: If brand search found no products within price range, try generic search
+  if (searchResult.filteredProducts.length === 0 && keywords.genericSearchQuery !== keywords.searchQuery) {
+    console.log(`[Suggestion] Brand search found no products in price range - trying alternate brand search`);
+
+    const genericResult = await performSearch(keywords.genericSearchQuery, true);
+
+    if (genericResult && genericResult.filteredProducts.length > 0) {
+      searchResult = genericResult;
+      isAlternateBrandSearch = true;
+      usedSearchQuery = keywords.genericSearchQuery;
+      console.log(`[Suggestion] Alternate brand search found ${genericResult.filteredProducts.length} products in price range`);
+    }
   }
 
-  console.log(`[Suggestion] Found ${products.length} products from search`);
-
-  // Step 4: Filter by price range (max $50 above original)
-  const filteredProducts = filterByPriceRange(products, originalPrice, 50);
-
-  if (filteredProducts.length === 0) {
-    console.log(`[Suggestion] All products filtered out by price`);
+  // If still no products after generic search
+  if (searchResult.filteredProducts.length === 0) {
+    console.log(`[Suggestion] All products filtered out by price (tried both brand and generic searches)`);
     return {
       success: false,
       originalProductName: keywords.productName,
-      searchQuery: keywords.searchQuery,
+      searchQuery: usedSearchQuery,
       bestMatch: null,
       alternativeMatches: [],
       error: "No products within price range",
@@ -811,12 +874,12 @@ export async function findReplacementProduct(
   }
 
   // Log candidates for debugging
-  filteredProducts.forEach((p, i) => {
+  searchResult.filteredProducts.forEach((p, i) => {
     console.log(`[Suggestion]   ${i + 1}. "${p.title.slice(0, 50)}..." - ${p.price}${p.isSponsored ? " [AD]" : ""}`);
   });
 
-  // Step 5: LLM picks the best match from filtered candidates
-  const verification = await verifyBestMatch(keywords, filteredProducts, originalPrice);
+  // Step 4: LLM picks the best match from filtered candidates
+  const verification = await verifyBestMatch(keywords, searchResult.filteredProducts, originalPrice, isAlternateBrandSearch);
 
   // Must have category match AND reasonable confidence
   if (verification.bestIndex === null || !verification.categoryMatch || verification.confidenceScore < 65) {
@@ -824,31 +887,36 @@ export async function findReplacementProduct(
     return {
       success: false,
       originalProductName: keywords.productName,
-      searchQuery: keywords.searchQuery,
+      searchQuery: usedSearchQuery,
       bestMatch: null,
       alternativeMatches: [],
       error: `No valid match: ${verification.matchReason}`,
     };
   }
 
-  const bestProduct = filteredProducts[verification.bestIndex];
+  const bestProduct = searchResult.filteredProducts[verification.bestIndex];
+
+  // Check if the replacement brand matches the original
+  const brandMatch = keywords.brand
+    ? bestProduct.title.toLowerCase().includes(keywords.brand.toLowerCase())
+    : false;
 
   const bestMatch: SemanticMatch = {
     product: bestProduct,
     confidenceScore: verification.confidenceScore,
     matchReason: verification.matchReason,
     categoryMatch: verification.categoryMatch,
-    brandMatch: keywords.brand
-      ? bestProduct.title.toLowerCase().includes(keywords.brand.toLowerCase())
-      : false,
+    brandMatch,
+    isAlternateBrand: isAlternateBrandSearch || (keywords.brand !== null && !brandMatch),
   };
 
-  console.log(`[Suggestion] ACCEPTED: "${bestProduct.title.slice(0, 40)}..." (${verification.confidenceScore}%)`);
+  const brandNote = bestMatch.isAlternateBrand ? " (alternate brand)" : "";
+  console.log(`[Suggestion] ACCEPTED${brandNote}: "${bestProduct.title.slice(0, 40)}..." (${verification.confidenceScore}%)`);
 
   return {
     success: true,
     originalProductName: keywords.productName,
-    searchQuery: keywords.searchQuery,
+    searchQuery: usedSearchQuery,
     bestMatch,
     alternativeMatches: [],
   };
