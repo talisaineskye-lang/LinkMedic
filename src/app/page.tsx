@@ -55,12 +55,9 @@ export default async function Home() {
             >
               Sign In
             </Link>
-            <Link
-              href="/audit"
-              className="rounded bg-[#00FF00] text-black px-4 py-2 text-sm font-bold hover:brightness-110 transition shadow-[0_0_20px_rgba(0,255,0,0.2)]"
-            >
-              SCAN MY CHANNEL
-            </Link>
+            <span className="px-3 py-1 text-xs font-bold tracking-wider bg-[#00FF00]/20 text-[#00FF00] border border-[#00FF00]/50 rounded-full">
+              BETA
+            </span>
           </div>
         </div>
       </nav>

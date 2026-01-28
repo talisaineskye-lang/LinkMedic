@@ -25,16 +25,6 @@ export function Hero() {
 
         {/* Main headline */}
         <div className="text-center mb-12">
-          <motion.div
-            className="inline-block mb-4"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <span className="px-3 py-1 text-xs font-bold tracking-wider bg-[#00FF00]/20 text-[#00FF00] border border-[#00FF00]/50 rounded-full">
-              BETA
-            </span>
-          </motion.div>
           <motion.h1
             className="font-display text-5xl md:text-7xl lg:text-8xl leading-[0.95] tracking-wide mb-6"
             initial={{ opacity: 0, y: 20 }}
@@ -65,11 +55,11 @@ export function Hero() {
           >
             <Link
               href="/audit"
-              className="inline-block rounded-lg bg-[#00FF00] text-black px-10 py-5 font-bold text-lg hover:brightness-110 transition shadow-[0_0_40px_rgba(0,255,0,0.3)]"
+              className="inline-block rounded-lg bg-[#00FF00] text-black px-8 py-4 font-bold text-lg hover:brightness-110 transition shadow-[0_0_40px_rgba(0,255,0,0.3)]"
             >
-              SCAN MY CHANNEL FOR LEAKS — FREE
+              Scan My Channel - Free
             </Link>
-            <p className="text-[#AAAAAA]/50 text-sm mt-4">
+            <p className="text-[#AAAAAA]/50 text-sm mt-3">
               No credit card required · Results in under 2 minutes
             </p>
           </motion.div>
