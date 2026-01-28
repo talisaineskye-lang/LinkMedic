@@ -34,17 +34,14 @@ export function DiagnosticReport() {
             whileHover={{ scale: 1.02, borderColor: 'rgba(255,0,0,0.3)' }}
             transition={{ duration: 0.2 }}
           >
-            {/* Flatline EKG */}
+            {/* Static Flatline */}
             <div className="mb-4">
               <svg width="100%" height="40" viewBox="0 0 200 40" className="text-[#FF0000]">
-                <motion.path
-                  d="M0 20 L60 20 L70 5 L80 35 L90 20 L200 20"
+                <path
+                  d="M0 20 L200 20"
                   stroke="currentColor"
                   strokeWidth="2"
                   fill="none"
-                  initial={{ pathLength: 0 }}
-                  animate={{ pathLength: 1 }}
-                  transition={{ duration: 2, repeat: Infinity }}
                 />
               </svg>
             </div>
