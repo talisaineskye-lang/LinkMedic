@@ -1,25 +1,52 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0F0F0F;
-  --foreground: #FFFFFF;
-  --yt-black: #0F0F0F;
-  --yt-dark: #0A0A0A;
-  --yt-gray: #272727;
-  --yt-light: #AAAAAA;
-  --emergency-red: #FF0000;
-  --profit-green: #00FF00;
+  /* Primary - Cyan */
+  --primary: #06b6d4;
+  --primary-dark: #0891b2;
+  --primary-light: #22d3ee;
+
+  /* YouTube Red - for YouTube references and accents */
+  --youtube: #ef4444;
+  --youtube-dark: #dc2626;
+
+  /* Warning - Amber */
+  --accent: #f59e0b;
+
+  /* Success */
+  --success: #10b981;
+
+  /* Backgrounds */
+  --background: #020617;
+  --bg-elevated: #0f172a;
+  --bg-card: rgba(255, 255, 255, 0.03);
+
+  /* Text */
+  --foreground: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  /* Borders */
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-light: rgba(255, 255, 255, 0.1);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-yt-black: var(--yt-black);
-  --color-yt-dark: var(--yt-dark);
-  --color-yt-gray: var(--yt-gray);
-  --color-yt-light: var(--yt-light);
-  --color-emergency-red: var(--emergency-red);
-  --color-profit-green: var(--profit-green);
+  --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-dark);
+  --color-primary-light: var(--primary-light);
+  --color-youtube: var(--youtube);
+  --color-youtube-dark: var(--youtube-dark);
+  --color-accent: var(--accent);
+  --color-success: var(--success);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-card: var(--bg-card);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-border-subtle: rgba(255, 255, 255, 0.06);
+  --color-border-light: rgba(255, 255, 255, 0.1);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-display);
@@ -29,6 +56,21 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+  letter-spacing: 0.01em;
+  line-height: 1.7;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+p, li {
+  letter-spacing: 0.015em;
+}
+
+.text-sm, .text-xs {
+  letter-spacing: 0.02em;
 }
 
 .font-display {
@@ -43,20 +85,78 @@ body {
   font-family: var(--font-geist-mono), monospace;
 }
 
+/* Glass Card */
+.glass-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+}
+
+/* Primary Button */
+.btn-primary {
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  color: #000;
+  font-weight: 700;
+  padding: 12px 24px;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(6, 182, 212, 0.3);
+  transition: all 0.3s;
+  display: inline-block;
+  text-decoration: none;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(6, 182, 212, 0.4);
+}
+
+/* Ghost Button */
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.03);
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px 24px;
+  border-radius: 10px;
+  backdrop-filter: blur(8px);
+  transition: all 0.3s;
+  display: inline-block;
+  text-decoration: none;
+}
+
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: #06b6d4;
+  color: #06b6d4;
+}
+
 /* Custom scrollbar for dark theme */
 ::-webkit-scrollbar {
   width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0F0F0F;
+  background: #020617;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #272727;
+  background: #1e293b;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #333;
+  background: #334155;
 }
