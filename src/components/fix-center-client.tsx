@@ -162,6 +162,61 @@ function NetworkBadge({ merchant }: { merchant: string }) {
   );
 }
 
+// Verification Modal - shown when all videos in a group are checked
+interface VerifyModalProps {
+  videoCount: number;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+function VerifyModal({ videoCount, onConfirm, onCancel }: VerifyModalProps) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onCancel}
+      />
+
+      {/* Modal */}
+      <div className="relative w-full max-w-sm bg-slate-900 border border-white/10 rounded-2xl shadow-xl">
+        <div className="p-6 text-center">
+          {/* Icon */}
+          <div className="w-16 h-16 mx-auto mb-4 bg-cyan-500/10 rounded-full flex items-center justify-center">
+            <CheckCircle2 className="w-8 h-8 text-cyan-400" />
+          </div>
+
+          {/* Title */}
+          <h3 className="text-lg font-semibold text-white mb-2">
+            All {videoCount} video{videoCount !== 1 ? "s" : ""} updated!
+          </h3>
+
+          {/* Description */}
+          <p className="text-slate-400 text-sm mb-6">
+            Mark this link as verified? It will move to your Fixed tab.
+          </p>
+
+          {/* Buttons */}
+          <div className="flex gap-3">
+            <button
+              onClick={onCancel}
+              className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-400 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition"
+            >
+              Not Yet
+            </button>
+            <button
+              onClick={onConfirm}
+              className="flex-1 px-4 py-2.5 text-sm font-bold text-black bg-cyan-500 hover:brightness-110 rounded-lg transition"
+            >
+              Mark as Verified
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function FixCenterClient({
   needsFixIssues,
   fixedIssues,
@@ -194,6 +249,10 @@ export function FixCenterClient({
   const [showDisclosureMenu, setShowDisclosureMenu] = useState<string | null>(null);
   const [showReplacementFor, setShowReplacementFor] = useState<string | null>(null);
   const [showActionMenu, setShowActionMenu] = useState<string | null>(null);
+  // Accordion checkbox progress tracking
+  const [checkedVideos, setCheckedVideos] = useState<Map<string, Set<string>>>(new Map());
+  const [showVerifyModal, setShowVerifyModal] = useState<string | null>(null);
+  const [allExpanded, setAllExpanded] = useState(false);
   const router = useRouter();
 
   // Group fixed links by date
@@ -498,6 +557,104 @@ export function FixCenterClient({
       } else {
         next.add(url);
       }
+      return next;
+    });
+  };
+
+  // === Accordion Checkbox Progress Tracking Functions ===
+
+  // Check/uncheck a video for a given URL
+  const toggleVideoChecked = (originalUrl: string, videoId: string) => {
+    setCheckedVideos(prev => {
+      const next = new Map(prev);
+      const videoSet = new Set(next.get(originalUrl) || []);
+
+      if (videoSet.has(videoId)) {
+        videoSet.delete(videoId);
+      } else {
+        videoSet.add(videoId);
+      }
+
+      next.set(originalUrl, videoSet);
+      return next;
+    });
+  };
+
+  // Check if a video is checked
+  const isVideoChecked = (originalUrl: string, videoId: string): boolean => {
+    return checkedVideos.get(originalUrl)?.has(videoId) || false;
+  };
+
+  // Get count of checked videos for a URL
+  const getCheckedCount = (originalUrl: string): number => {
+    return checkedVideos.get(originalUrl)?.size || 0;
+  };
+
+  // Check if any fixing has started for this URL
+  const hasStartedFixing = (originalUrl: string): boolean => {
+    return (checkedVideos.get(originalUrl)?.size || 0) > 0;
+  };
+
+  // Check if all videos are checked for a URL
+  const allVideosChecked = (originalUrl: string, totalVideos: number): boolean => {
+    return (checkedVideos.get(originalUrl)?.size || 0) >= totalVideos;
+  };
+
+  // Copy & Open action that also checks the video
+  const copyOpenAndCheck = async (
+    suggestedLink: string,
+    copyId: string,
+    youtubeVideoId: string,
+    originalUrl: string,
+    videoId: string,
+    totalVideos: number
+  ) => {
+    try {
+      await navigator.clipboard.writeText(suggestedLink);
+      setCopiedId(copyId);
+      setTimeout(() => setCopiedId(null), 2000);
+
+      // Open YouTube Studio
+      window.open(`https://studio.youtube.com/video/${youtubeVideoId}/edit`, '_blank');
+
+      // Auto-check this video
+      setCheckedVideos(prev => {
+        const next = new Map(prev);
+        const videoSet = new Set(next.get(originalUrl) || []);
+        videoSet.add(videoId);
+        next.set(originalUrl, videoSet);
+
+        // Check if all are now checked - trigger modal
+        if (videoSet.size >= totalVideos) {
+          setTimeout(() => setShowVerifyModal(originalUrl), 500);
+        }
+
+        return next;
+      });
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
+
+  // Expand/Collapse all URLs
+  const toggleExpandAll = () => {
+    if (allExpanded) {
+      setExpandedUrls(new Set());
+    } else {
+      setExpandedUrls(new Set(groupedIssues.map(g => g.originalUrl)));
+    }
+    setAllExpanded(!allExpanded);
+  };
+
+  // Handle verification confirmation - mark all fixed and clear checked state
+  const handleVerifyAllFixed = async (originalUrl: string, linkIds: string[]) => {
+    setShowVerifyModal(null);
+    await handleMarkAllFixed(originalUrl, linkIds);
+
+    // Clear checked state for this URL after marking fixed
+    setCheckedVideos(prev => {
+      const next = new Map(prev);
+      next.delete(originalUrl);
       return next;
     });
   };
@@ -983,9 +1140,27 @@ export function FixCenterClient({
                 </div>
               </div>
               {viewMode === "grouped" && (
-                <span className="text-xs text-slate-400/50">
-                  {groupedIssues.length} unique link{groupedIssues.length !== 1 ? "s" : ""} across {needsFixIssues.length} video{needsFixIssues.length !== 1 ? "s" : ""}
-                </span>
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={toggleExpandAll}
+                    className="text-xs text-slate-400 hover:text-white transition flex items-center gap-1"
+                  >
+                    {allExpanded ? (
+                      <>
+                        <ChevronDown className="w-3 h-3" />
+                        Collapse All
+                      </>
+                    ) : (
+                      <>
+                        <ChevronRight className="w-3 h-3" />
+                        Expand All
+                      </>
+                    )}
+                  </button>
+                  <span className="text-xs text-slate-400/50">
+                    {groupedIssues.length} unique link{groupedIssues.length !== 1 ? "s" : ""} across {needsFixIssues.length} video{needsFixIssues.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
               )}
             </div>
           )}
@@ -1155,38 +1330,43 @@ export function FixCenterClient({
                         </div>
                       </td>
 
-                      {/* Videos Affected - Expandable */}
+                      {/* Videos Affected - Expandable with Progress */}
                       <td className="px-4 py-4">
                         <button
                           onClick={() => toggleUrlExpanded(group.originalUrl)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              toggleUrlExpanded(group.originalUrl);
+                            }
+                          }}
                           className="flex items-center gap-1.5 text-sm text-slate-400/70 hover:text-white transition mx-auto"
+                          aria-expanded={expandedUrls.has(group.originalUrl)}
+                          aria-controls={`videos-${group.linkIds[0]}`}
                         >
                           {expandedUrls.has(group.originalUrl) ? (
                             <ChevronDown className="w-4 h-4" />
                           ) : (
                             <ChevronRight className="w-4 h-4" />
                           )}
-                          <span className="font-medium">{group.videos.length}</span>
-                          <span className="text-slate-400/50">video{group.videos.length !== 1 ? "s" : ""}</span>
+                          {hasStartedFixing(group.originalUrl) ? (
+                            // Show progress once fixing has started
+                            <span className="font-medium">
+                              <span className="text-cyan-400">
+                                {getCheckedCount(group.originalUrl)}
+                              </span>
+                              <span className="text-slate-400/50">/{group.videos.length} fixed</span>
+                            </span>
+                          ) : (
+                            // Show simple count before fixing starts
+                            <>
+                              <span className="font-medium">{group.videos.length}</span>
+                              <span className="text-slate-400/50">
+                                video{group.videos.length !== 1 ? "s" : ""}
+                              </span>
+                            </>
+                          )}
                         </button>
-                        {expandedUrls.has(group.originalUrl) && (
-                          <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
-                            {group.videos.map((video) => (
-                              <div key={video.id} className="flex items-center gap-2 text-xs">
-                                <a
-                                  href={`https://studio.youtube.com/video/${video.youtubeVideoId}/edit`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-slate-400 hover:text-cyan-400 truncate max-w-[150px] flex items-center gap-1"
-                                  title={video.title}
-                                >
-                                  <Pencil className="w-3 h-3 flex-shrink-0" />
-                                  {video.title.length > 25 ? video.title.slice(0, 25) + "..." : video.title}
-                                </a>
-                              </div>
-                            ))}
-                          </div>
-                        )}
                       </td>
 
                       {/* AI Suggestion */}
@@ -1367,6 +1547,162 @@ export function FixCenterClient({
                         )}
                       </td>
                     </tr>
+                    {/* Expanded Accordion Row with Video Checkboxes */}
+                    {expandedUrls.has(group.originalUrl) && (
+                      <tr>
+                        <td colSpan={7} className="p-0 bg-slate-900/30" id={`videos-${group.linkIds[0]}`}>
+                          <div className="px-4 py-3">
+                            {/* Sub-table header */}
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="text-xs text-slate-400 uppercase tracking-wider font-medium">
+                                Videos using this link
+                              </span>
+                              {group.suggestedLink && group.suggestedTitle && (
+                                <span className="text-xs text-slate-400/50">
+                                  Replacement: {group.suggestedTitle.length > 40 ? group.suggestedTitle.slice(0, 40) + "..." : group.suggestedTitle}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Videos sub-table */}
+                            <div className="rounded-lg border border-white/10 overflow-hidden">
+                              <table className="w-full">
+                                <thead className="bg-white/5">
+                                  <tr>
+                                    <th className="px-4 py-2 text-left text-xs font-medium text-slate-400 uppercase w-12">
+                                      {/* Checkbox column header */}
+                                    </th>
+                                    <th className="px-4 py-2 text-left text-xs font-medium text-slate-400 uppercase">
+                                      Video
+                                    </th>
+                                    <th className="px-4 py-2 text-right text-xs font-medium text-slate-400 uppercase w-32">
+                                      Action
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/5">
+                                  {group.videos.map((video) => {
+                                    const videoChecked = isVideoChecked(group.originalUrl, video.id);
+                                    const isCopied = copiedId === `accordion-${video.id}`;
+
+                                    return (
+                                      <tr key={video.id} className="hover:bg-white/5 transition">
+                                        {/* Checkbox */}
+                                        <td className="px-4 py-3">
+                                          <button
+                                            onClick={() => {
+                                              toggleVideoChecked(group.originalUrl, video.id);
+                                              // Check if all will be checked after this toggle
+                                              const currentCount = getCheckedCount(group.originalUrl);
+                                              const willBeChecked = !videoChecked;
+                                              if (willBeChecked && currentCount + 1 >= group.videos.length) {
+                                                setTimeout(() => setShowVerifyModal(group.originalUrl), 300);
+                                              }
+                                            }}
+                                            onKeyDown={(e) => {
+                                              if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault();
+                                                toggleVideoChecked(group.originalUrl, video.id);
+                                              }
+                                            }}
+                                            className={`w-5 h-5 rounded border-2 flex items-center justify-center transition ${
+                                              videoChecked
+                                                ? "bg-cyan-500 border-cyan-500"
+                                                : "border-white/30 hover:border-white/50"
+                                            }`}
+                                            role="checkbox"
+                                            aria-checked={videoChecked}
+                                            aria-label={videoChecked ? "Mark as not fixed" : "Mark as fixed"}
+                                          >
+                                            {videoChecked && <Check className="w-3 h-3 text-black" />}
+                                          </button>
+                                        </td>
+
+                                        {/* Video Title */}
+                                        <td className="px-4 py-3">
+                                          <div className="flex items-center gap-3">
+                                            {video.thumbnailUrl ? (
+                                              <Image
+                                                src={video.thumbnailUrl}
+                                                alt={video.title}
+                                                width={48}
+                                                height={27}
+                                                className="rounded object-cover flex-shrink-0"
+                                              />
+                                            ) : (
+                                              <div className="w-12 h-7 bg-white/5 rounded flex-shrink-0" />
+                                            )}
+                                            <div className="min-w-0">
+                                              <p
+                                                className={`text-sm font-medium truncate max-w-[300px] ${
+                                                  videoChecked ? "text-slate-400 line-through" : "text-white"
+                                                }`}
+                                                title={video.title}
+                                              >
+                                                {video.title.length > 50 ? video.title.slice(0, 50) + "..." : video.title}
+                                              </p>
+                                              <p className="text-xs text-slate-400/50">
+                                                {formatNumber(video.viewCount)} views
+                                              </p>
+                                            </div>
+                                          </div>
+                                        </td>
+
+                                        {/* Actions */}
+                                        <td className="px-4 py-3 text-right">
+                                          <div className="flex items-center justify-end gap-2">
+                                            {group.suggestedLink ? (
+                                              <button
+                                                onClick={() => copyOpenAndCheck(
+                                                  group.suggestedLink!,
+                                                  `accordion-${video.id}`,
+                                                  video.youtubeVideoId,
+                                                  group.originalUrl,
+                                                  video.id,
+                                                  group.videos.length
+                                                )}
+                                                disabled={isCopied}
+                                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition ${
+                                                  isCopied
+                                                    ? "bg-cyan-500 text-black"
+                                                    : "bg-white/5 hover:bg-white/10 border border-white/20 text-white"
+                                                }`}
+                                              >
+                                                {isCopied ? (
+                                                  <>
+                                                    <Check className="w-3 h-3" />
+                                                    Copied!
+                                                  </>
+                                                ) : (
+                                                  <>
+                                                    <Copy className="w-3 h-3" />
+                                                    Copy & Open
+                                                  </>
+                                                )}
+                                              </button>
+                                            ) : (
+                                              <a
+                                                href={`https://studio.youtube.com/video/${video.youtubeVideoId}/edit`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-white/5 hover:bg-white/10 border border-white/20 text-white transition"
+                                              >
+                                                <Pencil className="w-3 h-3" />
+                                                Edit
+                                              </a>
+                                            )}
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
                     {/* Manual Find Replacement Row - Expandable */}
                     {showReplacementFor === group.originalUrl && (
                       <tr>
@@ -1647,11 +1983,29 @@ export function FixCenterClient({
       </div>
       )}
 
+      {/* Verification Modal */}
+      {showVerifyModal && (() => {
+        const group = groupedIssues.find(g => g.originalUrl === showVerifyModal);
+        if (!group) return null;
+
+        return (
+          <VerifyModal
+            videoCount={group.videos.length}
+            onConfirm={() => handleVerifyAllFixed(showVerifyModal, group.linkIds)}
+            onCancel={() => setShowVerifyModal(null)}
+          />
+        );
+      })()}
+
       {/* Copy Toast */}
       {copiedId && (
         <div className="fixed bottom-6 right-6 px-4 py-3 bg-cyan-500 text-black rounded-xl shadow-lg flex items-center gap-2 animate-in slide-in-from-bottom-2 z-50">
           <Check className="w-4 h-4" />
-          <span className="text-sm font-bold">Copied! Ready to paste into YouTube.</span>
+          <span className="text-sm font-bold">
+            {copiedId.startsWith('accordion-')
+              ? "Link copied! YouTube Studio opened."
+              : "Copied! Ready to paste into YouTube."}
+          </span>
         </div>
       )}
     </div>
