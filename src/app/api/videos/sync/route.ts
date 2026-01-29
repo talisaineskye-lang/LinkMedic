@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { syncUserVideos, ScanType } from "@/lib/youtube";
-import { extractLinksForUser } from "@/lib/scanner";
+import { extractLinksForUser, scanUserLinks } from "@/lib/scanner";
 import { checkTierLimits, getUpgradeMessage, getMaxChannels } from "@/lib/tier-limits";
 import { sendScanCompleteEmail } from "@/lib/email";
 import { calculateRevenueImpact, DEFAULT_SETTINGS } from "@/lib/revenue-estimator";
@@ -176,6 +176,12 @@ export async function POST(request: Request) {
     // Also auto-detects and saves affiliate tag if user doesn't have one
     const { links, disclosureIssues, detectedAffiliateTag } = await extractLinksForUser(session.user.id);
 
+    // Audit links to check their status (broken, OOS, etc.)
+    // This changes status from UNKNOWN to actual status
+    console.log(`[Sync] Auditing ${links} extracted links...`);
+    const { checked: linksAudited, issues: issuesFound } = await scanUserLinks(session.user.id);
+    console.log(`[Sync] Audited ${linksAudited} links, found ${issuesFound} issues`);
+
     // Handle first-time scans: send email and upgrade TRIAL → AUDITOR
     if (isFirstScan) {
       try {
@@ -250,6 +256,8 @@ export async function POST(request: Request) {
       synced,
       total,
       linksExtracted: links,
+      linksAudited,
+      issuesFound,
       disclosureIssues,
       // Let frontend know if we auto-detected their affiliate tag
       detectedAffiliateTag,

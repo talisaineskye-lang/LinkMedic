@@ -156,8 +156,11 @@ export function DashboardClient({
 
       const data = await response.json();
       const scanLabel = scanType === "quick" ? "Quick scan" : "Full scan";
+      const issueText = data.issuesFound > 0
+        ? `Found ${data.issuesFound} issue${data.issuesFound !== 1 ? 's' : ''} to fix!`
+        : 'All links healthy!';
       alert(
-        `${scanLabel} complete! Synced ${data.synced} videos and extracted ${data.linksExtracted} links`
+        `${scanLabel} complete! Synced ${data.synced} videos, extracted ${data.linksExtracted} links, audited ${data.linksAudited || 0} links. ${issueText}`
       );
       router.refresh();
     } catch (error) {
