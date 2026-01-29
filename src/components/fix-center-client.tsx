@@ -9,7 +9,23 @@ import { DISCLOSURE_TEMPLATES } from "@/lib/disclosure-detector";
 import { NETWORK_DISPLAY_NAMES, AffiliateMerchant } from "@/lib/affiliate-networks";
 import { FindReplacementsButton } from "./find-replacements-button";
 import { FindReplacement } from "./find-replacement";
+import { Tooltip } from "./ui/tooltip";
 import Link from "next/link";
+
+// Tooltip content constants
+const TOOLTIP_CONTENT = {
+  confidence: "How closely the suggested replacement matches the original product's category, price point, and ratings.",
+  revenueAtRisk: "Estimated lost commission based on video views. Calculated using 1% CTR, 1.5% conversion rate, and 3% average commission.",
+  aiSuggestion: "We automatically find in-stock alternatives that match the original product's category and price range.",
+  issueOutOfStock: "This product is currently unavailable on the retailer's site. Visitors clicking this link can't buy it.",
+  issueBroken: "This link returns a 404 error or no longer exists.",
+  issueRedirect: "This link redirects somewhere unexpected, like a homepage or search page instead of a product.",
+  issueMissingTag: "This link is missing your affiliate tracking tag, so you won't earn commission from clicks.",
+  issueThirdParty: "This product is only available from third-party sellers, which may affect commission rates.",
+  copyAndOpen: "Copies the new affiliate link to your clipboard and opens YouTube Studio so you can paste it.",
+  progressIndicator: "Tracks how many videos you've updated with the new link.",
+  markAsVerified: "Confirms you've updated all videos. Moves this link to the Fixed tab.",
+};
 
 interface Issue {
   id: string;
@@ -97,9 +113,11 @@ function ConfidenceBadge({ score }: { score: number | null }) {
   };
 
   return (
-    <span className={`inline-flex px-2 py-0.5 text-xs font-bold rounded border ${getColor()}`}>
-      {score}%
-    </span>
+    <Tooltip content={TOOLTIP_CONTENT.confidence} position="top" showIcon>
+      <span className={`inline-flex px-2 py-0.5 text-xs font-bold rounded border cursor-help ${getColor()}`}>
+        {score}%
+      </span>
+    </Tooltip>
   );
 }
 
@@ -107,26 +125,36 @@ function IssueTypeBadge({ status }: { status: string }) {
   const getConfig = () => {
     switch (status) {
       case "NOT_FOUND":
-        return { label: "404", color: "bg-red-500/20 border-red-500/50 text-red-500" };
+        return { label: "404", color: "bg-red-500/20 border-red-500/50 text-red-500", tooltip: TOOLTIP_CONTENT.issueBroken };
       case "OOS":
-        return { label: "Out of Stock", color: "bg-orange-500/20 border-orange-500/50 text-orange-400" };
+        return { label: "Out of Stock", color: "bg-orange-500/20 border-orange-500/50 text-orange-400", tooltip: TOOLTIP_CONTENT.issueOutOfStock };
       case "OOS_THIRD_PARTY":
-        return { label: "3rd Party Only", color: "bg-yellow-500/20 border-yellow-500/50 text-yellow-400" };
+        return { label: "3rd Party Only", color: "bg-yellow-500/20 border-yellow-500/50 text-yellow-400", tooltip: TOOLTIP_CONTENT.issueThirdParty };
       case "SEARCH_REDIRECT":
-        return { label: "Redirect", color: "bg-orange-500/20 border-orange-500/50 text-orange-400" };
+        return { label: "Redirect", color: "bg-orange-500/20 border-orange-500/50 text-orange-400", tooltip: TOOLTIP_CONTENT.issueRedirect };
       case "MISSING_TAG":
-        return { label: "Missing Tag", color: "bg-yellow-500/20 border-yellow-500/50 text-yellow-400" };
+        return { label: "Missing Tag", color: "bg-yellow-500/20 border-yellow-500/50 text-yellow-400", tooltip: TOOLTIP_CONTENT.issueMissingTag };
       default:
-        return { label: status, color: "bg-white/5 border-white/20 text-slate-400" };
+        return { label: status, color: "bg-white/5 border-white/20 text-slate-400", tooltip: "" };
     }
   };
 
-  const { label, color } = getConfig();
+  const { label, color, tooltip } = getConfig();
+
+  if (!tooltip) {
+    return (
+      <span className={`inline-flex px-2 py-0.5 text-xs font-bold rounded border ${color}`}>
+        {label}
+      </span>
+    );
+  }
 
   return (
-    <span className={`inline-flex px-2 py-0.5 text-xs font-bold rounded border ${color}`}>
-      {label}
-    </span>
+    <Tooltip content={tooltip} position="top" showIcon>
+      <span className={`inline-flex px-2 py-0.5 text-xs font-bold rounded border cursor-help ${color}`}>
+        {label}
+      </span>
+    </Tooltip>
   );
 }
 
@@ -204,12 +232,14 @@ function VerifyModal({ videoCount, onConfirm, onCancel }: VerifyModalProps) {
             >
               Not Yet
             </button>
-            <button
-              onClick={onConfirm}
-              className="flex-1 px-4 py-2.5 text-sm font-bold text-black bg-cyan-500 hover:brightness-110 rounded-lg transition"
-            >
-              Mark as Verified
-            </button>
+            <Tooltip content={TOOLTIP_CONTENT.markAsVerified} position="top">
+              <button
+                onClick={onConfirm}
+                className="flex-1 px-4 py-2.5 text-sm font-bold text-black bg-cyan-500 hover:brightness-110 rounded-lg transition"
+              >
+                Mark as Verified
+              </button>
+            </Tooltip>
           </div>
         </div>
       </div>
@@ -1292,13 +1322,19 @@ export function FixCenterClient({
                       Videos Affected
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                      AI Suggestion
+                      <Tooltip content={TOOLTIP_CONTENT.aiSuggestion} position="top">
+                        <span className="cursor-help border-b border-dashed border-slate-500">AI Suggestion</span>
+                      </Tooltip>
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
-                      Confidence
+                      <Tooltip content={TOOLTIP_CONTENT.confidence} position="top">
+                        <span className="cursor-help border-b border-dashed border-slate-500">Confidence</span>
+                      </Tooltip>
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-slate-400 uppercase tracking-wider">
-                      Total Revenue at Risk
+                      <Tooltip content={TOOLTIP_CONTENT.revenueAtRisk} position="top">
+                        <span className="cursor-help border-b border-dashed border-slate-500">Total Revenue at Risk</span>
+                      </Tooltip>
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
                       Action
@@ -1351,12 +1387,14 @@ export function FixCenterClient({
                           )}
                           {hasStartedFixing(group.originalUrl) ? (
                             // Show progress once fixing has started
-                            <span className="font-medium">
-                              <span className="text-cyan-400">
-                                {getCheckedCount(group.originalUrl)}
+                            <Tooltip content={TOOLTIP_CONTENT.progressIndicator} position="top">
+                              <span className="font-medium cursor-help">
+                                <span className="text-cyan-400">
+                                  {getCheckedCount(group.originalUrl)}
+                                </span>
+                                <span className="text-slate-400/50">/{group.videos.length} fixed</span>
                               </span>
-                              <span className="text-slate-400/50">/{group.videos.length} fixed</span>
-                            </span>
+                            </Tooltip>
                           ) : (
                             // Show simple count before fixing starts
                             <>
@@ -1652,34 +1690,36 @@ export function FixCenterClient({
                                         <td className="px-4 py-3 text-right">
                                           <div className="flex items-center justify-end gap-2">
                                             {group.suggestedLink ? (
-                                              <button
-                                                onClick={() => copyOpenAndCheck(
-                                                  group.suggestedLink!,
-                                                  `accordion-${video.id}`,
-                                                  video.youtubeVideoId,
-                                                  group.originalUrl,
-                                                  video.id,
-                                                  group.videos.length
-                                                )}
-                                                disabled={isCopied}
-                                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition ${
-                                                  isCopied
-                                                    ? "bg-cyan-500 text-black"
-                                                    : "bg-white/5 hover:bg-white/10 border border-white/20 text-white"
-                                                }`}
-                                              >
-                                                {isCopied ? (
-                                                  <>
-                                                    <Check className="w-3 h-3" />
-                                                    Copied!
-                                                  </>
-                                                ) : (
-                                                  <>
-                                                    <Copy className="w-3 h-3" />
-                                                    Copy & Open
-                                                  </>
-                                                )}
-                                              </button>
+                                              <Tooltip content={TOOLTIP_CONTENT.copyAndOpen} position="left">
+                                                <button
+                                                  onClick={() => copyOpenAndCheck(
+                                                    group.suggestedLink!,
+                                                    `accordion-${video.id}`,
+                                                    video.youtubeVideoId,
+                                                    group.originalUrl,
+                                                    video.id,
+                                                    group.videos.length
+                                                  )}
+                                                  disabled={isCopied}
+                                                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition ${
+                                                    isCopied
+                                                      ? "bg-cyan-500 text-black"
+                                                      : "bg-white/5 hover:bg-white/10 border border-white/20 text-white"
+                                                  }`}
+                                                >
+                                                  {isCopied ? (
+                                                    <>
+                                                      <Check className="w-3 h-3" />
+                                                      Copied!
+                                                    </>
+                                                  ) : (
+                                                    <>
+                                                      <Copy className="w-3 h-3" />
+                                                      Copy & Open
+                                                    </>
+                                                  )}
+                                                </button>
+                                              </Tooltip>
                                             ) : (
                                               <a
                                                 href={`https://studio.youtube.com/video/${video.youtubeVideoId}/edit`}
@@ -1741,13 +1781,19 @@ export function FixCenterClient({
                     Issue Type
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                    AI Suggestion
+                    <Tooltip content={TOOLTIP_CONTENT.aiSuggestion} position="top">
+                      <span className="cursor-help border-b border-dashed border-slate-500">AI Suggestion</span>
+                    </Tooltip>
                   </th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
-                    Confidence
+                    <Tooltip content={TOOLTIP_CONTENT.confidence} position="top">
+                      <span className="cursor-help border-b border-dashed border-slate-500">Confidence</span>
+                    </Tooltip>
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-slate-400 uppercase tracking-wider">
-                    Revenue at Risk
+                    <Tooltip content={TOOLTIP_CONTENT.revenueAtRisk} position="top">
+                      <span className="cursor-help border-b border-dashed border-slate-500">Revenue at Risk</span>
+                    </Tooltip>
                   </th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
                     Action

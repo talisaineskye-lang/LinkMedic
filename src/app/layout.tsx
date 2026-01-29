@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Outfit, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
+import { CookieConsent } from "@/components/cookie-consent";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -29,7 +30,10 @@ export default function RootLayout({
       <body
         className={`${outfit.variable} ${geistMono.variable} font-sans antialiased bg-[#0F0F0F]`}
       >
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <CookieConsent />
+        </Providers>
       </body>
     </html>
   );

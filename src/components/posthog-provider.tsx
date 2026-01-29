@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { initPostHog, identifyUser, posthog, isPostHogReady } from "@/lib/posthog";
+import { hasAnalyticsConsent } from "./cookie-consent";
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -11,11 +12,28 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const [ready, setReady] = useState(false);
 
-  // Initialize PostHog on mount
-  useEffect(() => {
-    initPostHog();
-    setReady(isPostHogReady());
+  // Initialize PostHog only if user has consented
+  const tryInitPostHog = useCallback(() => {
+    if (hasAnalyticsConsent()) {
+      initPostHog();
+      setReady(isPostHogReady());
+    }
   }, []);
+
+  // Initialize PostHog on mount if consent exists
+  useEffect(() => {
+    tryInitPostHog();
+
+    // Listen for consent event (user accepts cookies after page load)
+    const handleConsentAccepted = () => {
+      tryInitPostHog();
+    };
+
+    window.addEventListener('cookieConsentAccepted', handleConsentAccepted);
+    return () => {
+      window.removeEventListener('cookieConsentAccepted', handleConsentAccepted);
+    };
+  }, [tryInitPostHog]);
 
   // Track page views
   useEffect(() => {
