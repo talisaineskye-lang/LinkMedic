@@ -2,19 +2,26 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Loader2, Lock } from "lucide-react";
+import { Search, Loader2, Sparkles } from "lucide-react";
 
 interface FindReplacementsButtonProps {
   canUseAI?: boolean;
+  linksWithoutSuggestions?: number;
 }
 
-export function FindReplacementsButton({ canUseAI = true }: FindReplacementsButtonProps) {
+export function FindReplacementsButton({
+  canUseAI = true,
+  linksWithoutSuggestions: initialCount
+}: FindReplacementsButtonProps) {
   const [loading, setLoading] = useState(false);
-  const [linksNeeding, setLinksNeeding] = useState<number | null>(null);
+  const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
+  const [linksNeeding, setLinksNeeding] = useState<number | null>(initialCount ?? null);
   const router = useRouter();
 
-  // Check how many links need replacements on mount
+  // Check how many links need replacements on mount (if not provided)
   useEffect(() => {
+    if (initialCount !== undefined) return;
+
     async function checkStatus() {
       try {
         const response = await fetch("/api/links/find-replacements");
@@ -27,15 +34,19 @@ export function FindReplacementsButton({ canUseAI = true }: FindReplacementsButt
       }
     }
     checkStatus();
-  }, []);
+  }, [initialCount]);
 
-  const handleFindReplacements = async () => {
+  const handleFindNext10 = async () => {
     if (!canUseAI) {
-      alert("Upgrade to a paid plan to get AI-powered replacement suggestions");
+      window.location.href = "/#pricing";
       return;
     }
+
     setLoading(true);
+    setProgress({ current: 0, total: Math.min(linksNeeding || 5, 5) });
+
     try {
+      // The endpoint already limits to 5 at a time
       const response = await fetch("/api/links/find-replacements", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -46,13 +57,21 @@ export function FindReplacementsButton({ canUseAI = true }: FindReplacementsButt
 
       if (!response.ok) {
         if (data.upgradeRequired) {
-          alert(data.message || "Upgrade required for this feature");
+          window.location.href = "/#pricing";
+          return;
+        }
+        if (data.requiresTag) {
+          alert("Please add your Amazon affiliate tag in Settings first");
           return;
         }
         throw new Error(data.error || "Failed to find replacements");
       }
 
-      alert(data.message);
+      // Update the count
+      if (linksNeeding !== null) {
+        setLinksNeeding(Math.max(0, linksNeeding - data.processed));
+      }
+
       router.refresh();
     } catch (error) {
       console.error("Error finding replacements:", error);
@@ -61,45 +80,34 @@ export function FindReplacementsButton({ canUseAI = true }: FindReplacementsButt
       );
     } finally {
       setLoading(false);
+      setProgress(null);
     }
   };
 
-  // Don't show button if no links need replacements
-  if (linksNeeding === 0) {
+  // Don't show button for free users or if no links need replacements
+  if (!canUseAI || linksNeeding === 0) {
     return null;
   }
 
   return (
     <button
-      onClick={handleFindReplacements}
-      disabled={loading || linksNeeding === 0 || !canUseAI}
-      className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg text-white transition ${
-        canUseAI
-          ? "bg-cyan-500 hover:bg-cyan-500/90 disabled:bg-slate-600"
-          : "bg-slate-700 cursor-not-allowed"
-      }`}
-      title={!canUseAI ? "Upgrade to use AI suggestions" : undefined}
+      onClick={handleFindNext10}
+      disabled={loading || linksNeeding === 0}
+      className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-black transition disabled:opacity-50"
+      title="Find AI suggestions for the next 5 links"
     >
       {loading ? (
         <>
           <Loader2 className="w-4 h-4 animate-spin" />
-          Finding...
-        </>
-      ) : !canUseAI ? (
-        <>
-          <Lock className="w-4 h-4" />
-          AI Suggestions
-          <span className="ml-1 px-1.5 py-0.5 text-xs bg-amber-600 rounded-full">
-            PRO
-          </span>
+          {progress ? `Finding ${progress.total}...` : "Finding..."}
         </>
       ) : (
         <>
-          <Search className="w-4 h-4" />
-          Find Replacements
+          <Sparkles className="w-4 h-4" />
+          Find Next 5
           {linksNeeding !== null && linksNeeding > 0 && (
-            <span className="ml-1 px-1.5 py-0.5 text-xs bg-cyan-500 rounded-full">
-              {linksNeeding}
+            <span className="ml-1 px-1.5 py-0.5 text-xs bg-black/20 rounded-full">
+              {linksNeeding} left
             </span>
           )}
         </>

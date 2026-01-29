@@ -87,13 +87,12 @@ export async function POST(request: Request) {
         take: MAX_PER_REQUEST,
       });
     } else {
-      // Get broken links without replacements
+      // Get all broken links (including those with existing suggestions that may need refresh)
       linksToProcess = await prisma.affiliateLink.findMany({
         where: {
           video: { userId: session.user.id },
           status: { in: BROKEN_STATUSES },
           isFixed: false,
-          suggestedLink: null,
         },
         select: {
           id: true,
@@ -293,7 +292,6 @@ export async function GET() {
         video: { userId: session.user.id },
         status: { in: BROKEN_STATUSES },
         isFixed: false,
-        suggestedLink: null,
       },
     });
 

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { Copy, Check, CheckCircle2, ExternalLink, RefreshCw, FileWarning, Lock, Eye, Pencil, ChevronDown, ChevronRight, Layers, List, X, FileDown, Trash2, Undo2, Search, Info } from "lucide-react";
+import { Copy, Check, CheckCircle2, ExternalLink, RefreshCw, FileWarning, Lock, Eye, Pencil, ChevronDown, ChevronRight, Layers, List, X, FileDown, Trash2, Undo2, Search, Info, MoreHorizontal } from "lucide-react";
 import { formatCurrency, formatNumber } from "@/lib/revenue-estimator";
 import { DISCLOSURE_TEMPLATES } from "@/lib/disclosure-detector";
 import { NETWORK_DISPLAY_NAMES, AffiliateMerchant } from "@/lib/affiliate-networks";
@@ -193,6 +193,7 @@ export function FixCenterClient({
   const [undoingLinkId, setUndoingLinkId] = useState<string | null>(null);
   const [showDisclosureMenu, setShowDisclosureMenu] = useState<string | null>(null);
   const [showReplacementFor, setShowReplacementFor] = useState<string | null>(null);
+  const [showActionMenu, setShowActionMenu] = useState<string | null>(null);
   const router = useRouter();
 
   // Group fixed links by date
@@ -266,10 +267,13 @@ export function FixCenterClient({
       if (showDisclosureMenu && !(e.target as Element).closest('.disclosure-dropdown')) {
         setShowDisclosureMenu(null);
       }
+      if (showActionMenu && !(e.target as Element).closest('.action-dropdown')) {
+        setShowActionMenu(null);
+      }
     };
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
-  }, [showExportMenu, showDisclosureMenu]);
+  }, [showExportMenu, showDisclosureMenu, showActionMenu]);
 
   const copyDisclosure = async (id: string, template: "standard" | "short" = "standard") => {
     try {
@@ -381,23 +385,40 @@ export function FixCenterClient({
     }
   };
 
-  const handleFindReplacement = async (id: string) => {
+  const handleFindReplacement = async (id: string, refresh: boolean = false) => {
+    // Check tier access on frontend (backend will also check)
+    if (!canUseAI) {
+      // Scroll to pricing or show upgrade modal
+      window.location.href = "/#pricing";
+      return;
+    }
+
     setFindingId(id);
     try {
-      const response = await fetch("/api/links/find-replacements", {
+      const response = await fetch(`/api/links/${id}/suggest`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ linkIds: [id] }),
+        body: JSON.stringify({ refresh }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error("Failed to find replacement");
+        if (data.error === "UPGRADE_REQUIRED") {
+          window.location.href = "/#pricing";
+          return;
+        }
+        if (data.requiresTag) {
+          alert("Please add your Amazon affiliate tag in Settings first");
+          return;
+        }
+        throw new Error(data.error || "Failed to find replacement");
       }
 
       router.refresh();
     } catch (error) {
       console.error("Error finding replacement:", error);
-      alert("Failed to find replacement");
+      alert(error instanceof Error ? error.message : "Failed to find replacement");
     } finally {
       setFindingId(null);
     }
@@ -593,7 +614,12 @@ export function FixCenterClient({
               )}
             </div>
           )}
-          {issuesNeedingReplacements > 0 && <FindReplacementsButton canUseAI={canUseAI} />}
+          {issuesNeedingReplacements > 0 && canUseAI && (
+            <FindReplacementsButton
+              canUseAI={canUseAI}
+              linksWithoutSuggestions={issuesNeedingReplacements}
+            />
+          )}
         </div>
       </div>
 
@@ -1179,23 +1205,6 @@ export function FixCenterClient({
                               {group.suggestedPrice && (
                                 <span className="text-xs text-slate-400">{group.suggestedPrice}</span>
                               )}
-                              <button
-                                onClick={() => copyAndOpenStudio(group.suggestedLink!, group.originalUrl, group.videos[0].youtubeVideoId)}
-                                className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-white/5/50 hover:bg-cyan-500/20 text-slate-400/70 hover:text-cyan-400 transition"
-                                title="Copy link and open YouTube Studio"
-                              >
-                                {copiedId === group.originalUrl ? (
-                                  <>
-                                    <Check className="w-3 h-3" />
-                                    Copied!
-                                  </>
-                                ) : (
-                                  <>
-                                    <Copy className="w-3 h-3" />
-                                    Copy & Edit
-                                  </>
-                                )}
-                              </button>
                               <a
                                 href={group.suggestedLink}
                                 target="_blank"
@@ -1206,7 +1215,7 @@ export function FixCenterClient({
                                 <ExternalLink className="w-3 h-3 text-slate-400" />
                               </a>
                               <button
-                                onClick={() => handleFindReplacement(group.linkIds[0])}
+                                onClick={() => handleFindReplacement(group.linkIds[0], true)}
                                 disabled={findingId === group.linkIds[0]}
                                 className="p-1 rounded bg-white/5/50 hover:bg-white/10 transition"
                                 title="Re-scan for new suggestion"
@@ -1215,6 +1224,15 @@ export function FixCenterClient({
                               </button>
                             </div>
                           </div>
+                        ) : !canUseAI ? (
+                          <button
+                            onClick={() => window.location.href = "/#pricing"}
+                            className="text-sm text-slate-500 hover:text-amber-400 flex items-center gap-1.5 transition"
+                          >
+                            <Lock className="w-3 h-3" />
+                            <span>Unlock AI</span>
+                            <span className="px-1.5 py-0.5 text-[10px] bg-amber-600/20 text-amber-400 rounded">PRO</span>
+                          </button>
                         ) : (
                           <button
                             onClick={() => handleFindReplacement(group.linkIds[0])}
@@ -1228,7 +1246,7 @@ export function FixCenterClient({
                               </>
                             ) : (
                               <>
-                                <RefreshCw className="w-3 h-3" />
+                                <Search className="w-3 h-3" />
                                 Find Replacement
                               </>
                             )}
@@ -1255,148 +1273,96 @@ export function FixCenterClient({
                       {/* Action */}
                       <td className="px-4 py-4 text-center">
                         {group.suggestedLink ? (
-                          <div className="flex flex-col items-center gap-2">
-                            {/* Copy & Edit button - copies link AND opens YouTube Studio - REQUIRED, DO NOT REMOVE */}
-                            <div className="flex items-center gap-2">
-                              {group.videos.length === 1 ? (
-                                <button
-                                  onClick={() => copyAndOpenStudio(group.suggestedLink!, `action-${group.originalUrl}`, group.videos[0].youtubeVideoId)}
-                                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition ${
-                                    copiedId === `action-${group.originalUrl}`
-                                      ? "bg-cyan-500 text-black"
-                                      : "bg-white/5 hover:bg-white/10 border border-white/20 text-white"
-                                  }`}
-                                  title="Copy replacement link and open YouTube Studio (use Ctrl+F to find broken link)"
-                                >
-                                  {copiedId === `action-${group.originalUrl}` ? (
-                                    <>
-                                      <Check className="w-3 h-3" />
-                                      Copied!
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Copy className="w-3 h-3" />
-                                      Copy & Edit
-                                    </>
-                                  )}
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={() => copyAndOpenStudio(group.suggestedLink!, `action-${group.originalUrl}`, group.videos[0].youtubeVideoId)}
-                                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition ${
-                                    copiedId === `action-${group.originalUrl}`
-                                      ? "bg-cyan-500 text-black"
-                                      : "bg-white/5 hover:bg-white/10 border border-white/20 text-white"
-                                  }`}
-                                  title="Copy replacement link and open YouTube Studio (use Ctrl+F to find broken link)"
-                                >
-                                  {copiedId === `action-${group.originalUrl}` ? (
-                                    <>
-                                      <Check className="w-3 h-3" />
-                                      Copied!
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Copy className="w-3 h-3" />
-                                      Copy & Edit
-                                    </>
-                                  )}
-                                </button>
-                              )}
-                            </div>
-                            {/* Mark Fixed button */}
+                          <div className="flex items-center justify-center gap-2">
+                            {/* Primary: Mark All Fixed button */}
                             <button
                               onClick={() => handleMarkAllFixed(group.originalUrl, group.linkIds)}
                               disabled={markingAllFixedUrl === group.originalUrl}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-cyan-500 hover:brightness-110 disabled:bg-white/5 text-black transition shadow-[0_0_15px_rgba(0,255,0,0.15)]"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-cyan-500 hover:brightness-110 disabled:opacity-50 text-black transition"
                             >
                               {markingAllFixedUrl === group.originalUrl ? (
-                                "Marking..."
+                                "..."
                               ) : (
                                 <>
                                   <CheckCircle2 className="w-3 h-3" />
-                                  Mark All Fixed ({group.linkIds.length})
+                                  Fixed ({group.linkIds.length})
                                 </>
                               )}
+                            </button>
+                            {/* More Actions Dropdown */}
+                            <div className="relative action-dropdown">
+                              <button
+                                onClick={() => setShowActionMenu(showActionMenu === group.originalUrl ? null : group.originalUrl)}
+                                className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/20 text-slate-400 hover:text-white transition"
+                                title="More actions"
+                              >
+                                <MoreHorizontal className="w-4 h-4" />
+                              </button>
+                              {showActionMenu === group.originalUrl && (
+                                <div className="absolute right-0 mt-1 w-44 bg-slate-900 rounded-lg shadow-xl border border-white/10 z-20 overflow-hidden">
+                                  {/* Copy & Edit - REQUIRED, DO NOT REMOVE */}
+                                  <button
+                                    onClick={() => {
+                                      copyAndOpenStudio(group.suggestedLink!, `action-${group.originalUrl}`, group.videos[0].youtubeVideoId);
+                                      setShowActionMenu(null);
+                                    }}
+                                    className="w-full px-3 py-2 text-left text-xs font-medium text-white hover:bg-white/10 transition flex items-center gap-2"
+                                  >
+                                    <Copy className="w-3 h-3" />
+                                    Copy & Edit
+                                  </button>
+                                  {/* Search */}
+                                  <button
+                                    onClick={() => {
+                                      setShowReplacementFor(showReplacementFor === group.originalUrl ? null : group.originalUrl);
+                                      setShowActionMenu(null);
+                                    }}
+                                    className="w-full px-3 py-2 text-left text-xs font-medium text-slate-400 hover:bg-white/10 hover:text-white transition flex items-center gap-2"
+                                  >
+                                    <Search className="w-3 h-3" />
+                                    {showReplacementFor === group.originalUrl ? "Hide Search" : "Manual Search"}
+                                  </button>
+                                  {/* Dismiss */}
+                                  <button
+                                    onClick={() => {
+                                      handleDismissAllLinks(group.originalUrl, group.linkIds);
+                                      setShowActionMenu(null);
+                                    }}
+                                    disabled={dismissingAllUrl === group.originalUrl}
+                                    className="w-full px-3 py-2 text-left text-xs font-medium text-slate-400 hover:bg-red-500/20 hover:text-red-500 transition flex items-center gap-2 disabled:opacity-50"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                    Dismiss
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center gap-2">
+                            {/* Manual Search Button */}
+                            <button
+                              onClick={() => setShowReplacementFor(
+                                showReplacementFor === group.originalUrl ? null : group.originalUrl
+                              )}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition ${
+                                showReplacementFor === group.originalUrl
+                                  ? "bg-white/10 text-white border border-white/30"
+                                  : "bg-white/5 hover:bg-white/10 border border-white/20 text-slate-400 hover:text-white"
+                              }`}
+                            >
+                              <Search className="w-3 h-3" />
+                              Search
                             </button>
                             {/* Dismiss button */}
                             <button
                               onClick={() => handleDismissAllLinks(group.originalUrl, group.linkIds)}
                               disabled={dismissingAllUrl === group.originalUrl}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-white/5 hover:bg-red-500/20 hover:text-red-500 text-slate-400 transition disabled:opacity-50"
-                              title="Dismiss this link (can't be fixed)"
+                              className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-slate-400 hover:text-red-500 transition disabled:opacity-50"
+                              title="Dismiss"
                             >
-                              {dismissingAllUrl === group.originalUrl ? (
-                                "Dismissing..."
-                              ) : (
-                                <>
-                                  <Trash2 className="w-3 h-3" />
-                                  Dismiss
-                                </>
-                              )}
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
-                            {/* Manual Search Toggle */}
-                            <button
-                              onClick={() => setShowReplacementFor(
-                                showReplacementFor === group.originalUrl ? null : group.originalUrl
-                              )}
-                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition ${
-                                showReplacementFor === group.originalUrl
-                                  ? "bg-white/10 text-white border border-white/30"
-                                  : "bg-white/5 hover:bg-white/10 border border-white/20 text-slate-400 hover:text-white"
-                              }`}
-                              title="Search Amazon manually for a replacement"
-                            >
-                              <Search className="w-3 h-3" />
-                              {showReplacementFor === group.originalUrl ? "Hide" : "Search"}
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex flex-col items-center gap-2">
-                            {/* Manual Search Toggle Button */}
-                            <button
-                              onClick={() => setShowReplacementFor(
-                                showReplacementFor === group.originalUrl ? null : group.originalUrl
-                              )}
-                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition ${
-                                showReplacementFor === group.originalUrl
-                                  ? "bg-white/10 text-white border border-white/30"
-                                  : "bg-white/5 hover:bg-white/10 border border-white/20 text-slate-400 hover:text-white"
-                              }`}
-                            >
-                              <Search className="w-3 h-3" />
-                              {showReplacementFor === group.originalUrl ? "Hide Search" : "Manual Search"}
-                            </button>
-                            <div className="flex items-center gap-2">
-                              {group.videos.length === 1 && (
-                                <a
-                                  href={`https://studio.youtube.com/video/${group.videos[0].youtubeVideoId}/edit`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-white/5 hover:bg-white/10 border border-white/20 text-white transition"
-                                  title="Edit in YouTube Studio"
-                                >
-                                  <Pencil className="w-3 h-3" />
-                                  Edit in Studio
-                                </a>
-                              )}
-                              {/* Dismiss button for links without suggestions */}
-                              <button
-                                onClick={() => handleDismissAllLinks(group.originalUrl, group.linkIds)}
-                                disabled={dismissingAllUrl === group.originalUrl}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-white/5 hover:bg-red-500/20 hover:text-red-500 text-slate-400 transition disabled:opacity-50"
-                                title="Dismiss this link (can't be fixed)"
-                              >
-                                {dismissingAllUrl === group.originalUrl ? (
-                                  "Dismissing..."
-                                ) : (
-                                  <>
-                                    <Trash2 className="w-3 h-3" />
-                                    Dismiss
-                                  </>
-                                )}
-                              </button>
-                            </div>
                           </div>
                         )}
                       </td>
@@ -1519,23 +1485,6 @@ export function FixCenterClient({
                             {issue.suggestedPrice && (
                               <span className="text-xs text-slate-400">{issue.suggestedPrice}</span>
                             )}
-                            <button
-                              onClick={() => copyAndOpenStudio(issue.suggestedLink!, issue.id, issue.youtubeVideoId)}
-                              className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-white/5/50 hover:bg-cyan-500/20 text-slate-400/70 hover:text-cyan-400 transition"
-                              title="Copy link and open YouTube Studio"
-                            >
-                              {copiedId === issue.id ? (
-                                <>
-                                  <Check className="w-3 h-3" />
-                                  Copied!
-                                </>
-                              ) : (
-                                <>
-                                  <Copy className="w-3 h-3" />
-                                  Copy & Edit
-                                </>
-                              )}
-                            </button>
                             <a
                               href={issue.suggestedLink}
                               target="_blank"
@@ -1547,7 +1496,7 @@ export function FixCenterClient({
                             </a>
                             {activeTab === "needs-fix" && (
                               <button
-                                onClick={() => handleFindReplacement(issue.id)}
+                                onClick={() => handleFindReplacement(issue.id, true)}
                                 disabled={findingId === issue.id}
                                 className="p-1 rounded bg-white/5/50 hover:bg-white/10 transition"
                                 title="Re-scan for new suggestion"
@@ -1558,23 +1507,34 @@ export function FixCenterClient({
                           </div>
                         </div>
                       ) : activeTab === "needs-fix" ? (
-                        <button
-                          onClick={() => handleFindReplacement(issue.id)}
-                          disabled={findingId === issue.id}
-                          className="text-sm text-slate-400 hover:text-cyan-400 flex items-center gap-1 transition disabled:opacity-50"
-                        >
-                          {findingId === issue.id ? (
-                            <>
-                              <RefreshCw className="w-3 h-3 animate-spin" />
-                              Finding...
-                            </>
-                          ) : (
-                            <>
-                              <RefreshCw className="w-3 h-3" />
-                              Find Replacement
-                            </>
-                          )}
-                        </button>
+                        !canUseAI ? (
+                          <button
+                            onClick={() => window.location.href = "/#pricing"}
+                            className="text-sm text-slate-500 hover:text-amber-400 flex items-center gap-1.5 transition"
+                          >
+                            <Lock className="w-3 h-3" />
+                            <span>Unlock AI</span>
+                            <span className="px-1.5 py-0.5 text-[10px] bg-amber-600/20 text-amber-400 rounded">PRO</span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleFindReplacement(issue.id)}
+                            disabled={findingId === issue.id}
+                            className="text-sm text-slate-400 hover:text-cyan-400 flex items-center gap-1 transition disabled:opacity-50"
+                          >
+                            {findingId === issue.id ? (
+                              <>
+                                <RefreshCw className="w-3 h-3 animate-spin" />
+                                Finding...
+                              </>
+                            ) : (
+                              <>
+                                <Search className="w-3 h-3" />
+                                Find Replacement
+                              </>
+                            )}
+                          </button>
+                        )
                       ) : (
                         <span className="text-xs text-slate-400/50">-</span>
                       )}
@@ -1599,90 +1559,82 @@ export function FixCenterClient({
                     {/* Action */}
                     <td className="px-4 py-4 text-center">
                       {issue.suggestedLink ? (
-                          <div className="flex flex-col items-center gap-2">
-                            {/* Copy & Edit button - copies link AND opens YouTube Studio - REQUIRED, DO NOT REMOVE */}
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => copyAndOpenStudio(issue.suggestedLink!, `action-${issue.id}`, issue.youtubeVideoId)}
-                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition ${
-                                  copiedId === `action-${issue.id}`
-                                    ? "bg-cyan-500 text-black"
-                                    : "bg-white/5 hover:bg-white/10 border border-white/20 text-white"
-                                }`}
-                                title="Copy replacement link and open YouTube Studio (use Ctrl+F to find broken link)"
-                              >
-                                {copiedId === `action-${issue.id}` ? (
-                                  <>
-                                    <Check className="w-3 h-3" />
-                                    Copied!
-                                  </>
-                                ) : (
-                                  <>
-                                    <Copy className="w-3 h-3" />
-                                    Copy & Edit
-                                  </>
-                                )}
-                              </button>
-                            </div>
-                            {/* Mark Fixed button */}
+                          <div className="flex items-center justify-center gap-2">
+                            {/* Primary: Mark Fixed button */}
                             <button
                               onClick={() => handleMarkFixed(issue.id)}
                               disabled={markingFixedId === issue.id}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-cyan-500 hover:brightness-110 disabled:bg-white/5 text-black transition shadow-[0_0_15px_rgba(0,255,0,0.15)]"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-cyan-500 hover:brightness-110 disabled:opacity-50 text-black transition"
                             >
                               {markingFixedId === issue.id ? (
-                                "Marking..."
+                                "..."
                               ) : (
                                 <>
                                   <CheckCircle2 className="w-3 h-3" />
-                                  Mark Fixed
+                                  Fixed
                                 </>
                               )}
                             </button>
+                            {/* More Actions Dropdown */}
+                            <div className="relative action-dropdown">
+                              <button
+                                onClick={() => setShowActionMenu(showActionMenu === issue.id ? null : issue.id)}
+                                className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/20 text-slate-400 hover:text-white transition"
+                                title="More actions"
+                              >
+                                <MoreHorizontal className="w-4 h-4" />
+                              </button>
+                              {showActionMenu === issue.id && (
+                                <div className="absolute right-0 mt-1 w-44 bg-slate-900 rounded-lg shadow-xl border border-white/10 z-20 overflow-hidden">
+                                  {/* Copy & Edit - REQUIRED, DO NOT REMOVE */}
+                                  <button
+                                    onClick={() => {
+                                      copyAndOpenStudio(issue.suggestedLink!, `action-${issue.id}`, issue.youtubeVideoId);
+                                      setShowActionMenu(null);
+                                    }}
+                                    className="w-full px-3 py-2 text-left text-xs font-medium text-white hover:bg-white/10 transition flex items-center gap-2"
+                                  >
+                                    <Copy className="w-3 h-3" />
+                                    Copy & Edit
+                                  </button>
+                                  {/* Dismiss */}
+                                  <button
+                                    onClick={() => {
+                                      handleDismissLink(issue.id);
+                                      setShowActionMenu(null);
+                                    }}
+                                    disabled={dismissingLinkId === issue.id}
+                                    className="w-full px-3 py-2 text-left text-xs font-medium text-slate-400 hover:bg-red-500/20 hover:text-red-500 transition flex items-center gap-2 disabled:opacity-50"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                    Dismiss
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center gap-2">
+                            {/* Edit in Studio */}
+                            <a
+                              href={`https://studio.youtube.com/video/${issue.youtubeVideoId}/edit`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-white/5 hover:bg-white/10 border border-white/20 text-white transition"
+                              title="Edit in YouTube Studio"
+                            >
+                              <Pencil className="w-3 h-3" />
+                              Edit
+                            </a>
                             {/* Dismiss button */}
                             <button
                               onClick={() => handleDismissLink(issue.id)}
                               disabled={dismissingLinkId === issue.id}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-white/5 hover:bg-red-500/20 hover:text-red-500 text-slate-400 transition disabled:opacity-50"
-                              title="Dismiss this link (can't be fixed)"
+                              className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-slate-400 hover:text-red-500 transition disabled:opacity-50"
+                              title="Dismiss"
                             >
-                              {dismissingLinkId === issue.id ? (
-                                "..."
-                              ) : (
-                                <Trash2 className="w-3 h-3" />
-                              )}
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
-                          </div>
-                        ) : (
-                          <div className="flex flex-col items-center gap-2">
-                            <span className="text-xs text-slate-400/50 italic">
-                              Find replacement first
-                            </span>
-                            <div className="flex items-center gap-2">
-                              <a
-                                href={`https://studio.youtube.com/video/${issue.youtubeVideoId}/edit`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-white/5 hover:bg-white/10 border border-white/20 text-white transition"
-                                title="Edit in YouTube Studio"
-                              >
-                                <Pencil className="w-3 h-3" />
-                                Edit in Studio
-                              </a>
-                              {/* Dismiss button for links without suggestions */}
-                              <button
-                                onClick={() => handleDismissLink(issue.id)}
-                                disabled={dismissingLinkId === issue.id}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-white/5 hover:bg-red-500/20 hover:text-red-500 text-slate-400 transition disabled:opacity-50"
-                                title="Dismiss this link (can't be fixed)"
-                              >
-                                {dismissingLinkId === issue.id ? (
-                                  "..."
-                                ) : (
-                                  <Trash2 className="w-3 h-3" />
-                                )}
-                              </button>
-                            </div>
                           </div>
                         )}
                     </td>

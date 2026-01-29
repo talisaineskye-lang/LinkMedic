@@ -329,7 +329,7 @@ export function DashboardClient({
           <button
             onClick={handleScan}
             disabled={isScanning || isSyncing}
-            className="btn-primary flex items-center gap-2 px-4 py-2 text-sm"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition border bg-gradient-to-br from-cyan-500 to-cyan-600 border-cyan-400/50 text-black hover:from-cyan-400 hover:to-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Search className={`w-4 h-4 ${isScanning ? "animate-pulse" : ""}`} />
             {isScanning ? "Scanning..." : "Scan Links"}
@@ -535,10 +535,10 @@ export function DashboardClient({
           </p>
           <Link
             href="/fix-center"
-            className="btn-primary inline-flex items-center gap-2 px-8 py-4 text-lg"
+            className="btn-primary inline-flex items-center gap-2 px-8 py-4 text-lg whitespace-nowrap"
           >
             Go to Fix Center
-            <ArrowRight className="w-5 h-5" />
+            <ArrowRight className="w-5 h-5 flex-shrink-0" />
           </Link>
         </div>
       ) : (

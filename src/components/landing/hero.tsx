@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export function Hero() {
   return (
-    <section className="relative bg-[#020617] text-white px-6 pt-32 pb-20 overflow-hidden">
+    <section className="relative bg-[#020617] text-white px-6 pt-44 sm:pt-36 pb-8 overflow-hidden">
       {/* Ambient glow effects */}
       <div
         className="absolute w-[600px] h-[600px] bg-cyan-500 opacity-[0.08] rounded-full blur-[120px] pointer-events-none"

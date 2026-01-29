@@ -8,7 +8,7 @@ export function VideoDemo() {
   const [isPlaying, setIsPlaying] = useState(false);
 
   return (
-    <section className="relative py-24 overflow-hidden bg-[#020617]">
+    <section className="relative pt-12 pb-24 overflow-hidden bg-[#020617]">
       {/* Ambient glow */}
       <div className="absolute w-[600px] h-[400px] bg-cyan-500 opacity-10 rounded-full blur-[100px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
 
