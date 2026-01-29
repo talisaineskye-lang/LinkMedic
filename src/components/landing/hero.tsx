@@ -63,7 +63,16 @@ export function Hero() {
           </motion.div>
 
           <motion.p
-            className="text-slate-500 text-sm mt-4"
+            className="text-cyan-400 text-sm mt-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6, duration: 0.4 }}
+          >
+            Currently supporting YouTube creators
+          </motion.p>
+
+          <motion.p
+            className="text-slate-500 text-sm mt-2"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7, duration: 0.4 }}
