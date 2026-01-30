@@ -51,8 +51,6 @@ interface AuditResultsClientProps {
 
 export function AuditResultsClient({ auditId, initialData }: AuditResultsClientProps) {
   const [copied, setCopied] = useState(false);
-  const [waitlistEmail, setWaitlistEmail] = useState("");
-  const [waitlistSubmitted, setWaitlistSubmitted] = useState(false);
   const result = initialData;
 
   // Calculate key metrics
@@ -89,13 +87,6 @@ export function AuditResultsClient({ auditId, initialData }: AuditResultsClientP
         });
       }
     }
-  };
-
-  const handleWaitlistSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // TODO: Send to email capture API
-    setWaitlistSubmitted(true);
-    setTimeout(() => setWaitlistSubmitted(false), 3000);
   };
 
   return (
@@ -420,23 +411,12 @@ export function AuditResultsClient({ auditId, initialData }: AuditResultsClientP
               </li>
             </ul>
 
-            {/* Waitlist Form */}
-            <form onSubmit={handleWaitlistSubmit} className="space-y-2">
-              <input
-                type="email"
-                placeholder="Enter email for waitlist"
-                value={waitlistEmail}
-                onChange={(e) => setWaitlistEmail(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-sm text-slate-300 placeholder:text-slate-600"
-              />
-              <button
-                type="submit"
-                className="w-full py-3 bg-slate-700/50 hover:bg-slate-700 rounded-lg text-slate-400 font-medium transition"
-              >
-                {waitlistSubmitted ? "Added to Waitlist!" : "Join the Waitlist"}
-              </button>
-            </form>
-            <p className="text-xs text-slate-600 text-center mt-2">Coming Soon</p>
+            <button
+              disabled
+              className="w-full py-3 bg-slate-700/30 rounded-lg text-slate-500 font-medium cursor-not-allowed"
+            >
+              Coming Soon
+            </button>
           </div>
         </div>
       </div>

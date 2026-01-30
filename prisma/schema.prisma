@@ -284,22 +284,6 @@ model LinkStatusHistory {
 }
 
 // ============================================
-// WAITLIST (Portfolio Manager Tier)
-// ============================================
-// Stores emails for users interested in Portfolio Manager tier
-model Waitlist {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  tier      String   // 'portfolio' for Portfolio Manager tier
-  source    String?  // Where they signed up from (e.g., 'pricing', 'dashboard')
-  feedback  String?  // Optional: "What's the #1 thing you'd need?"
-  joinedAt  DateTime @default(now())
-
-  @@index([tier])
-  @@index([joinedAt])
-}
-
-// ============================================
 // FEEDBACK (Beta Phase)
 // ============================================
 // Stores feedback from beta testers
