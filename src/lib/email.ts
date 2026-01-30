@@ -36,30 +36,51 @@ export async function sendBrokenLinkAlert(alert: BrokenLinkAlert): Promise<boole
       to: alert.userEmail,
       subject: `[LinkMedic] ${statusText} Link Detected`,
       html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #1f2937;">Alert: ${statusText} Link Detected</h2>
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #e2e8f0; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #0f0f0f;">
+          <div style="background: #0f0f0f;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <span style="color: #22d3ee; font-size: 24px; font-weight: bold;">LinkMedic</span>
+            </div>
 
-          <p style="color: #4b5563;">Hi ${alert.userName || "there"},</p>
+            <h2 style="color: #f87171; margin-bottom: 16px;">Alert: ${statusText} Link Detected</h2>
 
-          <p style="color: #4b5563;">
-            We detected a problem with one of your affiliate links:
-          </p>
+            <p>Hi ${alert.userName || "there"},</p>
 
-          <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin: 16px 0;">
-            <p style="margin: 0 0 8px 0;"><strong>Video:</strong> ${alert.videoTitle}</p>
-            <p style="margin: 0 0 8px 0;"><strong>Link:</strong> <a href="${alert.brokenUrl}" style="color: #2563eb;">${alert.brokenUrl}</a></p>
-            <p style="margin: 0 0 8px 0;"><strong>Status:</strong> <span style="color: ${alert.status === "NOT_FOUND" ? "#dc2626" : "#d97706"};">${statusText}</span></p>
-            <p style="margin: 0;"><strong>Estimated Loss:</strong> <span style="color: #dc2626;">${formatCurrency(alert.estimatedLoss)}</span></p>
+            <p>We detected a problem with one of your affiliate links:</p>
+
+            <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 20px; margin: 24px 0;">
+              <p style="margin: 0 0 12px 0; color: #94a3b8;"><strong style="color: #e2e8f0;">Video:</strong> ${alert.videoTitle}</p>
+              <p style="margin: 0 0 12px 0; color: #94a3b8;"><strong style="color: #e2e8f0;">Link:</strong> <a href="${alert.brokenUrl}" style="color: #22d3ee;">${alert.brokenUrl}</a></p>
+              <p style="margin: 0 0 12px 0; color: #94a3b8;"><strong style="color: #e2e8f0;">Status:</strong> <span style="color: ${alert.status === "NOT_FOUND" ? "#f87171" : "#fb923c"};">${statusText}</span></p>
+              <p style="margin: 0; color: #94a3b8;"><strong style="color: #e2e8f0;">Estimated Loss:</strong> <span style="color: #f87171;">${formatCurrency(alert.estimatedLoss)}</span></p>
+            </div>
+
+            <p><strong style="color: #22d3ee;">Recommended Action:</strong> Review and update the link in your video description.</p>
+
+            <div style="text-align: center; margin: 32px 0;">
+              <a href="${APP_URL}/fix-center" style="display: inline-block; background: #22d3ee; color: #0f0f0f; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                Fix This Link
+              </a>
+            </div>
+
+            <p style="color: #64748b; font-size: 14px; margin-top: 32px;">
+              — The LinkMedic Team
+            </p>
+
+            <hr style="border: none; border-top: 1px solid #334155; margin: 32px 0;">
+
+            <div style="text-align: center; color: #64748b; font-size: 12px;">
+              <a href="${APP_URL}" style="color: #64748b;">LinkMedic</a> · Protecting your affiliate revenue
+            </div>
           </div>
-
-          <p style="color: #4b5563;">
-            <strong>Recommended Action:</strong> Review and update the link in your video description.
-          </p>
-
-          <p style="color: #6b7280; font-size: 14px; margin-top: 24px;">
-            — The LinkMedic Team
-          </p>
-        </div>
+        </body>
+        </html>
       `,
     });
     return true;
@@ -96,29 +117,59 @@ export async function sendScanSummaryAlert(alert: ScanSummaryAlert): Promise<boo
       to: alert.userEmail,
       subject: `[LinkMedic] Scan Complete: ${alert.issuesFound} Issues Found`,
       html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #1f2937;">Weekly Scan Complete</h2>
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #e2e8f0; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #0f0f0f;">
+          <div style="background: #0f0f0f;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <span style="color: #22d3ee; font-size: 24px; font-weight: bold;">LinkMedic</span>
+            </div>
 
-          <p style="color: #4b5563;">Hi ${alert.userName || "there"},</p>
+            <h2 style="color: #e2e8f0; margin-bottom: 16px;">Weekly Scan Complete</h2>
 
-          <p style="color: #4b5563;">
-            Your weekly link scan has completed. Here's a summary:
-          </p>
+            <p>Hi ${alert.userName || "there"},</p>
 
-          <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin: 16px 0;">
-            <p style="margin: 0 0 8px 0;"><strong>Links Scanned:</strong> ${alert.totalScanned}</p>
-            <p style="margin: 0 0 8px 0;"><strong>Issues Found:</strong> <span style="color: #dc2626;">${alert.issuesFound}</span></p>
-            <p style="margin: 0;"><strong>Estimated Revenue at Risk:</strong> <span style="color: #dc2626;">${formatCurrency(alert.totalEstimatedLoss)}</span></p>
+            <p>Your weekly link scan has completed. Here's a summary:</p>
+
+            <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 20px; margin: 24px 0;">
+              <table style="width: 100%;">
+                <tr>
+                  <td style="padding: 8px 0; color: #94a3b8;">Links Scanned:</td>
+                  <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #e2e8f0;">${alert.totalScanned.toLocaleString()}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #94a3b8;">Issues Found:</td>
+                  <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #f87171;">${alert.issuesFound}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #94a3b8;">Revenue at Risk:</td>
+                  <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #f87171;">${formatCurrency(alert.totalEstimatedLoss)}</td>
+                </tr>
+              </table>
+            </div>
+
+            <div style="text-align: center; margin: 32px 0;">
+              <a href="${APP_URL}/fix-center" style="display: inline-block; background: #22d3ee; color: #0f0f0f; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                View All Issues
+              </a>
+            </div>
+
+            <p style="color: #64748b; font-size: 14px; margin-top: 32px;">
+              — The LinkMedic Team
+            </p>
+
+            <hr style="border: none; border-top: 1px solid #334155; margin: 32px 0;">
+
+            <div style="text-align: center; color: #64748b; font-size: 12px;">
+              <a href="${APP_URL}" style="color: #64748b;">LinkMedic</a> · Protecting your affiliate revenue
+            </div>
           </div>
-
-          <p style="color: #4b5563;">
-            <a href="${APP_URL}/fix-center" style="color: #2563eb;">View all issues →</a>
-          </p>
-
-          <p style="color: #6b7280; font-size: 14px; margin-top: 24px;">
-            — The LinkMedic Team
-          </p>
-        </div>
+        </body>
+        </html>
       `,
     });
     return true;
@@ -142,23 +193,52 @@ export async function sendWelcomeEmail(to: string, name?: string): Promise<{ suc
     to,
     subject: "Welcome to LinkMedic!",
     html: `
-      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-        <h1 style="color: #1f2937;">Welcome${name ? `, ${name}` : ""}!</h1>
-        <p style="color: #4b5563;">Thanks for signing up for LinkMedic.</p>
-        <p style="color: #4b5563;">Here's how to get started:</p>
-        <ol style="color: #4b5563;">
-          <li>Connect your YouTube channel</li>
-          <li>We'll scan your videos for broken affiliate links</li>
-          <li>Fix them with one click</li>
-        </ol>
-        <p style="margin-top: 24px;">
-          <a href="${APP_URL}/dashboard" style="background: #10b981; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Go to your dashboard →</a>
-        </p>
-        <p style="color: #4b5563; margin-top: 24px;">Questions? Just reply to this email.</p>
-        <p style="color: #6b7280; font-size: 14px; margin-top: 24px;">
-          — The LinkMedic Team
-        </p>
-      </div>
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #e2e8f0; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #0f0f0f;">
+        <div style="background: #0f0f0f;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <span style="color: #22d3ee; font-size: 24px; font-weight: bold;">LinkMedic</span>
+          </div>
+
+          <h1 style="color: #e2e8f0; margin-bottom: 16px;">Welcome${name ? `, ${name}` : ""}!</h1>
+
+          <p>Thanks for signing up for LinkMedic — you're one step closer to recovering lost affiliate revenue.</p>
+
+          <p style="color: #22d3ee; font-weight: 600;">Here's how to get started:</p>
+
+          <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 20px; margin: 24px 0;">
+            <ol style="margin: 0; padding-left: 20px;">
+              <li style="margin-bottom: 12px; color: #e2e8f0;">Connect your YouTube channel</li>
+              <li style="margin-bottom: 12px; color: #e2e8f0;">We'll scan your videos for broken affiliate links</li>
+              <li style="color: #e2e8f0;">Fix them with AI-powered suggestions</li>
+            </ol>
+          </div>
+
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="${APP_URL}/dashboard" style="display: inline-block; background: #22d3ee; color: #0f0f0f; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              Go to Your Dashboard
+            </a>
+          </div>
+
+          <p>Questions? Just reply to this email — we're here to help.</p>
+
+          <p style="color: #64748b; font-size: 14px; margin-top: 32px;">
+            — The LinkMedic Team
+          </p>
+
+          <hr style="border: none; border-top: 1px solid #334155; margin: 32px 0;">
+
+          <div style="text-align: center; color: #64748b; font-size: 12px;">
+            <a href="${APP_URL}" style="color: #64748b;">LinkMedic</a> · Protecting your affiliate revenue
+          </div>
+        </div>
+      </body>
+      </html>
     `,
   });
 
@@ -198,25 +278,50 @@ export async function sendWeeklyAlert(
     to,
     subject: `LinkMedic Alert: ${alertData.brokenLinks} broken links found`,
     html: `
-      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-        <h1 style="color: #1f2937;">Weekly Link Health Report</h1>
-        <p style="color: #4b5563;">
-          We found <strong style="color: #dc2626;">${alertData.brokenLinks} broken links</strong> that may be costing you
-          <strong style="color: #dc2626;">$${alertData.estimatedLoss.toFixed(2)}/month</strong>.
-        </p>
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #e2e8f0; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #0f0f0f;">
+        <div style="background: #0f0f0f;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <span style="color: #22d3ee; font-size: 24px; font-weight: bold;">LinkMedic</span>
+          </div>
 
-        ${alertData.topIssues.length > 0 ? `
-        <h3 style="color: #1f2937; margin-top: 24px;">Top issues to fix:</h3>
-        <ul style="color: #4b5563;">${issuesList}</ul>
-        ` : ""}
+          <h1 style="color: #e2e8f0; margin-bottom: 16px;">Weekly Link Health Report</h1>
 
-        <p style="margin-top: 24px;">
-          <a href="${APP_URL}/fix-center" style="background: #10b981; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Fix them now →</a>
-        </p>
-        <p style="color: #6b7280; font-size: 14px; margin-top: 24px;">
-          — LinkMedic
-        </p>
-      </div>
+          <p>
+            We found <strong style="color: #f87171;">${alertData.brokenLinks} broken links</strong> that may be costing you
+            <strong style="color: #f87171;">$${alertData.estimatedLoss.toFixed(2)}/month</strong>.
+          </p>
+
+          ${alertData.topIssues.length > 0 ? `
+          <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 20px; margin: 24px 0;">
+            <h3 style="color: #22d3ee; margin: 0 0 16px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Top Issues to Fix</h3>
+            <ul style="margin: 0; padding-left: 20px; color: #e2e8f0;">${issuesList}</ul>
+          </div>
+          ` : ""}
+
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="${APP_URL}/fix-center" style="display: inline-block; background: #22d3ee; color: #0f0f0f; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              Fix Them Now
+            </a>
+          </div>
+
+          <p style="color: #64748b; font-size: 14px; margin-top: 32px;">
+            — The LinkMedic Team
+          </p>
+
+          <hr style="border: none; border-top: 1px solid #334155; margin: 32px 0;">
+
+          <div style="text-align: center; color: #64748b; font-size: 12px;">
+            <a href="${APP_URL}" style="color: #64748b;">LinkMedic</a> · Protecting your affiliate revenue
+          </div>
+        </div>
+      </body>
+      </html>
     `,
   });
 
@@ -253,13 +358,13 @@ export async function sendScanCompleteEmail(
   const showUpgradeButton = tier === "TRIAL" || tier === "AUDITOR";
 
   const upgradeSection = showUpgradeButton ? `
-    <div style="background: linear-gradient(135deg, #065f46 0%, #047857 100%); padding: 24px; border-radius: 8px; margin: 24px 0; text-align: center;">
-      <p style="color: #d1fae5; font-size: 14px; margin: 0 0 8px 0;">UNLOCK YOUR FULL POTENTIAL</p>
+    <div style="background: linear-gradient(135deg, #0e7490 0%, #0891b2 100%); padding: 24px; border-radius: 8px; margin: 24px 0; text-align: center;">
+      <p style="color: #cffafe; font-size: 14px; margin: 0 0 8px 0; letter-spacing: 1px;">UNLOCK YOUR FULL POTENTIAL</p>
       <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 0 0 16px 0;">
         Upgrade to fix all your links with AI-powered suggestions
       </p>
       <a href="${APP_URL}/settings"
-         style="display: inline-block; background: #fff; color: #065f46; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px;">
+         style="display: inline-block; background: #fff; color: #0e7490; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px;">
         Upgrade to Specialist - $19/mo
       </a>
     </div>
@@ -277,70 +382,70 @@ export async function sendScanCompleteEmail(
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
         </head>
-        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-
-          <div style="text-align: center; margin-bottom: 30px;">
-            <span style="color: #10b981; font-size: 24px; font-weight: bold;">Link Medic</span>
-          </div>
-
-          <p>Hi ${name || "there"},</p>
-
-          <p><strong>Good news:</strong> Your channel audit is complete. No waiting rooms involved.</p>
-
-          <p>While you were reading this, Link Medic scanned your video archives for 404 errors, expired affiliate tags, and out-of-stock products. Here's what we found:</p>
-
-          <div style="background: #1a1a2e; color: #fff; padding: 24px; border-radius: 8px; margin: 24px 0; font-family: monospace;">
-            <div style="text-align: center; font-weight: bold; margin-bottom: 16px; color: #10b981; font-size: 14px; letter-spacing: 1px;">
-              YOUR CHANNEL HEALTH SNAPSHOT
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #e2e8f0; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #0f0f0f;">
+          <div style="background: #0f0f0f;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <span style="color: #22d3ee; font-size: 24px; font-weight: bold;">LinkMedic</span>
             </div>
-            <table style="width: 100%; color: #fff;">
-              <tr>
-                <td style="padding: 8px 0; color: #9ca3af;">Total Links Scanned:</td>
-                <td style="padding: 8px 0; text-align: right; font-weight: bold;">${data.totalLinks.toLocaleString()}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #9ca3af;">Revenue Leaks Detected:</td>
-                <td style="padding: 8px 0; text-align: right; font-weight: bold; color: ${data.brokenLinks > 0 ? "#f87171" : "#10b981"};">${data.brokenLinks}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #9ca3af;">Estimated Monthly Recovery:</td>
-                <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #10b981;">$${data.monthlyRecovery.toLocaleString()}</td>
-              </tr>
-            </table>
-          </div>
 
-          <p><strong>The diagnosis:</strong> Every broken link is a dead end for viewers and a lost commission for you. The good news? These are easy fixes — no surgery required.</p>
+            <p>Hi ${name || "there"},</p>
 
-          <p><strong>YOUR PRESCRIPTION:</strong><br>
-          We've prioritized your most-viewed videos so you can fix the highest-impact leaks first. Most creators recover 80% of lost revenue by fixing just their Top 10 videos.</p>
+            <p><strong style="color: #22d3ee;">Good news:</strong> Your channel audit is complete. No waiting rooms involved.</p>
 
-          <div style="text-align: center; margin: 32px 0;">
-            <a href="${APP_URL}/dashboard"
-               style="display: inline-block; background: #10b981; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
-              View My Full Report
-            </a>
-          </div>
+            <p>While you were reading this, LinkMedic scanned your video archives for 404 errors, expired affiliate tags, and out-of-stock products. Here's what we found:</p>
 
-          ${upgradeSection}
+            <div style="background: #1e293b; border: 1px solid #334155; padding: 24px; border-radius: 8px; margin: 24px 0;">
+              <div style="text-align: center; font-weight: bold; margin-bottom: 16px; color: #22d3ee; font-size: 14px; letter-spacing: 1px;">
+                YOUR CHANNEL HEALTH SNAPSHOT
+              </div>
+              <table style="width: 100%; color: #e2e8f0;">
+                <tr>
+                  <td style="padding: 8px 0; color: #94a3b8;">Total Links Scanned:</td>
+                  <td style="padding: 8px 0; text-align: right; font-weight: bold;">${data.totalLinks.toLocaleString()}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #94a3b8;">Revenue Leaks Detected:</td>
+                  <td style="padding: 8px 0; text-align: right; font-weight: bold; color: ${data.brokenLinks > 0 ? "#f87171" : "#22d3ee"};">${data.brokenLinks}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #94a3b8;">Estimated Monthly Recovery:</td>
+                  <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #22d3ee;">$${data.monthlyRecovery.toLocaleString()}</td>
+                </tr>
+              </table>
+            </div>
 
-          <p><strong>Pro tip:</strong> Grab a coffee, fix your top 10 links, and give yourself a raise on work you finished months ago. Not a bad way to spend 15 minutes.</p>
+            <p><strong style="color: #e2e8f0;">The diagnosis:</strong> Every broken link is a dead end for viewers and a lost commission for you. The good news? These are easy fixes — no surgery required.</p>
 
-          <p>Stay link-healthy,<br>
-          <strong>The Link Medic Team</strong></p>
+            <p><strong style="color: #22d3ee;">YOUR PRESCRIPTION:</strong><br>
+            We've prioritized your most-viewed videos so you can fix the highest-impact leaks first. Most creators recover 80% of lost revenue by fixing just their Top 10 videos.</p>
 
-          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
+            <div style="text-align: center; margin: 32px 0;">
+              <a href="${APP_URL}/dashboard"
+                 style="display: inline-block; background: #22d3ee; color: #0f0f0f; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                View My Full Report
+              </a>
+            </div>
 
-          <p style="color: #6b7280; font-size: 14px;">
-            <strong>P.S.</strong> Worried about SEO? Don't be. Updating your descriptions to fix broken links signals to YouTube that your content is maintained and high-quality for viewers.
-          </p>
+            ${upgradeSection}
 
-          <div style="text-align: center; margin-top: 32px; color: #9ca3af; font-size: 12px;">
-            <p>
-              <a href="${APP_URL}" style="color: #9ca3af;">Link Medic</a> ·
-              Detect broken links. Suggest fixes. Scan weekly.
+            <p><strong style="color: #e2e8f0;">Pro tip:</strong> Grab a coffee, fix your top 10 links, and give yourself a raise on work you finished months ago. Not a bad way to spend 15 minutes.</p>
+
+            <p>Stay link-healthy,<br>
+            <strong>The LinkMedic Team</strong></p>
+
+            <hr style="border: none; border-top: 1px solid #334155; margin: 32px 0;">
+
+            <p style="color: #64748b; font-size: 14px;">
+              <strong style="color: #94a3b8;">P.S.</strong> Worried about SEO? Don't be. Updating your descriptions to fix broken links signals to YouTube that your content is maintained and high-quality for viewers.
             </p>
-          </div>
 
+            <div style="text-align: center; margin-top: 32px; color: #64748b; font-size: 12px;">
+              <p>
+                <a href="${APP_URL}" style="color: #64748b;">LinkMedic</a> ·
+                Detect broken links. Suggest fixes. Scan weekly.
+              </p>
+            </div>
+          </div>
         </body>
         </html>
       `,
@@ -370,18 +475,44 @@ export async function sendPaymentFailedEmail(to: string): Promise<{ success: boo
     to,
     subject: "LinkMedic: Payment failed",
     html: `
-      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-        <h1 style="color: #1f2937;">Payment Issue</h1>
-        <p style="color: #4b5563;">We couldn't process your payment for LinkMedic.</p>
-        <p style="color: #4b5563;">Please update your payment method to keep your account active:</p>
-        <p style="margin-top: 24px;">
-          <a href="${APP_URL}/settings" style="background: #f59e0b; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Update payment method →</a>
-        </p>
-        <p style="color: #4b5563; margin-top: 24px;">Questions? Just reply to this email.</p>
-        <p style="color: #6b7280; font-size: 14px; margin-top: 24px;">
-          — LinkMedic
-        </p>
-      </div>
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #e2e8f0; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #0f0f0f;">
+        <div style="background: #0f0f0f;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <span style="color: #22d3ee; font-size: 24px; font-weight: bold;">LinkMedic</span>
+          </div>
+
+          <h1 style="color: #fb923c; margin-bottom: 16px;">Payment Issue</h1>
+
+          <p>We couldn't process your payment for LinkMedic.</p>
+
+          <p>Please update your payment method to keep your account active and continue protecting your affiliate revenue:</p>
+
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="${APP_URL}/settings" style="display: inline-block; background: #fb923c; color: #0f0f0f; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              Update Payment Method
+            </a>
+          </div>
+
+          <p>Questions? Just reply to this email — we're here to help.</p>
+
+          <p style="color: #64748b; font-size: 14px; margin-top: 32px;">
+            — The LinkMedic Team
+          </p>
+
+          <hr style="border: none; border-top: 1px solid #334155; margin: 32px 0;">
+
+          <div style="text-align: center; color: #64748b; font-size: 12px;">
+            <a href="${APP_URL}" style="color: #64748b;">LinkMedic</a> · Protecting your affiliate revenue
+          </div>
+        </div>
+      </body>
+      </html>
     `,
   });
 
@@ -433,66 +564,66 @@ export async function sendWeeklyDigestEmail(
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
         </head>
-        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #e2e8f0; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #0f0f0f;">
+          <div style="background: #0f0f0f;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <span style="color: #22d3ee; font-size: 24px; font-weight: bold;">LinkMedic</span>
+            </div>
 
-          <div style="text-align: center; margin-bottom: 30px;">
-            <span style="color: #10b981; font-size: 24px; font-weight: bold;">Link Medic</span>
-          </div>
+            <p>Hi ${name || "there"},</p>
 
-          <p>Hi ${name || "there"},</p>
+            <p>Here's your weekly link checkup for <strong style="color: #22d3ee;">${channelName}</strong>:</p>
 
-          <p>Here's your weekly link checkup for <strong>${channelName}</strong>:</p>
+            <div style="background: #1e293b; border: 1px solid #334155; padding: 24px; border-radius: 8px; margin: 24px 0;">
+              <div style="text-align: center; font-size: 20px; font-weight: bold; color: ${statusColor}; margin-bottom: 16px;">
+                ${statusText}
+              </div>
 
-          <div style="background: #1a1a2e; color: #fff; padding: 24px; border-radius: 8px; margin: 24px 0;">
-            <div style="text-align: center; font-size: 20px; font-weight: bold; color: ${statusColor}; margin-bottom: 16px;">
-              ${statusText}
+              ${hasIssues ? `
+                <table style="width: 100%; color: #e2e8f0;">
+                  <tr>
+                    <td style="padding: 8px 0; color: #94a3b8;">New broken links:</td>
+                    <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #f87171;">${data.newBrokenLinks}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #94a3b8;">Links went out of stock:</td>
+                    <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #fb923c;">${data.newOutOfStock}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #94a3b8;">Estimated monthly impact:</td>
+                    <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #f87171;">-$${data.monthlyImpact.toLocaleString()}</td>
+                  </tr>
+                </table>
+              ` : `
+                <p style="text-align: center; color: #94a3b8; margin: 0;">
+                  No new issues detected this week. Your links are healthy! 💪
+                </p>
+              `}
             </div>
 
             ${hasIssues ? `
-              <table style="width: 100%; color: #fff;">
-                <tr>
-                  <td style="padding: 8px 0; color: #9ca3af;">New broken links:</td>
-                  <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #f87171;">${data.newBrokenLinks}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #9ca3af;">Links went out of stock:</td>
-                  <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #fb923c;">${data.newOutOfStock}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #9ca3af;">Estimated monthly impact:</td>
-                  <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #f87171;">-$${data.monthlyImpact.toLocaleString()}</td>
-                </tr>
-              </table>
+              <p>We found some new issues that need your attention. Click below to see the details and get fix suggestions.</p>
+
+              <div style="text-align: center; margin: 32px 0;">
+                <a href="${APP_URL}/fix-center"
+                   style="display: inline-block; background: #22d3ee; color: #0f0f0f; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                  View Issues & Fix
+                </a>
+              </div>
             ` : `
-              <p style="text-align: center; color: #9ca3af; margin: 0;">
-                No new issues detected this week. Your links are healthy! 💪
-              </p>
+              <p>Keep up the great work! We'll keep monitoring and let you know if anything changes.</p>
             `}
+
+            <p>Stay link-healthy,<br>
+            <strong>The LinkMedic Team</strong></p>
+
+            <hr style="border: none; border-top: 1px solid #334155; margin: 32px 0;">
+
+            <p style="color: #64748b; font-size: 12px; text-align: center;">
+              You're receiving this because you have weekly scans enabled.<br>
+              <a href="${APP_URL}/settings" style="color: #64748b;">Manage email preferences</a>
+            </p>
           </div>
-
-          ${hasIssues ? `
-            <p>We found some new issues that need your attention. Click below to see the details and get fix suggestions.</p>
-
-            <div style="text-align: center; margin: 32px 0;">
-              <a href="${APP_URL}/dashboard"
-                 style="display: inline-block; background: #10b981; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
-                View Issues & Fix
-              </a>
-            </div>
-          ` : `
-            <p>Keep up the great work! We'll keep monitoring and let you know if anything changes.</p>
-          `}
-
-          <p>Stay link-healthy,<br>
-          <strong>The Link Medic Team</strong></p>
-
-          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
-
-          <p style="color: #6b7280; font-size: 12px; text-align: center;">
-            You're receiving this because you have weekly scans enabled.<br>
-            <a href="${APP_URL}/settings" style="color: #6b7280;">Manage email preferences</a>
-          </p>
-
         </body>
         </html>
       `,
