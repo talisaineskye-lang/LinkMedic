@@ -207,7 +207,7 @@ function VerifyModal({ videoCount, onConfirm, onCancel }: VerifyModalProps) {
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-sm bg-slate-900 border border-white/10 rounded-2xl shadow-xl">
+      <div className="relative w-full max-w-md bg-slate-900 border border-white/10 rounded-2xl shadow-xl">
         <div className="p-6 text-center">
           {/* Icon */}
           <div className="w-16 h-16 mx-auto mb-4 bg-cyan-500/10 rounded-full flex items-center justify-center">
@@ -215,7 +215,7 @@ function VerifyModal({ videoCount, onConfirm, onCancel }: VerifyModalProps) {
           </div>
 
           {/* Title */}
-          <h3 className="text-lg font-semibold text-white mb-2">
+          <h3 className="text-xl font-semibold text-white mb-2">
             All {videoCount} video{videoCount !== 1 ? "s" : ""} updated!
           </h3>
 
@@ -235,7 +235,7 @@ function VerifyModal({ videoCount, onConfirm, onCancel }: VerifyModalProps) {
             <Tooltip content={TOOLTIP_CONTENT.markAsVerified} position="top">
               <button
                 onClick={onConfirm}
-                className="flex-1 px-4 py-2.5 text-sm font-bold text-black bg-cyan-500 hover:brightness-110 rounded-lg transition"
+                className="px-6 py-2.5 text-sm font-bold text-black bg-cyan-500 hover:brightness-110 rounded-lg transition"
               >
                 Mark as Verified
               </button>
@@ -765,11 +765,11 @@ export function FixCenterClient({
               </button>
 
               {showExportMenu && (
-                <div className="absolute right-0 mt-2 w-64 bg-white/5 rounded-xl shadow-lg border border-white/10 z-20 overflow-hidden">
+                <div className="absolute right-0 bottom-full mb-2 w-64 bg-slate-800 rounded-xl shadow-xl border border-white/20 z-50 overflow-hidden">
                   <button
                     onClick={() => handleDownloadExport("tubebuddy")}
                     disabled={!needsFixIssues.some(i => i.suggestedLink)}
-                    className="w-full px-4 py-3 text-left hover:bg-white/5 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-3 text-left hover:bg-white/10 transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <div className="font-medium text-white flex items-center gap-2">
                       <span>📋</span> TubeBuddy (Bulk Fix)
@@ -779,7 +779,7 @@ export function FixCenterClient({
 
                   <button
                     onClick={() => handleDownloadExport("csv")}
-                    className="w-full px-4 py-3 text-left hover:bg-white/5 transition border-t border-white/10"
+                    className="w-full px-4 py-3 text-left hover:bg-white/10 transition border-t border-white/10"
                   >
                     <div className="font-medium text-white flex items-center gap-2">
                       <span>📊</span> CSV Spreadsheet
@@ -790,7 +790,7 @@ export function FixCenterClient({
                   <button
                     onClick={() => handleDownloadExport("manual")}
                     disabled={!needsFixIssues.some(i => i.suggestedLink)}
-                    className="w-full px-4 py-3 text-left hover:bg-white/5 transition border-t border-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-3 text-left hover:bg-white/10 transition border-t border-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <div className="font-medium text-white flex items-center gap-2">
                       <span>📄</span> Fix Script (Manual)
@@ -1023,7 +1023,7 @@ export function FixCenterClient({
                                   <ChevronDown className="w-3 h-3" />
                                 </button>
                                 {showDisclosureMenu === item.id && (
-                                  <div className="absolute left-0 mt-1 w-64 bg-slate-800 rounded-xl shadow-xl border border-white/20 z-50 overflow-hidden">
+                                  <div className="absolute left-0 bottom-full mb-1 w-64 bg-slate-800 rounded-xl shadow-xl border border-white/20 z-50 overflow-hidden">
                                     <button
                                       onClick={() => copyDisclosure(item.id, "standard")}
                                       className="w-full px-3 py-2 text-left hover:bg-white/10 transition"
@@ -1517,7 +1517,7 @@ export function FixCenterClient({
                                 <MoreHorizontal className="w-4 h-4" />
                               </button>
                               {showActionMenu === group.originalUrl && (
-                                <div className="absolute right-0 mt-1 w-44 bg-slate-900 rounded-lg shadow-xl border border-white/10 z-20 overflow-hidden">
+                                <div className="absolute right-0 bottom-full mb-1 w-44 bg-slate-800 rounded-lg shadow-xl border border-white/20 z-50 overflow-hidden">
                                   {/* Copy & Edit - REQUIRED, DO NOT REMOVE */}
                                   <button
                                     onClick={() => {
@@ -1967,7 +1967,7 @@ export function FixCenterClient({
                                 <MoreHorizontal className="w-4 h-4" />
                               </button>
                               {showActionMenu === issue.id && (
-                                <div className="absolute right-0 mt-1 w-44 bg-slate-900 rounded-lg shadow-xl border border-white/10 z-20 overflow-hidden">
+                                <div className="absolute right-0 bottom-full mb-1 w-44 bg-slate-800 rounded-lg shadow-xl border border-white/20 z-50 overflow-hidden">
                                   {/* Copy & Edit - REQUIRED, DO NOT REMOVE */}
                                   <button
                                     onClick={() => {
