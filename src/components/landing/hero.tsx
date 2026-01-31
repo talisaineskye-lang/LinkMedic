@@ -80,40 +80,6 @@ export function Hero() {
             No credit card required · Results in under 2 minutes
           </motion.p>
         </div>
-
-        {/* Demo Video */}
-        <motion.div
-          className="relative max-w-4xl mx-auto"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8, duration: 0.6 }}
-        >
-          <div className="relative rounded-xl overflow-hidden border border-white/10 shadow-2xl shadow-cyan-500/10">
-            {/* Browser-style header */}
-            <div className="bg-slate-800/80 px-4 py-3 flex items-center gap-2 border-b border-white/5">
-              <div className="flex gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-red-500/80" />
-                <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-                <div className="w-3 h-3 rounded-full bg-green-500/80" />
-              </div>
-              <div className="flex-1 text-center">
-                <span className="text-slate-400 text-xs">LinkMedic Demo</span>
-              </div>
-            </div>
-            {/* Video */}
-            <video
-              className="w-full"
-              autoPlay
-              muted
-              loop
-              playsInline
-              controls
-            >
-              <source src="/demo.mp4" type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
-          </div>
-        </motion.div>
       </div>
     </section>
   );
