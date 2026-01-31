@@ -8,7 +8,6 @@ import { Hero } from "@/components/landing/hero";
 import { VideoDemo } from "@/components/landing/video-demo";
 import { DiagnosticReport } from "@/components/landing/diagnostic-report";
 import { BeforeAfter } from "@/components/landing/before-after";
-import { LeakCalculator } from "@/components/landing/revenue-slider";
 import { FoundingMemberBanner } from "@/components/landing/founding-member-banner";
 import { IntegrationsBar } from "@/components/landing/integrations-bar";
 import { Check, Link2, Search, Wrench } from "lucide-react";
@@ -85,8 +84,6 @@ export default async function Home() {
       {/* Before/After */}
       <BeforeAfter />
 
-      {/* Leak Calculator */}
-      <LeakCalculator />
 
       {/* How It Works */}
       <section className="bg-[#0f172a] py-24 relative overflow-hidden">
