@@ -31,13 +31,12 @@ export function VideoDemo() {
         >
           <div className="aspect-video bg-slate-900/80 rounded-xl relative overflow-hidden">
             <video
-              className="w-full h-full object-cover"
+              className="w-full h-full"
               controls
               playsInline
-            >
-              <source src="/demo.mp4" type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
+              preload="metadata"
+              src="/demo.mp4"
+            />
           </div>
         </motion.div>
       </div>
