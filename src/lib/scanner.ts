@@ -45,8 +45,12 @@ export async function extractAndStoreLinks(videoId: string): Promise<number> {
 /**
  * Extracts links from all videos for a user and analyzes disclosures
  * Also auto-detects affiliate tags from existing Amazon links (per region)
+ *
+ * OPTIMIZED: Uses batch DB operations instead of per-video/per-link queries
  */
 export async function extractLinksForUser(userId: string): Promise<{ videos: number; links: number; disclosureIssues: number; detectedAffiliateTag: string | null }> {
+  const startTime = Date.now();
+
   // Check if user already has affiliate tags saved
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -64,12 +68,31 @@ export async function extractLinksForUser(userId: string): Promise<{ videos: num
     select: { id: true, description: true },
   });
 
-  let totalLinks = 0;
   let disclosureIssues = 0;
   let detectedAffiliateTag: string | null = null;
 
   // Track detected tags per region
   const detectedTags: Partial<Record<AmazonRegion, string>> = {};
+
+  // PHASE 1: Process all videos in memory, build batch updates
+  interface VideoUpdate {
+    id: string;
+    hasAffiliateLinks: boolean;
+    affiliateLinkCount: number;
+    disclosureStatus: DisclosureStatus;
+    disclosureText: string | null;
+    disclosurePosition: number | null;
+  }
+
+  interface LinkToCreate {
+    videoId: string;
+    originalUrl: string;
+    merchant: string;
+    amazonRegion: string | null;
+  }
+
+  const videoUpdates: VideoUpdate[] = [];
+  const linksToProcess: LinkToCreate[] = [];
 
   for (const video of videos) {
     if (!video.description) continue;
@@ -80,16 +103,14 @@ export async function extractLinksForUser(userId: string): Promise<{ videos: num
     // Analyze disclosure for this video
     const disclosureResult = analyzeDisclosure(video.description);
 
-    // Update video with disclosure analysis
-    await prisma.video.update({
-      where: { id: video.id },
-      data: {
-        hasAffiliateLinks: disclosureResult.hasAffiliateLinks,
-        affiliateLinkCount: disclosureResult.affiliateLinkCount,
-        disclosureStatus: disclosureResult.disclosureStatus as DisclosureStatus,
-        disclosureText: disclosureResult.disclosureText,
-        disclosurePosition: disclosureResult.disclosurePosition,
-      },
+    // Queue video update (will batch later)
+    videoUpdates.push({
+      id: video.id,
+      hasAffiliateLinks: disclosureResult.hasAffiliateLinks,
+      affiliateLinkCount: disclosureResult.affiliateLinkCount,
+      disclosureStatus: disclosureResult.disclosureStatus as DisclosureStatus,
+      disclosureText: disclosureResult.disclosureText,
+      disclosurePosition: disclosureResult.disclosurePosition,
     });
 
     // Count disclosure issues (MISSING or WEAK with affiliate links)
@@ -106,14 +127,11 @@ export async function extractLinksForUser(userId: string): Promise<{ videos: num
 
       // Auto-detect affiliate tags per region from Amazon links
       if (link.merchant === "amazon" && amazonRegion) {
-        // Only detect if we haven't already detected for this region
         if (!detectedTags[amazonRegion]) {
           const tag = extractRegionAffiliateTag(link.url);
           if (tag) {
             detectedTags[amazonRegion] = tag;
-            console.log(`[Scanner] Auto-detected affiliate tag for ${amazonRegion}: ${tag}`);
-
-            // Keep track of first detected tag for backward compatibility
+            // Tag auto-detected for region
             if (!detectedAffiliateTag) {
               detectedAffiliateTag = tag;
             }
@@ -121,35 +139,102 @@ export async function extractLinksForUser(userId: string): Promise<{ videos: num
         }
       }
 
-      // Check if link already exists for this video
-      const existing = await prisma.affiliateLink.findFirst({
-        where: {
-          videoId: video.id,
-          originalUrl: link.url,
-        },
+      // Queue link for processing
+      linksToProcess.push({
+        videoId: video.id,
+        originalUrl: link.url,
+        merchant: link.merchant,
+        amazonRegion: amazonRegion || null,
       });
-
-      if (!existing) {
-        await prisma.affiliateLink.create({
-          data: {
-            videoId: video.id,
-            originalUrl: link.url,
-            merchant: link.merchant,
-            amazonRegion: amazonRegion || null,
-          },
-        });
-        totalLinks++;
-      } else if (amazonRegion && !existing.amazonRegion) {
-        // Update existing link with region if not set
-        await prisma.affiliateLink.update({
-          where: { id: existing.id },
-          data: { amazonRegion },
-        });
-      }
     }
   }
 
-  // Build tag updates (only update tags that aren't already set)
+
+  // PHASE 2: Batch update all video disclosure data (chunked to avoid 5s timeout)
+  if (videoUpdates.length > 0) {
+    const updateStart = Date.now();
+    const CHUNK_SIZE = 50;
+
+    for (let i = 0; i < videoUpdates.length; i += CHUNK_SIZE) {
+      const chunk = videoUpdates.slice(i, i + CHUNK_SIZE);
+      await prisma.$transaction(
+        chunk.map(update =>
+          prisma.video.update({
+            where: { id: update.id },
+            data: {
+              hasAffiliateLinks: update.hasAffiliateLinks,
+              affiliateLinkCount: update.affiliateLinkCount,
+              disclosureStatus: update.disclosureStatus,
+              disclosureText: update.disclosureText,
+              disclosurePosition: update.disclosurePosition,
+            },
+          })
+        )
+      );
+    }
+  }
+
+  // PHASE 3: Fetch ALL existing affiliate links for this user's videos in ONE query
+  const videoIds = videos.map(v => v.id);
+  const existingLinks = await prisma.affiliateLink.findMany({
+    where: { videoId: { in: videoIds } },
+    select: { id: true, videoId: true, originalUrl: true, amazonRegion: true },
+  });
+
+  // Build a lookup map: "videoId:url" -> existingLink
+  const existingLinkMap = new Map<string, { id: string; amazonRegion: string | null }>();
+  for (const link of existingLinks) {
+    existingLinkMap.set(`${link.videoId}:${link.originalUrl}`, {
+      id: link.id,
+      amazonRegion: link.amazonRegion,
+    });
+  }
+
+  // PHASE 4: Determine new links vs links needing region update
+  const newLinks: LinkToCreate[] = [];
+  const regionUpdates: { id: string; amazonRegion: string }[] = [];
+
+  for (const link of linksToProcess) {
+    const key = `${link.videoId}:${link.originalUrl}`;
+    const existing = existingLinkMap.get(key);
+
+    if (!existing) {
+      newLinks.push(link);
+    } else if (link.amazonRegion && !existing.amazonRegion) {
+      regionUpdates.push({ id: existing.id, amazonRegion: link.amazonRegion });
+    }
+  }
+
+  // PHASE 5: Batch create new links
+  if (newLinks.length > 0) {
+    await prisma.affiliateLink.createMany({
+      data: newLinks.map(link => ({
+        videoId: link.videoId,
+        originalUrl: link.originalUrl,
+        merchant: link.merchant,
+        amazonRegion: link.amazonRegion,
+      })),
+      skipDuplicates: true, // Safety net for race conditions
+    });
+  }
+
+  // PHASE 6: Batch update region for existing links (chunked to avoid timeout)
+  if (regionUpdates.length > 0) {
+    const CHUNK_SIZE = 50;
+    for (let i = 0; i < regionUpdates.length; i += CHUNK_SIZE) {
+      const chunk = regionUpdates.slice(i, i + CHUNK_SIZE);
+      await prisma.$transaction(
+        chunk.map(update =>
+          prisma.affiliateLink.update({
+            where: { id: update.id },
+            data: { amazonRegion: update.amazonRegion },
+          })
+        )
+      );
+    }
+  }
+
+  // PHASE 7: Build tag updates (only update tags that aren't already set)
   const tagUpdates: Record<string, string> = {};
 
   if (detectedTags.US && !user?.affiliateTagUS) {
@@ -176,10 +261,11 @@ export async function extractLinksForUser(userId: string): Promise<{ videos: num
       where: { id: userId },
       data: tagUpdates,
     });
-    console.log(`[Scanner] Auto-saved affiliate tags for user ${userId}:`, tagUpdates);
   }
 
-  return { videos: videos.length, links: totalLinks, disclosureIssues, detectedAffiliateTag };
+  console.log(`[Sync] Extracted ${newLinks.length} links from ${videos.length} videos in ${Date.now() - startTime}ms`);
+
+  return { videos: videos.length, links: newLinks.length, disclosureIssues, detectedAffiliateTag };
 }
 
 /**
@@ -235,6 +321,12 @@ export async function scanUserLinks(
   userId: string,
   staleThresholdDays: number = 7
 ): Promise<{ checked: number; issues: number }> {
+  // Skip link audit if SKIP_LINK_AUDIT is set (useful for dev when ScrapingBee has issues)
+  if (process.env.SKIP_LINK_AUDIT === "true") {
+    console.log("[Audit] Skipping link audit (SKIP_LINK_AUDIT=true)");
+    return { checked: 0, issues: 0 };
+  }
+
   const staleDate = new Date();
   staleDate.setDate(staleDate.getDate() - staleThresholdDays);
 
@@ -259,16 +351,9 @@ export async function scanUserLinks(
     return { checked: 0, issues: 0 };
   }
 
-  console.log(`[Scanner] Starting audit of ${links.length} links for user ${userId}`);
-
   // Use the new parallel audit engine
   const urls = links.map(l => l.originalUrl);
-  const results = await auditLinks({
-    urls,
-    onProgress: (completed, total) => {
-      console.log(`[Scanner] Progress: ${completed}/${total}`);
-    },
-  });
+  const results = await auditLinks({ urls });
 
   // Problem statuses that count as issues
   const PROBLEM_STATUSES: LinkStatus[] = [
@@ -314,8 +399,7 @@ export async function scanUserLinks(
     }
   }
 
-  const cached = results.filter(r => r.fromCache).length;
-  console.log(`[Scanner] Completed: ${links.length} links checked, ${issues} issues found (${cached} from cache)`);
+  console.log(`[Sync] Audited ${links.length} links, found ${issues} issues`);
 
   return { checked: links.length, issues };
 }

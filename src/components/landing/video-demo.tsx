@@ -6,10 +6,10 @@ export function VideoDemo() {
       <div className="max-w-4xl mx-auto px-6">
         <div className="text-center mb-12">
           <span className="text-cyan-400 text-sm font-semibold tracking-wide uppercase">
-            See It In Action
+            Demo
           </span>
           <h2 className="text-3xl md:text-4xl font-bold mt-3 tracking-tight text-white">
-            60-Second Demo
+            See It In Action
           </h2>
           <p className="text-slate-400 mt-4">
             Watch how fast you can find and fix broken links

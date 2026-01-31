@@ -290,8 +290,9 @@ async function fetchAllVideos(
 }
 
 /**
- * Batch upserts videos using a single Prisma transaction
+ * Batch upserts videos using chunked Prisma transactions
  * Much faster than individual upserts due to reduced DB round trips
+ * Chunks to avoid transaction timeout (default 5s)
  */
 async function batchUpsertVideos(
   videos: YouTubeVideo[],
@@ -300,36 +301,44 @@ async function batchUpsertVideos(
 ): Promise<number> {
   if (videos.length === 0) return 0;
 
-  // Prisma doesn't support upsertMany, so we batch upserts in a transaction
-  // This is still 10-20x faster than sequential individual upserts
-  // Note: For very large batches (500+ videos), consider chunking
-  await prisma.$transaction(
-    videos.map(video =>
-      prisma.video.upsert({
-        where: { youtubeVideoId: video.id },
-        create: {
-          youtubeVideoId: video.id,
-          title: video.title,
-          description: video.description,
-          thumbnailUrl: video.thumbnailUrl,
-          viewCount: video.viewCount,
-          publishedAt: video.publishedAt,
-          userId,
-          channelId,
-        },
-        update: {
-          title: video.title,
-          description: video.description,
-          thumbnailUrl: video.thumbnailUrl,
-          viewCount: video.viewCount,
-          // IMPORTANT: Update userId to ensure video belongs to current user
-          // This fixes the case where a video was previously synced by another account
-          userId,
-          channelId,
-        },
-      })
-    )
-  );
+  // Chunk size of 50 to stay well under 5s transaction timeout
+  const CHUNK_SIZE = 50;
+  const chunks: YouTubeVideo[][] = [];
+
+  for (let i = 0; i < videos.length; i += CHUNK_SIZE) {
+    chunks.push(videos.slice(i, i + CHUNK_SIZE));
+  }
+
+  // Process each chunk in a separate transaction
+  for (const chunk of chunks) {
+    await prisma.$transaction(
+      chunk.map(video =>
+        prisma.video.upsert({
+          where: { youtubeVideoId: video.id },
+          create: {
+            youtubeVideoId: video.id,
+            title: video.title,
+            description: video.description,
+            thumbnailUrl: video.thumbnailUrl,
+            viewCount: video.viewCount,
+            publishedAt: video.publishedAt,
+            userId,
+            channelId,
+          },
+          update: {
+            title: video.title,
+            description: video.description,
+            thumbnailUrl: video.thumbnailUrl,
+            viewCount: video.viewCount,
+            // IMPORTANT: Update userId to ensure video belongs to current user
+            // This fixes the case where a video was previously synced by another account
+            userId,
+            channelId,
+          },
+        })
+      )
+    );
+  }
 
   return videos.length;
 }
@@ -481,12 +490,28 @@ export async function syncUserVideos(
       if (channel) {
         youtubeChannelId = channel.youtubeChannelId;
         dbChannelId = channel.id;
+      } else {
+        // Channel record doesn't exist but activeChannelId is set
+        // Use activeChannelId as dbChannelId to ensure dashboard filter works
+        dbChannelId = user.activeChannelId;
       }
     }
 
     // Fallback to legacy youtubeChannelId
     if (!youtubeChannelId) {
       youtubeChannelId = user?.youtubeChannelId ?? undefined;
+    }
+
+    // If we still don't have a dbChannelId but have youtubeChannelId,
+    // try to find a channel by youtubeChannelId
+    if (!dbChannelId && youtubeChannelId) {
+      const channelByYtId = await (prisma as any).channel.findFirst({
+        where: { youtubeChannelId, userId },
+        select: { id: true },
+      });
+      if (channelByYtId) {
+        dbChannelId = channelByYtId.id;
+      }
     }
   }
 
@@ -499,11 +524,10 @@ export async function syncUserVideos(
   const THIRTY_DAYS_AGO = new Date();
   THIRTY_DAYS_AGO.setDate(THIRTY_DAYS_AGO.getDate() - 30);
 
-  // OPTIMIZATION 1: Get uploads playlist ID ONCE (not per page)
-  console.log(`[YouTube] Starting ${scanType} sync for channel ${youtubeChannelId}`);
+  // Get uploads playlist ID ONCE (not per page)
   const uploadsPlaylistId = await getUploadsPlaylistId(auth, youtubeChannelId);
 
-  // OPTIMIZATION 2: Fetch all videos without artificial delays
+  // Fetch all videos without artificial delays
   const videos = await fetchAllVideos(
     auth,
     uploadsPlaylistId,
@@ -512,12 +536,16 @@ export async function syncUserVideos(
     THIRTY_DAYS_AGO
   );
 
-  console.log(`[YouTube] Fetched ${videos.length} videos in ${Date.now() - startTime}ms`);
-
-  // OPTIMIZATION 3: Batch upsert all videos in a single transaction
-  const upsertStart = Date.now();
+  // Batch upsert all videos
   const synced = await batchUpsertVideos(videos, userId, dbChannelId || null);
-  console.log(`[YouTube] Upserted ${synced} videos in ${Date.now() - upsertStart}ms`);
+
+  // Fix any existing videos with null channelId (migration for older data)
+  if (dbChannelId) {
+    await prisma.video.updateMany({
+      where: { userId, channelId: null },
+      data: { channelId: dbChannelId },
+    });
+  }
 
   // For quick scan, also refresh the top 20 videos by views
   if (scanType === "quick") {
@@ -529,7 +557,7 @@ export async function syncUserVideos(
     where: dbChannelId ? { userId, channelId: dbChannelId } : { userId },
   });
 
-  console.log(`[YouTube] Sync complete: ${synced} videos in ${Date.now() - startTime}ms total`);
+  console.log(`[Sync] Fetched ${synced} videos from YouTube in ${Date.now() - startTime}ms`);
 
   return { synced, total, channelId: dbChannelId, scanType };
 }

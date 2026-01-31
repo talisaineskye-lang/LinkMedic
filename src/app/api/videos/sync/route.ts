@@ -59,14 +59,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Parse request body for channelId and scanType
+    // Parse request body for channelId, scanType, and force (dev bypass)
     let channelId: string | undefined;
     let scanType: ScanType = "full"; // Default to full scan
+    let forceBypass = false; // Dev bypass for cooldown
     try {
       const body = await request.json();
       channelId = body.channelId;
       if (body.scanType === "quick" || body.scanType === "full") {
         scanType = body.scanType;
+      }
+      // Dev bypass - only works in development
+      if (body.force === true && process.env.NODE_ENV === "development") {
+        forceBypass = true;
       }
     } catch {
       // No body or invalid JSON is fine - we'll use defaults
@@ -116,8 +121,8 @@ export async function POST(request: Request) {
       where: { id: session.user.id },
     }) as { tier: string; lastQuickScan: Date | null; lastFullScan: Date | null } | null;
 
-    // Check scan eligibility based on cooldowns (skip for first scan)
-    if (!isFirstScan && userData) {
+    // Check scan eligibility based on cooldowns (skip for first scan or force bypass)
+    if (!isFirstScan && userData && !forceBypass) {
       const eligibility = getScanEligibility(
         userData.lastQuickScan,
         userData.lastFullScan
@@ -177,10 +182,7 @@ export async function POST(request: Request) {
     const { links, disclosureIssues, detectedAffiliateTag } = await extractLinksForUser(session.user.id);
 
     // Audit links to check their status (broken, OOS, etc.)
-    // This changes status from UNKNOWN to actual status
-    console.log(`[Sync] Auditing ${links} extracted links...`);
     const { checked: linksAudited, issues: issuesFound } = await scanUserLinks(session.user.id);
-    console.log(`[Sync] Audited ${linksAudited} links, found ${issuesFound} issues`);
 
     // Handle first-time scans: send email and upgrade TRIAL → AUDITOR
     if (isFirstScan) {

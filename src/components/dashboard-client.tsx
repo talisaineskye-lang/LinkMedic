@@ -111,14 +111,14 @@ export function DashboardClient({
 
   const hasData = stats.totalLinks > 0;
 
-  const handleSync = async (scanType: "quick" | "full" = "full") => {
+  const handleSync = async (scanType: "quick" | "full" = "full", force = false) => {
     if (!tierInfo.canResync && !scanEligibility.isFirstScan) {
       alert("Upgrade to a paid plan to resync your videos");
       return;
     }
 
-    // Check cooldown eligibility
-    if (!scanEligibility.isFirstScan) {
+    // Check cooldown eligibility (skip if force)
+    if (!scanEligibility.isFirstScan && !force) {
       if (scanType === "quick" && !scanEligibility.quickScanAvailable) {
         alert(`Quick scan is on cooldown. Available in ${formatCooldown(scanEligibility.quickScanCooldownEnds)}`);
         return;
@@ -137,7 +137,7 @@ export function DashboardClient({
       const response = await fetch("/api/videos/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ scanType }),
+        body: JSON.stringify({ scanType, force }),
       });
 
       if (!response.ok) {
@@ -243,14 +243,26 @@ export function DashboardClient({
             <h1 className="font-display text-4xl tracking-wide mb-2">DASHBOARD</h1>
             <p className="text-slate-400">Monitor your affiliate link health</p>
           </div>
-          <button
-            onClick={() => handleSync("full")}
-            disabled={isSyncing}
-            className="btn-primary flex items-center gap-2 px-6 py-3"
-          >
-            <RotateCw className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
-            {isSyncing ? "Syncing..." : "Sync Videos"}
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => handleSync("full")}
+              disabled={isSyncing}
+              className="btn-primary flex items-center gap-2 px-6 py-3"
+            >
+              <RotateCw className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
+              {isSyncing ? "Syncing..." : "Sync Videos"}
+            </button>
+            {/* Dev force sync */}
+            <button
+              onClick={() => handleSync("full", true)}
+              disabled={isSyncing}
+              className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition border bg-amber-600 hover:bg-amber-500 border-amber-400/50 text-black"
+              title="Force sync (bypasses cooldown)"
+            >
+              <RotateCw className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
+              Force
+            </button>
+          </div>
         </div>
 
         {/* Empty State */}
@@ -265,13 +277,23 @@ export function DashboardClient({
             and discovering hidden revenue losses.
           </p>
 
-          <button
-            onClick={() => handleSync("full")}
-            disabled={isSyncing}
-            className="btn-primary text-lg px-10 py-4"
-          >
-            {isSyncing ? "Syncing Your Videos..." : "Sync My YouTube Videos"}
-          </button>
+          <div className="flex items-center justify-center gap-4">
+            <button
+              onClick={() => handleSync("full")}
+              disabled={isSyncing}
+              className="btn-primary text-lg px-10 py-4"
+            >
+              {isSyncing ? "Syncing Your Videos..." : "Sync My YouTube Videos"}
+            </button>
+            <button
+              onClick={() => handleSync("full", true)}
+              disabled={isSyncing}
+              className="flex items-center gap-2 px-6 py-4 rounded-lg text-lg font-medium transition border bg-amber-600 hover:bg-amber-500 border-amber-400/50 text-black"
+              title="Force sync (bypasses cooldown)"
+            >
+              Force
+            </button>
+          </div>
 
           <p className="text-sm text-slate-500 mt-6">
             We&apos;ll scan up to 500 videos and extract all affiliate links from
@@ -400,6 +422,16 @@ export function DashboardClient({
               <Download className={`w-4 h-4 ${isExporting ? "animate-pulse" : ""}`} />
             )}
             {isExporting ? "Exporting..." : "Export CSV"}
+          </button>
+          {/* Dev force sync - bypasses cooldown (only works on localhost) */}
+          <button
+            onClick={() => handleSync("full", true)}
+            disabled={isSyncing}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition border bg-amber-600 hover:bg-amber-500 border-amber-400/50 text-black"
+            title="Force sync (bypasses cooldown - dev only)"
+          >
+            <RotateCw className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
+            Force
           </button>
         </div>
       </div>

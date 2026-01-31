@@ -44,6 +44,14 @@ export default async function FixCenterPage() {
   const canUseAI = TIER_FEATURES[tier].aiSuggestions;
 
   // Filter by active channel if set (multi-channel support)
+  // Also fix any orphaned videos with null channelId
+  if (user?.activeChannelId) {
+    await prisma.video.updateMany({
+      where: { userId: session.user.id, channelId: null },
+      data: { channelId: user.activeChannelId },
+    });
+  }
+
   const channelFilter = user?.activeChannelId
     ? { channelId: user.activeChannelId }
     : {};

@@ -19,7 +19,12 @@ import { LinkStatus } from "@prisma/client";
 
 const CONCURRENCY_LIMIT = 5;
 const CACHE_TTL_HOURS = 24;
-const SCRAPINGBEE_TIMEOUT = 30000;
+const SCRAPINGBEE_TIMEOUT = 10000; // Reduced from 30s for faster failure detection
+const MAX_CONSECUTIVE_FAILURES = 5; // Bail out if ScrapingBee fails this many times in a row
+
+// Track consecutive failures for early bail-out
+let consecutiveFailures = 0;
+let scrapingBeeDisabled = false;
 
 // Severity scores for revenue impact calculation
 export const SEVERITY_MAP: Record<LinkStatus, number> = {
@@ -142,7 +147,6 @@ async function checkCache(asin: string): Promise<CachedResult | null> {
   const maxAge = CACHE_TTL_HOURS * 60 * 60 * 1000;
 
   if (cacheAge > maxAge) {
-    console.log(`[Cache] ASIN ${asin} expired (${Math.round(cacheAge / 3600000)}h old)`);
     return null;
   }
 
@@ -151,8 +155,6 @@ async function checkCache(asin: string): Promise<CachedResult | null> {
     where: { asin },
     data: { hitCount: { increment: 1 } },
   });
-
-  console.log(`[Cache] HIT for ASIN ${asin}`);
   return {
     status: cached.status,
     finalUrl: cached.finalUrl,
@@ -189,7 +191,6 @@ async function saveToCache(
       lastChecked: new Date(),
     },
   });
-  console.log(`[Cache] Saved ASIN ${asin} with status ${status}`);
 }
 
 // ============================================
@@ -205,18 +206,24 @@ interface FetchResult {
 
 /**
  * Fetch URL via ScrapingBee with redirect tracking
+ * Includes early bail-out if ScrapingBee is consistently failing
  */
 async function fetchWithScrapingBee(url: string): Promise<FetchResult> {
+  // Check if we've already disabled ScrapingBee due to failures
+  if (scrapingBeeDisabled) {
+    return { html: null, httpStatus: 500, finalUrl: url, error: "ScrapingBee disabled due to failures" };
+  }
+
   const apiKey = process.env.SCRAPINGBEE_API_KEY;
 
   if (!apiKey) {
-    console.error("[Audit] No SCRAPINGBEE_API_KEY configured");
+    console.error("[Audit] No SCRAPINGBEE_API_KEY configured - skipping link audits");
+    scrapingBeeDisabled = true;
     return { html: null, httpStatus: 500, finalUrl: url, error: "No API key" };
   }
 
   try {
     const countryCode = getCountryCode(url);
-    console.log(`[Audit] Fetching ${url.slice(0, 50)}... with proxy country: ${countryCode}`);
 
     const params = new URLSearchParams({
       api_key: apiKey,
@@ -244,13 +251,23 @@ async function fetchWithScrapingBee(url: string): Promise<FetchResult> {
     const finalUrl = response.headers.get("spb-resolved-url") || url;
     const html = await response.text();
 
+    // Success! Reset failure counter
+    consecutiveFailures = 0;
+
     return {
       html,
       httpStatus: response.status,
       finalUrl,
     };
   } catch (error) {
-    console.error("[Audit] ScrapingBee error:", error);
+    // Track consecutive failures
+    consecutiveFailures++;
+
+    if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+      console.error(`[Audit] ScrapingBee failed ${consecutiveFailures} times in a row - disabling for this sync`);
+      scrapingBeeDisabled = true;
+    }
+
     return {
       html: null,
       httpStatus: 500,
@@ -455,6 +472,18 @@ async function auditSingleLink(url: string): Promise<AuditResult> {
   // Fetch the page to get the resolved URL and extract ASIN
   const fetchResult = await fetchWithScrapingBee(url);
 
+  // Handle dead link status codes (407, 410, 451) - mark as NOT_FOUND
+  if (DEAD_LINK_STATUS_CODES.includes(fetchResult.httpStatus)) {
+    return {
+      ...baseResult,
+      status: "NOT_FOUND",
+      reason: `Dead link (HTTP ${fetchResult.httpStatus})`,
+      httpStatus: fetchResult.httpStatus,
+      finalUrl: fetchResult.finalUrl,
+      severity: SEVERITY_MAP.NOT_FOUND,
+    };
+  }
+
   if (fetchResult.error || !fetchResult.html) {
     return {
       ...baseResult,
@@ -513,7 +542,7 @@ async function auditSingleLink(url: string): Promise<AuditResult> {
 }
 
 // ============================================
-// BATCH AUDIT WITH PARALLELISM
+// BATCH AUDIT WITH PARALLELISM & DEDUPLICATION
 // ============================================
 
 export interface BatchAuditOptions {
@@ -521,36 +550,189 @@ export interface BatchAuditOptions {
   onProgress?: (completed: number, total: number) => void;
 }
 
+// HTTP status codes that indicate permanently dead links (don't re-check)
+const DEAD_LINK_STATUS_CODES = [407, 410, 451];
+const DEAD_LINK_CACHE_DAYS = 7; // Cache dead links for 7 days
+
+/**
+ * Normalize URL for deduplication (remove tracking params, lowercase)
+ */
+function normalizeUrlForDedup(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    // Remove common tracking parameters but keep affiliate tag
+    const paramsToRemove = ['ref', 'ref_', 'psc', 'pd_rd_i', 'pd_rd_r', 'pd_rd_w', 'pd_rd_wg', 'pf_rd_i', 'pf_rd_m', 'pf_rd_p', 'pf_rd_r', 'pf_rd_s', 'pf_rd_t', 'smid', 'spIA', 'linkCode', 'linkId'];
+    paramsToRemove.forEach(param => urlObj.searchParams.delete(param));
+    return urlObj.toString().toLowerCase();
+  } catch {
+    return url.toLowerCase();
+  }
+}
+
+/**
+ * Check URL-based cache for recently checked links
+ * This catches shortened URLs (amzn.to) that don't have ASINs
+ */
+async function checkUrlCache(url: string): Promise<CachedResult | null> {
+  // Check if this exact URL was recently audited via the AffiliateLink table
+  const recentLink = await prisma.affiliateLink.findFirst({
+    where: {
+      originalUrl: url,
+      lastCheckedAt: { not: null },
+    },
+    select: {
+      status: true,
+      lastCheckedAt: true,
+    },
+    orderBy: { lastCheckedAt: 'desc' },
+  });
+
+  if (!recentLink?.lastCheckedAt) return null;
+
+  const cacheAge = Date.now() - recentLink.lastCheckedAt.getTime();
+  const maxAge = CACHE_TTL_HOURS * 60 * 60 * 1000;
+
+  // For dead links (NOT_FOUND, SEARCH_REDIRECT), use longer cache
+  const isDeadLink = recentLink.status === 'NOT_FOUND' || recentLink.status === 'SEARCH_REDIRECT';
+  const deadLinkMaxAge = DEAD_LINK_CACHE_DAYS * 24 * 60 * 60 * 1000;
+
+  if (isDeadLink && cacheAge < deadLinkMaxAge) {
+    return {
+      status: recentLink.status,
+      finalUrl: null,
+      reason: "Dead link (cached)",
+      httpStatus: null,
+    };
+  }
+
+  if (cacheAge < maxAge) {
+    return {
+      status: recentLink.status,
+      finalUrl: null,
+      reason: "Recently checked",
+      httpStatus: null,
+    };
+  }
+
+  return null;
+}
+
 /**
  * Audit multiple links in parallel with p-limit
+ *
+ * OPTIMIZATIONS:
+ * - Deduplicates URLs: same URL checked only once, result mapped to all occurrences
+ * - URL-based cache: skips recently checked URLs
+ * - Dead link cache: 407/410 responses cached for 7 days
+ * - Early bail-out: stops if ScrapingBee fails 5+ times in a row
  */
 export async function auditLinks(options: BatchAuditOptions): Promise<AuditResult[]> {
   const { urls, onProgress } = options;
   const limit = pLimit(CONCURRENCY_LIMIT);
 
+  // Reset failure tracking for each new audit batch
+  consecutiveFailures = 0;
+  scrapingBeeDisabled = false;
+
+  // STEP 1: Deduplicate URLs
+  const normalizedToOriginal = new Map<string, string>(); // normalized -> first original URL
+  const originalToNormalized = new Map<string, string>(); // original -> normalized
+  const uniqueUrls: string[] = [];
+
+  for (const url of urls) {
+    const normalized = normalizeUrlForDedup(url);
+    originalToNormalized.set(url, normalized);
+
+    if (!normalizedToOriginal.has(normalized)) {
+      normalizedToOriginal.set(normalized, url);
+      uniqueUrls.push(url);
+    }
+  }
+
+  const duplicatesSkipped = urls.length - uniqueUrls.length;
+  if (duplicatesSkipped > 0) {
+    console.log(`[Audit] Deduplicated: ${urls.length} URLs → ${uniqueUrls.length} unique (${duplicatesSkipped} duplicates skipped)`);
+  }
+
+  // STEP 2: Check URL cache for recently checked links
+  const urlsToAudit: string[] = [];
+  const cachedResults = new Map<string, AuditResult>();
+
+  for (const url of uniqueUrls) {
+    const cached = await checkUrlCache(url);
+    if (cached) {
+      cachedResults.set(normalizeUrlForDedup(url), {
+        originalUrl: url,
+        asin: null,
+        status: cached.status,
+        reason: cached.reason || "Cached",
+        httpStatus: cached.httpStatus,
+        finalUrl: cached.finalUrl,
+        productTitle: null,
+        severity: SEVERITY_MAP[cached.status],
+        fromCache: true,
+      });
+    } else {
+      urlsToAudit.push(url);
+    }
+  }
+
+  if (cachedResults.size > 0) {
+    console.log(`[Audit] Cache hits: ${cachedResults.size}, URLs to audit: ${urlsToAudit.length}`);
+  }
+
+  // STEP 3: Audit remaining URLs with concurrency limit
   let completed = 0;
   const total = urls.length;
+  const auditedResults = new Map<string, AuditResult>();
 
-  console.log(`[Audit] Starting batch audit of ${total} links (concurrency: ${CONCURRENCY_LIMIT})`);
-  const startTime = Date.now();
+  if (urlsToAudit.length > 0) {
+    const results = await Promise.all(
+      urlsToAudit.map((url) =>
+        limit(async () => {
+          const result = await auditSingleLink(url);
+          completed++;
+          onProgress?.(completed + cachedResults.size, total);
+          return { url, result };
+        })
+      )
+    );
 
-  const results = await Promise.all(
-    urls.map((url) =>
-      limit(async () => {
-        const result = await auditSingleLink(url);
-        completed++;
-        onProgress?.(completed, total);
-        console.log(`[Audit] ${completed}/${total} - ${result.status} - ${url.slice(0, 50)}...`);
-        return result;
-      })
-    )
-  );
+    for (const { url, result } of results) {
+      auditedResults.set(normalizeUrlForDedup(url), result);
+    }
+  }
 
-  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-  const cached = results.filter((r) => r.fromCache).length;
-  console.log(`[Audit] Completed ${total} links in ${elapsed}s (${cached} from cache)`);
+  // STEP 4: Map results back to ALL original URLs (including duplicates)
+  const finalResults: AuditResult[] = urls.map((url) => {
+    const normalized = originalToNormalized.get(url)!;
 
-  return results;
+    // Check audited results first, then cached results
+    const result = auditedResults.get(normalized) || cachedResults.get(normalized);
+
+    if (result) {
+      // Return a copy with the original URL preserved
+      return {
+        ...result,
+        originalUrl: url,
+      };
+    }
+
+    // Fallback (shouldn't happen)
+    return {
+      originalUrl: url,
+      asin: null,
+      status: "UNKNOWN" as LinkStatus,
+      reason: "No result available",
+      httpStatus: null,
+      finalUrl: null,
+      productTitle: null,
+      severity: SEVERITY_MAP.UNKNOWN,
+      fromCache: false,
+    };
+  });
+
+  return finalResults;
 }
 
 // ============================================
