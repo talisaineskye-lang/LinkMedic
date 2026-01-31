@@ -728,7 +728,8 @@ export async function findReplacementProduct(
   _videoTitle: string,  // Ignored - not reliable for product identification
   _videoDescription?: string,  // Ignored - not reliable for product identification
   originalProductTitle?: string,
-  affiliateTag?: string  // User's affiliate tag - REQUIRED for correct commission attribution
+  affiliateTag?: string,  // User's affiliate tag - REQUIRED for correct commission attribution
+  excludeAsins: string[] = []  // ASINs to exclude (e.g., previous suggestions that were OOS)
 ): Promise<SuggestionResult> {
   if (!affiliateTag) {
     return {
@@ -820,7 +821,18 @@ export async function findReplacementProduct(
     const searchHtml = await fetchAmazonSearch(query, region);
     if (!searchHtml) return null;
 
-    const products = parseSearchResults(searchHtml, tag, region);
+    let products = parseSearchResults(searchHtml, tag, region);
+    if (products.length === 0) return null;
+
+    // Filter out excluded ASINs (previous suggestions that user rejected/were OOS)
+    if (excludeAsins.length > 0) {
+      const beforeCount = products.length;
+      products = products.filter(p => !excludeAsins.includes(p.asin));
+      if (beforeCount !== products.length) {
+        console.log(`[Suggestion] Excluded ${beforeCount - products.length} previously suggested products`);
+      }
+    }
+
     if (products.length === 0) return null;
 
     console.log(`[Suggestion] Found ${products.length} products from ${isGenericSearch ? 'generic' : 'brand'} search`);

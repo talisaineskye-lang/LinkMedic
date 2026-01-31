@@ -68,6 +68,7 @@ export async function POST(
         suggestedLink: true,
         suggestedTitle: true,
         suggestedPrice: true,
+        suggestedAsin: true,  // Need this to exclude on refresh
         confidenceScore: true,
         video: {
           select: {
@@ -126,6 +127,13 @@ export async function POST(
       }, { status: 400 });
     }
 
+    // Build list of ASINs to exclude (previous suggestions that didn't work)
+    const excludeAsins: string[] = [];
+    if (forceRefresh && link.suggestedAsin) {
+      excludeAsins.push(link.suggestedAsin);
+      console.log(`[suggest] Excluding previous suggestion ASIN: ${link.suggestedAsin}`);
+    }
+
     // Find replacement using AI
     console.log(`[suggest] Finding replacement for link ${linkId}`);
     const suggestion = await findReplacementProduct(
@@ -133,7 +141,8 @@ export async function POST(
       link.video.title,
       link.video.description || undefined,
       undefined,
-      user.affiliateTag
+      user.affiliateTag,
+      excludeAsins
     );
 
     if (suggestion.success && suggestion.bestMatch) {

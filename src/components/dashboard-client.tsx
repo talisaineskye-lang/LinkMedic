@@ -76,9 +76,15 @@ export function DashboardClient({
   const [activeScanType, setActiveScanType] = useState<"quick" | "full" | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isLocalhost, setIsLocalhost] = useState(false);
   const router = useRouter();
 
   const isFreeUser = tierInfo.tier === "TRIAL" || tierInfo.tier === "AUDITOR";
+
+  // Check if running on localhost (for dev-only features like Force sync)
+  useEffect(() => {
+    setIsLocalhost(window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+  }, []);
 
   // Helper to format cooldown time remaining
   const formatCooldown = (isoString: string | null): string => {
@@ -252,16 +258,18 @@ export function DashboardClient({
               <RotateCw className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
               {isSyncing ? "Syncing..." : "Sync Videos"}
             </button>
-            {/* Dev force sync */}
-            <button
-              onClick={() => handleSync("full", true)}
-              disabled={isSyncing}
-              className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition border bg-amber-600 hover:bg-amber-500 border-amber-400/50 text-black"
-              title="Force sync (bypasses cooldown)"
-            >
-              <RotateCw className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
-              Force
-            </button>
+            {/* Dev force sync - only visible on localhost */}
+            {isLocalhost && (
+              <button
+                onClick={() => handleSync("full", true)}
+                disabled={isSyncing}
+                className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition border bg-amber-600 hover:bg-amber-500 border-amber-400/50 text-black"
+                title="Force sync (bypasses cooldown)"
+              >
+                <RotateCw className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
+                Force
+              </button>
+            )}
           </div>
         </div>
 
@@ -285,14 +293,17 @@ export function DashboardClient({
             >
               {isSyncing ? "Syncing Your Videos..." : "Sync My YouTube Videos"}
             </button>
-            <button
-              onClick={() => handleSync("full", true)}
-              disabled={isSyncing}
-              className="flex items-center gap-2 px-6 py-4 rounded-lg text-lg font-medium transition border bg-amber-600 hover:bg-amber-500 border-amber-400/50 text-black"
-              title="Force sync (bypasses cooldown)"
-            >
-              Force
-            </button>
+            {/* Dev force sync - only visible on localhost */}
+            {isLocalhost && (
+              <button
+                onClick={() => handleSync("full", true)}
+                disabled={isSyncing}
+                className="flex items-center gap-2 px-6 py-4 rounded-lg text-lg font-medium transition border bg-amber-600 hover:bg-amber-500 border-amber-400/50 text-black"
+                title="Force sync (bypasses cooldown)"
+              >
+                Force
+              </button>
+            )}
           </div>
 
           <p className="text-sm text-slate-500 mt-6">
@@ -423,16 +434,18 @@ export function DashboardClient({
             )}
             {isExporting ? "Exporting..." : "Export CSV"}
           </button>
-          {/* Dev force sync - bypasses cooldown (only works on localhost) */}
-          <button
-            onClick={() => handleSync("full", true)}
-            disabled={isSyncing}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition border bg-amber-600 hover:bg-amber-500 border-amber-400/50 text-black"
-            title="Force sync (bypasses cooldown - dev only)"
-          >
-            <RotateCw className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
-            Force
-          </button>
+          {/* Dev force sync - only visible on localhost */}
+          {isLocalhost && (
+            <button
+              onClick={() => handleSync("full", true)}
+              disabled={isSyncing}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition border bg-amber-600 hover:bg-amber-500 border-amber-400/50 text-black"
+              title="Force sync (bypasses cooldown - dev only)"
+            >
+              <RotateCw className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
+              Force
+            </button>
+          )}
         </div>
       </div>
 
