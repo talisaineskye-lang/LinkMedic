@@ -12,11 +12,13 @@ export const metadata: Metadata = {
     description: "Learn the three-link tier system that top creators use to earn 2x to 5x more from the same videos.",
     type: "article",
     url: "https://linkmedic.io/intel/2026-youtube-affiliate-strategy-guide",
+    images: [{ url: "https://linkmedic.io/opengraph-image.jpg" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "The 2026 YouTube Affiliate Strategy Guide",
     description: "Learn the three-link tier system that top creators use to earn 2x to 5x more from the same videos.",
+    images: ["https://linkmedic.io/opengraph-image.jpg"],
   },
 };
 

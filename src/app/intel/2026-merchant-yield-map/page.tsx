@@ -12,11 +12,13 @@ export const metadata: Metadata = {
     description: "Compare affiliate commission rates and cookie windows across all major networks.",
     type: "article",
     url: "https://linkmedic.io/intel/2026-merchant-yield-map",
+    images: [{ url: "https://linkmedic.io/opengraph-image.jpg" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "The 2026 Merchant Yield Map",
     description: "Compare affiliate commission rates and cookie windows across all major networks.",
+    images: ["https://linkmedic.io/opengraph-image.jpg"],
   },
 };
 

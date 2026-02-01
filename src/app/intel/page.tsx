@@ -12,11 +12,13 @@ export const metadata: Metadata = {
     description: "Affiliate marketing strategies, commission guides, and revenue optimization tips for YouTube creators.",
     type: "website",
     url: "https://linkmedic.io/intel",
+    images: [{ url: "https://linkmedic.io/opengraph-image.jpg" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Intel Blog | LinkMedic",
     description: "Affiliate marketing strategies and commission guides for YouTube creators.",
+    images: ["https://linkmedic.io/opengraph-image.jpg"],
   },
 };
 
