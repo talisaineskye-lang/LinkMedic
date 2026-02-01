@@ -47,7 +47,7 @@ export function FoundingMemberBanner() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-4 text-center">
         <div className="flex items-center gap-2">
           <span className="text-cyan-400 font-mono text-[10px] sm:text-sm tracking-wider whitespace-nowrap">
-            FOUNDING MEMBER OFFER
+            RECOVERY SQUAD OFFER
           </span>
           <span className="hidden sm:inline text-white/30">|</span>
         </div>

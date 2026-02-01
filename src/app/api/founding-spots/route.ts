@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
-const FOUNDING_MEMBER_LIMIT = 48;
+const FOUNDING_MEMBER_LIMIT = 25;
 
 export async function GET() {
   try {
