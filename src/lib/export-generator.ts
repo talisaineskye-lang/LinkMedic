@@ -185,6 +185,15 @@ function calculatePriority(views: number, allViews: number[]): number {
 }
 
 /**
+ * Truncate text to max length with ellipsis
+ * Used for Progress Tracker to keep checklist clean
+ */
+function truncateText(text: string, maxLength: number = 50): string {
+  if (text.length <= maxLength) return text;
+  return text.slice(0, maxLength - 3).trim() + "...";
+}
+
+/**
  * Format date for exports
  */
 function formatDate(): string {
@@ -520,9 +529,9 @@ export function generateFixScriptMarkdown(data: ExportData): string {
 
 `;
 
-  // Progress tracker checkboxes
+  // Progress tracker checkboxes (truncated product names for cleaner checklist)
   data.groupedLinks.forEach((group, i) => {
-    const productLabel = group.productName || "Unknown Product";
+    const productLabel = truncateText(group.productName || "Unknown Product", 50);
     const videoCountLabel = group.videos.length === 1 ? "1 video" : `${group.videos.length} videos`;
     md += `- [ ] Link ${i + 1}: ${productLabel} (${videoCountLabel})\n`;
   });
@@ -633,7 +642,7 @@ For each broken link below, create a find/replace rule:
 
   // Individual link sections
   linksWithFixes.forEach((group, i) => {
-    const productLabel = group.productName || "Product";
+    const productLabel = truncateText(group.productName || "Product", 50);
     const videoIds = group.videos.map((v) => v.youtubeVideoId).join(",");
 
     md += `### Link ${i + 1}: ${productLabel}
