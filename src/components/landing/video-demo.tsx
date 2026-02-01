@@ -16,17 +16,16 @@ export function VideoDemo() {
           </p>
         </div>
 
-        <div className="rounded-xl overflow-hidden border border-white/10 bg-black">
-          <video
+        <div className="rounded-xl overflow-hidden border border-white/10 bg-black aspect-video">
+          <iframe
             width="100%"
-            height="auto"
-            controls
-            playsInline
-            preload="auto"
-          >
-            <source src="/demo.mp4" type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
+            height="100%"
+            src="https://www.youtube.com/embed/DHOZYEzMvKA?rel=0&modestbranding=1"
+            title="LinkMedic Demo"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="w-full h-full"
+          />
         </div>
       </div>
     </section>
