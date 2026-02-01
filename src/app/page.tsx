@@ -10,22 +10,53 @@ import { DiagnosticReport } from "@/components/landing/diagnostic-report";
 import { BeforeAfter } from "@/components/landing/before-after";
 import { FoundingMemberBanner } from "@/components/landing/founding-member-banner";
 import { IntegrationsBar } from "@/components/landing/integrations-bar";
+import { JsonLd, softwareApplicationSchema, createFaqSchema } from "@/components/JsonLd";
 import { Check, Link2, Search, Wrench } from "lucide-react";
+
+// FAQ data for both display and schema
+const faqData = [
+  {
+    question: "How do I fix the broken links?",
+    answer: "You have options. Fix links one-by-one directly in your LinkMedic dashboard — click a link, see the AI suggestion, copy the fix. For larger channels, export your fix list and update descriptions in bulk using YouTube Studio or your preferred tool."
+  },
+  {
+    question: "How often do you scan?",
+    answer: "Free users get a one-time scan. Paid users get automatic weekly scans — we catch new issues before they start costing you money."
+  },
+  {
+    question: "How do you access my channel?",
+    answer: "We use the official YouTube API to read your public video descriptions. We never see your password and can't change anything without your action."
+  },
+  {
+    question: "Will this affect my YouTube SEO?",
+    answer: "No — fixing broken links actually helps. YouTube prefers videos that lead to good experiences, not dead ends."
+  },
+  {
+    question: "Can it handle thousands of videos?",
+    answer: "Yes. We scan your entire back catalog in under 2 minutes, prioritizing your most-viewed videos first."
+  },
+  {
+    question: "Does this work for non-Amazon links?",
+    answer: "We flag 404s and broken redirects for any affiliate link. Amazon links get extra checks for stock status and tag validation."
+  },
+];
 
 export const metadata: Metadata = {
   title: "LinkMedic – Find & Fix Broken YouTube Affiliate Links",
-  description: "Scan your YouTube channel for broken affiliate links. Detect 404s, out-of-stock products, and dead redirects across Amazon, Impact, CJ, Rakuten, ShareASale, and Awin.",
+  description: "Scan your YouTube channel for broken affiliate links in under 2 minutes. Get AI-powered fix suggestions and recover lost commission revenue automatically.",
   keywords: ["youtube affiliate links", "broken link checker", "affiliate revenue", "amazon affiliate", "youtube creator tools"],
   openGraph: {
     title: "LinkMedic – Find & Fix Broken YouTube Affiliate Links",
-    description: "Scan your YouTube channel for broken affiliate links. Detect 404s, out-of-stock products, and dead redirects.",
+    description: "Scan your YouTube channel for broken affiliate links in under 2 minutes. Get AI-powered fix suggestions and recover lost commission revenue automatically.",
     type: "website",
-    url: "https://linkmedic.io",
+    url: "https://link-medic.app",
+    images: [{ url: "https://link-medic.app/opengraph-image.jpg" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "LinkMedic – Find & Fix Broken YouTube Affiliate Links",
-    description: "Scan your YouTube channel for broken affiliate links. Detect 404s, out-of-stock products, and dead redirects.",
+    description: "Scan your YouTube channel for broken affiliate links in under 2 minutes. Get AI-powered fix suggestions and recover lost commission revenue automatically.",
+    images: ["https://link-medic.app/opengraph-image.jpg"],
   },
 };
 
@@ -38,6 +69,10 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-[#020617]">
+      {/* Structured Data */}
+      <JsonLd data={softwareApplicationSchema} />
+      <JsonLd data={createFaqSchema(faqData)} />
+
       {/* Fixed Navigation */}
       <nav className="fixed top-0 w-full bg-[#020617]/90 backdrop-blur-md border-b border-white/10 z-50">
         <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
@@ -77,6 +112,26 @@ export default async function Home() {
 
       {/* Integrations Bar */}
       <IntegrationsBar />
+
+      {/* What is LinkMedic - AI Search Optimized Definition */}
+      <section id="what-is-linkmedic" className="bg-[#020617] py-16 border-y border-white/5">
+        <div className="max-w-3xl mx-auto px-6">
+          <h2 className="font-display text-2xl md:text-3xl text-white tracking-tight mb-6 text-center">
+            WHAT IS <span className="text-cyan-400">LINKMEDIC</span>?
+          </h2>
+          <div className="text-slate-400 text-lg leading-relaxed space-y-4">
+            <p>
+              <strong className="text-white">LinkMedic is a broken affiliate link checker for YouTube creators.</strong> It automatically scans your video descriptions to find dead links, out-of-stock products, and expired affiliate tags that are silently costing you money.
+            </p>
+            <p>
+              Unlike generic link checkers, LinkMedic is built specifically for YouTube affiliate marketers. It detects Amazon product unavailability, validates affiliate tracking parameters, and provides AI-powered replacement suggestions so you can fix broken links without spending hours searching for alternatives.
+            </p>
+            <p>
+              Whether you have 50 videos or 5,000, LinkMedic scans your entire back catalog and prioritizes fixes by estimated revenue impact—helping you recover lost affiliate commissions from your evergreen content.
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* Diagnostic Report (The Problem) */}
       <DiagnosticReport />

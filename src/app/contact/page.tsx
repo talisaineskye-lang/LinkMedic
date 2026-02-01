@@ -7,6 +7,19 @@ export const metadata: Metadata = {
   title: "Contact | LinkMedic",
   description:
     "Get in touch with the LinkMedic team for support, billing questions, or partnership inquiries.",
+  openGraph: {
+    title: "Contact | LinkMedic",
+    description: "Get in touch with the LinkMedic team for support, billing questions, or partnership inquiries.",
+    type: "website",
+    url: "https://link-medic.app/contact",
+    images: [{ url: "https://link-medic.app/opengraph-image.jpg" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Contact | LinkMedic",
+    description: "Get in touch with the LinkMedic team for support, billing questions, or partnership inquiries.",
+    images: ["https://link-medic.app/opengraph-image.jpg"],
+  },
 };
 
 export default function ContactPage() {

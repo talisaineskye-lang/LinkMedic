@@ -2,29 +2,39 @@ import { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import { JsonLd, createArticleSchema } from "@/components/JsonLd";
 
 export const metadata: Metadata = {
   title: "The 2026 Merchant Yield Map | LinkMedic Intel",
-  description: "A side-by-side comparison of affiliate commission rates and cookie windows. Bookmark this and reference it every time you add links to a video.",
+  description: "Compare affiliate commission rates, cookie durations, and payout terms across Amazon, Impact, CJ, Rakuten, ShareASale, and Awin — all in one place.",
   keywords: ["affiliate commission rates", "cookie windows", "amazon alternatives", "b&h photo affiliate", "impact affiliate", "rakuten affiliate"],
   openGraph: {
     title: "The 2026 Merchant Yield Map | LinkMedic Intel",
-    description: "Compare affiliate commission rates and cookie windows across all major networks.",
+    description: "Compare affiliate commission rates, cookie durations, and payout terms across Amazon, Impact, CJ, Rakuten, ShareASale, and Awin — all in one place.",
     type: "article",
-    url: "https://linkmedic.io/intel/2026-merchant-yield-map",
-    images: [{ url: "https://linkmedic.io/opengraph-image.jpg" }],
+    url: "https://link-medic.app/intel/2026-merchant-yield-map",
+    images: [{ url: "https://link-medic.app/opengraph-image.jpg" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "The 2026 Merchant Yield Map",
-    description: "Compare affiliate commission rates and cookie windows across all major networks.",
-    images: ["https://linkmedic.io/opengraph-image.jpg"],
+    description: "Compare affiliate commission rates, cookie durations, and payout terms across Amazon, Impact, CJ, Rakuten, ShareASale, and Awin — all in one place.",
+    images: ["https://link-medic.app/opengraph-image.jpg"],
   },
 };
 
 export default function MerchantYieldMap() {
   return (
     <div className="min-h-screen bg-[#020617] text-white">
+      {/* Structured Data */}
+      <JsonLd data={createArticleSchema({
+        headline: "The 2026 Merchant Yield Map: Who Pays What",
+        description: "Compare affiliate commission rates, cookie durations, and payout terms across Amazon, Impact, CJ, Rakuten, ShareASale, and Awin — all in one place.",
+        datePublished: "2026-01-15",
+        dateModified: "2026-01-15",
+        url: "https://link-medic.app/intel/2026-merchant-yield-map",
+      })} />
+
       {/* Header */}
       <header className="border-b border-white/10 bg-[#020617]/90 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">

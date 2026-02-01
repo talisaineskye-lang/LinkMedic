@@ -11,12 +11,14 @@ export const metadata: Metadata = {
     title: "Resources | LinkMedic - YouTube Affiliate Link Guides",
     description: "Guides and resources for YouTube creators managing affiliate links.",
     type: "website",
-    url: "https://linkmedic.io/resources",
+    url: "https://link-medic.app/resources",
+    images: [{ url: "https://link-medic.app/opengraph-image.jpg" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Resources | LinkMedic",
     description: "Guides and resources for YouTube creators managing affiliate links.",
+    images: ["https://link-medic.app/opengraph-image.jpg"],
   },
 };
 

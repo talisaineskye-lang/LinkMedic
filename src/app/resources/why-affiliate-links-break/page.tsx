@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import { JsonLd, createArticleSchema } from "@/components/JsonLd";
 
 export const metadata: Metadata = {
   title: "Why Affiliate Links Break on YouTube (And What to Do) | LinkMedic",
@@ -11,18 +12,29 @@ export const metadata: Metadata = {
     title: "Why Affiliate Links Break on YouTube (And What to Do)",
     description: "Learn why YouTube affiliate links fail silently and how to fix them.",
     type: "article",
-    url: "https://linkmedic.io/resources/why-affiliate-links-break",
+    url: "https://link-medic.app/resources/why-affiliate-links-break",
+    images: [{ url: "https://link-medic.app/opengraph-image.jpg" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Why Affiliate Links Break on YouTube",
     description: "Learn why YouTube affiliate links fail silently and how to fix them.",
+    images: ["https://link-medic.app/opengraph-image.jpg"],
   },
 };
 
 export default function WhyAffiliateLinksBreak() {
   return (
     <div className="min-h-screen bg-[#020617] text-white">
+      {/* Structured Data */}
+      <JsonLd data={createArticleSchema({
+        headline: "Why Affiliate Links Break on YouTube (And What to Do)",
+        description: "Learn why YouTube affiliate links fail silently, common Amazon link issues, and how to fix broken affiliate links to recover lost revenue.",
+        datePublished: "2026-01-10",
+        dateModified: "2026-01-10",
+        url: "https://link-medic.app/resources/why-affiliate-links-break",
+      })} />
+
       {/* Header */}
       <header className="border-b border-white/10 bg-[#020617]/90 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">

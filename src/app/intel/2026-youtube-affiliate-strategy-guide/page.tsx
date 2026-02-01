@@ -2,29 +2,39 @@ import { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import { JsonLd, createArticleSchema } from "@/components/JsonLd";
 
 export const metadata: Metadata = {
   title: "The 2026 YouTube Affiliate Strategy Guide | LinkMedic Intel",
-  description: "Stop leaving money on the table. Amazon isn't the only game in town anymore. Smart creators are using multiple affiliate networks to earn 2x to 5x more from the same videos.",
+  description: "Learn the three-link tier system that top YouTube creators use to earn 2x to 5x more affiliate revenue from the same videos. No extra traffic needed.",
   keywords: ["youtube affiliate strategy", "affiliate marketing 2026", "amazon alternatives", "affiliate commission rates", "three link tier system"],
   openGraph: {
     title: "The 2026 YouTube Affiliate Strategy Guide | LinkMedic Intel",
-    description: "Learn the three-link tier system that top creators use to earn 2x to 5x more from the same videos.",
+    description: "Learn the three-link tier system that top YouTube creators use to earn 2x to 5x more affiliate revenue from the same videos. No extra traffic needed.",
     type: "article",
-    url: "https://linkmedic.io/intel/2026-youtube-affiliate-strategy-guide",
-    images: [{ url: "https://linkmedic.io/opengraph-image.jpg" }],
+    url: "https://link-medic.app/intel/2026-youtube-affiliate-strategy-guide",
+    images: [{ url: "https://link-medic.app/opengraph-image.jpg" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "The 2026 YouTube Affiliate Strategy Guide",
-    description: "Learn the three-link tier system that top creators use to earn 2x to 5x more from the same videos.",
-    images: ["https://linkmedic.io/opengraph-image.jpg"],
+    description: "Learn the three-link tier system that top YouTube creators use to earn 2x to 5x more affiliate revenue from the same videos. No extra traffic needed.",
+    images: ["https://link-medic.app/opengraph-image.jpg"],
   },
 };
 
 export default function AffiliateStrategyGuide() {
   return (
     <div className="min-h-screen bg-[#020617] text-white">
+      {/* Structured Data */}
+      <JsonLd data={createArticleSchema({
+        headline: "The 2026 YouTube Affiliate Strategy Guide",
+        description: "Learn the three-link tier system that top YouTube creators use to earn 2x to 5x more affiliate revenue from the same videos. No extra traffic needed.",
+        datePublished: "2026-01-15",
+        dateModified: "2026-01-15",
+        url: "https://link-medic.app/intel/2026-youtube-affiliate-strategy-guide",
+      })} />
+
       {/* Header */}
       <header className="border-b border-white/10 bg-[#020617]/90 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">

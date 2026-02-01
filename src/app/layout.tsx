@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Outfit, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { CookieConsent } from "@/components/cookie-consent";
+import { JsonLd, organizationSchema } from "@/components/JsonLd";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -50,6 +52,21 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-XXYMEVL86W"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-XXYMEVL86W');
+          `}
+        </Script>
+        <JsonLd data={organizationSchema} />
+      </head>
       <body
         className={`${outfit.variable} ${geistMono.variable} font-sans antialiased bg-[#0F0F0F]`}
       >

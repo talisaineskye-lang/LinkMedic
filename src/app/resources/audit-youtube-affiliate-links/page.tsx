@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import { JsonLd, createArticleSchema } from "@/components/JsonLd";
 
 export const metadata: Metadata = {
   title: "How to Audit YouTube Affiliate Links (The Right Way) | LinkMedic",
@@ -11,18 +12,29 @@ export const metadata: Metadata = {
     title: "How to Audit YouTube Affiliate Links (The Right Way)",
     description: "Prioritize fixes by revenue impact, not random checks.",
     type: "article",
-    url: "https://linkmedic.io/resources/audit-youtube-affiliate-links",
+    url: "https://link-medic.app/resources/audit-youtube-affiliate-links",
+    images: [{ url: "https://link-medic.app/opengraph-image.jpg" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "How to Audit YouTube Affiliate Links",
     description: "Prioritize fixes by revenue impact, not random checks.",
+    images: ["https://link-medic.app/opengraph-image.jpg"],
   },
 };
 
 export default function AuditYouTubeAffiliateLinks() {
   return (
     <div className="min-h-screen bg-[#020617] text-white">
+      {/* Structured Data */}
+      <JsonLd data={createArticleSchema({
+        headline: "How to Audit YouTube Affiliate Links (The Right Way)",
+        description: "Learn the right way to audit YouTube descriptions for broken affiliate links, prioritize fixes by revenue impact, and set up ongoing monitoring.",
+        datePublished: "2026-01-10",
+        dateModified: "2026-01-10",
+        url: "https://link-medic.app/resources/audit-youtube-affiliate-links",
+      })} />
+
       {/* Header */}
       <header className="border-b border-white/10 bg-[#020617]/90 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">

@@ -5,20 +5,20 @@ import { ArrowRight, Calendar, Clock } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Intel Blog | LinkMedic",
-  description: "Affiliate marketing strategies, commission guides, and revenue optimization tips for YouTube creators.",
+  description: "Affiliate marketing strategies, commission optimization guides, and revenue tips to help YouTube creators earn more from every video in their back catalog.",
   keywords: ["affiliate marketing", "youtube affiliate", "commission rates", "affiliate strategy"],
   openGraph: {
     title: "Intel Blog | LinkMedic",
-    description: "Affiliate marketing strategies, commission guides, and revenue optimization tips for YouTube creators.",
+    description: "Affiliate marketing strategies, commission optimization guides, and revenue tips to help YouTube creators earn more from every video in their back catalog.",
     type: "website",
-    url: "https://linkmedic.io/intel",
-    images: [{ url: "https://linkmedic.io/opengraph-image.jpg" }],
+    url: "https://link-medic.app/intel",
+    images: [{ url: "https://link-medic.app/opengraph-image.jpg" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Intel Blog | LinkMedic",
-    description: "Affiliate marketing strategies and commission guides for YouTube creators.",
-    images: ["https://linkmedic.io/opengraph-image.jpg"],
+    description: "Affiliate marketing strategies, commission optimization guides, and revenue tips to help YouTube creators earn more from every video in their back catalog.",
+    images: ["https://link-medic.app/opengraph-image.jpg"],
   },
 };
 

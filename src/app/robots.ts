@@ -16,6 +16,6 @@ export default function robots(): MetadataRoute.Robots {
         "/coming-soon",
       ],
     },
-    sitemap: "https://linkmedic.io/sitemap.xml",
+    sitemap: "https://link-medic.app/sitemap.xml",
   };
 }

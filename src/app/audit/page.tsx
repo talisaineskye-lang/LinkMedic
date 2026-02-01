@@ -3,6 +3,7 @@ import { AuditTool } from "@/components/audit-tool";
 import { XCircle, AlertTriangle, CornerDownRight, BarChart3, Video, Zap } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { JsonLd, freeAuditToolSchema } from "@/components/JsonLd";
 
 export const metadata: Metadata = {
   title: "Free YouTube Affiliate Link Audit Tool – Find Broken Links & Lost Revenue",
@@ -12,18 +13,23 @@ export const metadata: Metadata = {
     title: "Free YouTube Affiliate Link Audit – Find Your Lost Revenue",
     description: "Discover how much affiliate revenue you're losing to broken links. Free audit tool for YouTube creators.",
     type: "website",
-    url: "https://linkmedic.io/audit",
+    url: "https://link-medic.app/audit",
+    images: [{ url: "https://link-medic.app/opengraph-image.jpg" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Free YouTube Affiliate Link Audit Tool",
     description: "See exactly how much revenue you're losing to broken affiliate links.",
+    images: ["https://link-medic.app/opengraph-image.jpg"],
   },
 };
 
 export default function AuditPage() {
   return (
     <main className="min-h-screen bg-[#020617]">
+      {/* Structured Data */}
+      <JsonLd data={freeAuditToolSchema} />
+
       {/* Header */}
       <header className="border-b border-white/10 bg-[#020617]/90 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">

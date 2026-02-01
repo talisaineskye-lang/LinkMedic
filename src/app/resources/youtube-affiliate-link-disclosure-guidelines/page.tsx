@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, CheckCircle, AlertTriangle, FileText } from "lucide-react";
+import { JsonLd, createArticleSchema } from "@/components/JsonLd";
 
 export const metadata: Metadata = {
   title: "YouTube Affiliate Link Disclosure Guidelines (FTC 2026)",
@@ -11,18 +12,29 @@ export const metadata: Metadata = {
     title: "YouTube Affiliate Link Disclosure Guidelines (FTC 2026)",
     description: "How to properly disclose affiliate links on YouTube to stay FTC compliant.",
     type: "article",
-    url: "https://linkmedic.io/resources/youtube-affiliate-link-disclosure-guidelines",
+    url: "https://link-medic.app/resources/youtube-affiliate-link-disclosure-guidelines",
+    images: [{ url: "https://link-medic.app/opengraph-image.jpg" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "YouTube Affiliate Link Disclosure Guidelines (FTC 2026)",
     description: "How to properly disclose affiliate links on YouTube to stay FTC compliant.",
+    images: ["https://link-medic.app/opengraph-image.jpg"],
   },
 };
 
 export default function YouTubeAffiliateDisclosureGuidelines() {
   return (
     <div className="min-h-screen bg-[#020617] text-white">
+      {/* Structured Data */}
+      <JsonLd data={createArticleSchema({
+        headline: "YouTube Affiliate Link Disclosure Guidelines (FTC 2026)",
+        description: "Learn how to properly disclose affiliate links on YouTube to stay FTC compliant in 2026. Clear templates, placement rules, and best practices.",
+        datePublished: "2026-01-10",
+        dateModified: "2026-01-10",
+        url: "https://link-medic.app/resources/youtube-affiliate-link-disclosure-guidelines",
+      })} />
+
       {/* Header */}
       <header className="border-b border-white/10 bg-[#020617]/90 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
