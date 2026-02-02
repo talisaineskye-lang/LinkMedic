@@ -23,6 +23,10 @@ export default async function FixCenterPage() {
     return null;
   }
 
+  // Compute timestamp once at the start (safe in Server Components)
+  // eslint-disable-next-line react-hooks/purity
+  const currentTime = Date.now();
+
   // Get user settings for revenue estimation and affiliate tags
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
@@ -103,7 +107,7 @@ export default async function FixCenterPage() {
   // Transform to issues with calculated revenue impact
   const transformLink = (link: typeof allBrokenLinks[0]) => {
     const videoAgeMonths = link.video.publishedAt
-      ? Math.max((Date.now() - new Date(link.video.publishedAt).getTime()) / (1000 * 60 * 60 * 24 * 30), 1)
+      ? Math.max((currentTime - new Date(link.video.publishedAt).getTime()) / (1000 * 60 * 60 * 24 * 30), 1)
       : 12;
 
     return {

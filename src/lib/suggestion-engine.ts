@@ -749,7 +749,7 @@ export async function findReplacementProduct(
   // Step 0: Resolve shortened URL and get ASIN
   const { resolved: resolvedUrl, asin: originalAsin } = await resolveAmazonUrl(originalUrl);
 
-  let region = getAmazonRegion(resolvedUrl);
+  const region = getAmazonRegion(resolvedUrl);
 
   // Construct clean product URL if we have ASIN
   let effectiveUrl = resolvedUrl;

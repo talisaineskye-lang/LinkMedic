@@ -29,6 +29,10 @@ export default async function DashboardPage() {
     return null;
   }
 
+  // Compute timestamp once at the start (safe in Server Components)
+  // eslint-disable-next-line react-hooks/purity
+  const currentTime = Date.now();
+
   // Get user settings for revenue estimation + tier info + scan timestamps
   // Note: Using type assertion for new scan timestamp fields until prisma db push
   const user = await prisma.user.findUnique({
@@ -97,7 +101,7 @@ export default async function DashboardPage() {
   // Calculate monthly loss from broken links
   const monthlyLoss = Math.round(brokenLinks.reduce((sum, link) => {
     const videoAgeMonths = link.video.publishedAt
-      ? Math.max((Date.now() - new Date(link.video.publishedAt).getTime()) / (1000 * 60 * 60 * 24 * 30), 1)
+      ? Math.max((currentTime - new Date(link.video.publishedAt).getTime()) / (1000 * 60 * 60 * 24 * 30), 1)
       : 12;
     return sum + calculateRevenueImpact(
       link.video.viewCount,
@@ -140,7 +144,7 @@ export default async function DashboardPage() {
   // Calculate recovered revenue from fixed links
   const recoveredMonthly = Math.round(fixedLinks.reduce((sum, link) => {
     const videoAgeMonths = link.video.publishedAt
-      ? Math.max((Date.now() - new Date(link.video.publishedAt).getTime()) / (1000 * 60 * 60 * 24 * 30), 1)
+      ? Math.max((currentTime - new Date(link.video.publishedAt).getTime()) / (1000 * 60 * 60 * 24 * 30), 1)
       : 12;
     return sum + calculateRevenueImpact(
       link.video.viewCount,
@@ -170,7 +174,7 @@ export default async function DashboardPage() {
   // Detect inactive channel
   // A channel is considered inactive if it has very low total views
   const totalViews = rawLinks.reduce((sum, link) => sum + (link.video.viewCount || 0), 0);
-  const thirtyDaysAgo = new Date(Date.now() - INACTIVE_CHANNEL_THRESHOLDS.recentDays * 24 * 60 * 60 * 1000);
+  const thirtyDaysAgo = new Date(currentTime - INACTIVE_CHANNEL_THRESHOLDS.recentDays * 24 * 60 * 60 * 1000);
 
   // Get views from recent videos (published in last 30 days)
   const recentVideoViews = rawLinks
@@ -203,7 +207,7 @@ export default async function DashboardPage() {
   // Calculate scan eligibility
   const QUICK_SCAN_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 hours
   const FULL_SCAN_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
-  const now = Date.now();
+  const now = currentTime;
 
   const quickCooldownEnds = user?.lastQuickScan
     ? new Date(user.lastQuickScan.getTime() + QUICK_SCAN_COOLDOWN_MS)
